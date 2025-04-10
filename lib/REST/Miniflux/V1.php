@@ -43,18 +43,23 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const DATE_FORMAT_SEC = "Y-m-d\TH:i:sP";
     protected const DATE_FORMAT_MICRO = "Y-m-d\TH:i:s.uP";
     protected const VALID_QUERY = [
-        'status'          => V::T_STRING + V::M_ARRAY,
-        'offset'          => V::T_INT,
-        'limit'           => V::T_INT,
-        'order'           => V::T_STRING,
-        'direction'       => V::T_STRING,
-        'before'          => V::T_DATE, // Unix timestamp
-        'after'           => V::T_DATE, // Unix timestamp
-        'before_entry_id' => V::T_INT,
-        'after_entry_id'  => V::T_INT,
-        'starred'         => V::T_BOOL,
-        'search'          => V::T_STRING,
-        'category_id'     => V::T_INT,
+        // All dates are in the form of UNIX timestamps
+        'status'           => V::T_STRING + V::M_ARRAY,
+        'offset'           => V::T_INT,
+        'limit'            => V::T_INT,
+        'order'            => V::T_STRING,
+        'direction'        => V::T_STRING,
+        'before'           => V::T_DATE,
+        'after'            => V::T_DATE,
+        'published_before' => V::T_DATE,
+        'published_after'  => V::T_DATE,
+        'changed_before'   => V::T_DATE,
+        'changed_after'    => V::T_DATE,
+        'before_entry_id'  => V::T_INT,
+        'after_entry_id'   => V::T_INT,
+        'starred'          => V::T_BOOL,
+        'search'           => V::T_STRING,
+        'category_id'      => V::T_INT,
     ];
     protected const VALID_JSON = [
         // user properties which map directly to Arsse user metadata are listed separately;
@@ -1043,14 +1048,23 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function computeContext(array $query, Context $c): RootContext {
-        if ($query['before'] && $query['before']->getTimestamp() === 0) {
-            $query['before'] = null; // NOTE: This workaround is needed for compatibility with "Microflux for Miniflux", an Android Client
+        // NOTE: Miniflux interprets a zero in a date field as a non-value,
+        //   but we normally treat it as a valid value (1970-01-01T00:00:00),
+        //   so we need these workarounds. The now-discontinued Android client
+        //   "Microflux for Miniflux" relied on this quirk of Miniflux to
+        //   display any articles at all
+        foreach (["before", "published_before", "changed_before", "after", "published_after", "changed_after"] as $d) {
+            if ($query[$d] && $query[$d]->getTimestamp() === 0) {
+                $query[$d] = null; 
+            }
         }
         $c->limit($query['limit'] ?? self::DEFAULT_ENTRY_LIMIT) // NOTE: This does not honour user preferences
             ->offset($query['offset'])
             ->starred($query['starred'])
-            ->modifiedRange($query['after'], $query['before']) // FIXME: This may not be the correct date field
-            ->articleRange($query['after_entry_id'] ? $query['after_entry_id'] + 1 : null, $query['before_entry_id'] ? $query['before_entry_id'] - 1 : null) // FIXME: This might be edition
+            ->addedRange($query['after'], $query['before'])
+            ->publishedRange($query['published_after'], $query['published_before'])
+            ->modifiedRange($query['changed_after'], $query['changed_before'])
+            ->articleRange($query['after_entry_id'] ? $query['after_entry_id'] + 1 : null, $query['before_entry_id'] ? $query['before_entry_id'] - 1 : null)
             ->searchTerms(strlen($query['search'] ?? "") ? preg_split("/\s+/", $query['search']) : null); // NOTE: Miniflux matches only whole words; we match simple substrings
         if ($query['category_id']) {
             if ($query['category_id'] === 1) {
