@@ -1603,8 +1603,8 @@ class Database {
             'labelled'           => "$least(coalesce(label_stats.assigned,0),1)",                                                                                                        // Whether the article has at least one label
             'annotated'          => "(case when coalesce(arsse_articles.note,'') <> '' then 1 else 0 end)",                                                                              // Whether the article has a note
             'note'               => "coalesce(arsse_articles.note,'')",                                                                                                                  // The article's note, if any
-            'published_date'     => "arsse_articles.published",                                                                                                                          // The date at which the article was first published i.e. its creation date
-            'edited_date'        => "arsse_articles.edited",                                                                                                                             // The date at which the article was last edited according to the feed
+            'published_date'     => "coalesce(arsse_articles.published, arsse_articles.added)",                                                                                          // The date at which the article was first published i.e. its creation date
+            'edited_date'        => "coalesce(arsse_articles.edited, arsse_articles.published, arsse_articles.modified)",                                                                // The date at which the article was last edited according to the feed
             'modified_date'      => "arsse_articles.modified",                                                                                                                           // The date at which the article was last updated in our database
             'added_date'         => "arsse_articles.added",                                                                                                                              // The date at which the article was created in our database
             'marked_date'        => "$greatest(arsse_articles.modified, coalesce(arsse_articles.marked, '0001-01-01 00:00:00'), coalesce(label_stats.modified, '0001-01-01 00:00:00'))", // The date at which the article metadata was last modified by the user
@@ -1726,6 +1726,8 @@ class Database {
                 "annotationTerms",
                 "modifiedRanges",
                 "markedRanges",
+                "addedRanges",
+                "publishedRanges",
             ] as $m) {
                 if ($context->$m() && !$context->$m) {
                     throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]);
@@ -1745,23 +1747,25 @@ class Database {
         // handle the simple context options
         $options = [
             // each context array consists of a column identifier (see $colDefs above), a comparison operator, and a data type; the "between" operator has special handling
-            "edition"          => ["edition",       "=",       "int"],
-            "editions"         => ["edition",       "in",      "int"],
-            "article"          => ["id",            "=",       "int"],
-            "articles"         => ["id",            "in",      "int"],
-            "articleRange"     => ["id",            "between", "int"],
-            "editionRange"     => ["edition",       "between", "int"],
-            "modifiedRange"    => ["modified_date", "between", "datetime"],
-            "markedRange"      => ["marked_date",   "between", "datetime"],
-            "folderShallow"    => ["folder",        "=",       "int"],
-            "foldersShallow"   => ["folder",        "in",      "int"],
-            "subscription"     => ["subscription",  "=",       "int"],
-            "subscriptions"    => ["subscription",  "in",      "int"],
-            "unread"           => ["unread",        "=",       "bool"],
-            "starred"          => ["starred",       "=",       "bool"],
-            "hidden"           => ["hidden",        "=",       "bool"],
-            "labelled"         => ["labelled",      "=",       "bool"],
-            "annotated"        => ["annotated",     "=",       "bool"],
+            "edition"          => ["edition",        "=",       "int"],
+            "editions"         => ["edition",        "in",      "int"],
+            "article"          => ["id",             "=",       "int"],
+            "articles"         => ["id",             "in",      "int"],
+            "articleRange"     => ["id",             "between", "int"],
+            "editionRange"     => ["edition",        "between", "int"],
+            "modifiedRange"    => ["modified_date",  "between", "datetime"],
+            "markedRange"      => ["marked_date",    "between", "datetime"],
+            "addedRange"       => ["added_date",     "between", "datetime"],
+            "publishedRange"   => ["published_date", "between", "datetime"],
+            "folderShallow"    => ["folder",         "=",       "int"],
+            "foldersShallow"   => ["folder",         "in",      "int"],
+            "subscription"     => ["subscription",   "=",       "int"],
+            "subscriptions"    => ["subscription",   "in",      "int"],
+            "unread"           => ["unread",         "=",       "bool"],
+            "starred"          => ["starred",        "=",       "bool"],
+            "hidden"           => ["hidden",         "=",       "bool"],
+            "labelled"         => ["labelled",       "=",       "bool"],
+            "annotated"        => ["annotated",      "=",       "bool"],
         ];
         foreach ($options as $m => [$col, $op, $type]) {
             if ($context->$m()) {
@@ -1870,8 +1874,10 @@ class Database {
         }
         // handle arrays of ranges
         $options = [
-            'modifiedRanges' => ["modified_date", "datetime"],
-            'markedRanges'   => ["marked_date",   "datetime"],
+            'modifiedRanges'  => ["modified_date",  "datetime"],
+            'markedRanges'    => ["marked_date",    "datetime"],
+            'addedRanges'     => ["added_date",     "datetime"],
+            'publishedRanges' => ["published_date", "datetime"],
         ];
         foreach ($options as $m => [$col, $type]) {
             if ($context->$m()) {

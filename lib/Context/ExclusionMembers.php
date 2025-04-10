@@ -39,6 +39,10 @@ trait ExclusionMembers {
     public $modifiedRanges = [];
     public $markedRange = [null, null];
     public $markedRanges = [];
+    public $addedRange = [null, null];
+    public $addedRanges = [];
+    public $publishedRange = [null, null];
+    public $publishedRanges = [];
 
     protected function cleanIdArray(array $spec, bool $allowZero = false): array {
         $spec = array_values($spec);
@@ -254,6 +258,38 @@ trait ExclusionMembers {
     }
 
     public function markedRanges(?array $spec = null) {
+        if (isset($spec)) {
+            $spec = $this->cleanDateRangeArray($spec);
+        }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function addedRange($start = null, $end = null) {
+        if ($start === null && $end === null) {
+            $spec = null;
+        } else {
+            $spec = [Date::normalize($start), Date::normalize($end)];
+        }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function addedRanges(?array $spec = null) {
+        if (isset($spec)) {
+            $spec = $this->cleanDateRangeArray($spec);
+        }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function publishedRange($start = null, $end = null) {
+        if ($start === null && $end === null) {
+            $spec = null;
+        } else {
+            $spec = [Date::normalize($start), Date::normalize($end)];
+        }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function publishedRanges(?array $spec = null) {
         if (isset($spec)) {
             $spec = $this->cleanDateRangeArray($spec);
         }
