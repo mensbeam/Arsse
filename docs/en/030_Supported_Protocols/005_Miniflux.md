@@ -15,7 +15,7 @@
 
 The Miniflux protocol is a fairly well-designed protocol supporting a wide variety of operations on newsfeeds, folders (termed "categories"), and articles; it also allows for user administration, and native OPML importing and exporting. Architecturally it is similar to the Nextcloud News protocol, but has more capabilities.
 
-Miniflux version 2.2.6 is emulated, though not all features are implemented
+Miniflux version 2.2.7 is emulated, though not all features are implemented
 
 # Missing features
 
