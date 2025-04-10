@@ -36,6 +36,7 @@ alter table arsse_articles add column read smallint not null default 0;
 alter table arsse_articles add column starred smallint not null default 0;
 alter table arsse_articles add column hidden smallint not null default 0;
 alter table arsse_articles add column touched smallint not null default 0;
+alter table arsse_articles add column added timestamp(0) without time zone;
 alter table arsse_articles add column marked timestamp(0) without time zone;
 alter table arsse_articles add column note text collate "und-x-icu" not null default '';
 
@@ -50,6 +51,7 @@ with new_data as (
         coalesce(m.hidden,0) as hidden,
         a.published,
         a.edited,
+        a.modified as added,
         a.modified,
         m.modified as marked,
         a.url,
@@ -64,10 +66,10 @@ with new_data as (
     left join arsse_articles as a on a.id = i.article
     left join arsse_marks as m on a.id = m.article and m.subscription = i.subscription
 )
-insert into arsse_articles(id,feed,subscription,read,starred,hidden,published,edited,modified,marked,url,title,author,guid,url_title_hash,url_content_hash,title_content_hash,note)
+insert into arsse_articles(id,feed,subscription,read,starred,hidden,published,edited,added,modified,marked,url,title,author,guid,url_title_hash,url_content_hash,title_content_hash,note)
     select * from new_data
-on conflict (id) do update set (subscription,read,starred,hidden,marked,note) = (
-    select subscription, read, starred, hidden, marked, note from new_data where id = excluded.id
+on conflict (id) do update set (subscription,read,starred,hidden,added,marked,note) = (
+    select subscription, read, starred, hidden, added, marked, note from new_data where id = excluded.id
 );
 -- set the sequence number appropriately
 select setval('arsse_articles_id_seq', (select max(id) from arsse_articles));
@@ -130,6 +132,8 @@ alter table arsse_label_members drop column subscription;
 delete from arsse_articles where id in (select article from arsse_articles_map where id <> article);
 delete from arsse_articles where subscription is null;
 alter table arsse_articles alter column subscription set not null;
+alter table arsse_articles alter column added set default CURRENT_TIMESTAMP;
+alter table arsse_articles alter column added set not null;
 alter table arsse_articles drop column feed;
 
 -- Add feed-related columns to the subscriptions table
@@ -145,6 +149,8 @@ alter table arsse_subscriptions add column err_msg text collate "und-x-icu";
 alter table arsse_subscriptions add column size bigint not null default 0;
 alter table arsse_subscriptions add column icon bigint references arsse_icons(id) on delete set null;
 alter table arsse_subscriptions add column deleted smallint not null default 0;
+alter table arsse_subscriptions add column user_agent text;
+alter table arsse_subscriptions add column cookie text;
 
 -- Populate the new columns
 update arsse_subscriptions as s set 
@@ -166,10 +172,6 @@ where s.feed = f.id;
 alter table arsse_subscriptions alter column url set not null;
 alter table arsse_subscriptions add unique(owner,url);
 alter table arsse_subscriptions drop column feed;
-
--- Add new columns to the subscriptions table
-alter table arsse_subscriptions add column user_agent text;
-alter table arsse_subscriptions add column cookie text;
 
 -- Delete unneeded table
 drop table arsse_articles_map;

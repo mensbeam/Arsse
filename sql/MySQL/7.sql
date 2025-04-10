@@ -39,11 +39,12 @@ alter table arsse_articles add column "read" smallint not null default 0;
 alter table arsse_articles add column starred smallint not null default 0;
 alter table arsse_articles add column hidden smallint not null default 0;
 alter table arsse_articles add column touched smallint not null default 0;
+alter table arsse_articles add column added datetime(0);
 alter table arsse_articles add column marked datetime(0);
 alter table arsse_articles add column note longtext;
 
 -- Populate the articles table with new information; this either inserts or updates in-place
-insert into arsse_articles(id,feed,subscription,"read",starred,hidden,published,edited,modified,marked,url,title,author,guid,url_title_hash,url_content_hash,title_content_hash,note)
+insert into arsse_articles(id,feed,subscription,"read",starred,hidden,published,edited,added,modified,marked,url,title,author,guid,url_title_hash,url_content_hash,title_content_hash,note)
     select
         i.id,
         a.feed,
@@ -53,6 +54,7 @@ insert into arsse_articles(id,feed,subscription,"read",starred,hidden,published,
         coalesce(m.hidden,0),
         a.published,
         a.edited,
+        a.modified as added,
         a.modified,
         m.modified,
         a.url,
@@ -71,6 +73,7 @@ on duplicate key update
     "read" = values("read"),
     starred = values(starred),
     hidden = values(hidden),
+    added = values(added),
     marked = values(marked),
     note = values(note);
 
@@ -133,6 +136,7 @@ alter table arsse_label_members drop column subscription;
 -- Clean up the articles table: delete obsolete rows, add necessary constraints on new columns which could not be satisfied before inserting information, and drop the obsolete feed column
 delete from arsse_articles where id in (select article from arsse_articles_map where id <> article);
 delete from arsse_articles where subscription is null;
+alter table arsse_articles modify added datetime(0) not null default CURRENT_TIMESTAMP;
 alter table arsse_articles modify subscription bigint unsigned not null;
 alter table arsse_articles add foreign key(subscription) references arsse_subscriptions(id) on delete cascade on update cascade;
 alter table arsse_articles drop foreign key arsse_articles_ibfk_1;
@@ -151,6 +155,8 @@ alter table arsse_subscriptions add column err_msg longtext;
 alter table arsse_subscriptions add column size bigint unsigned not null default 0;
 alter table arsse_subscriptions add column icon bigint unsigned;
 alter table arsse_subscriptions add column deleted boolean not null default 0;
+alter table arsse_subscriptions add column user_agent longtext;
+alter table arsse_subscriptions add column cookie longtext;
 
 -- Populate the new columns
 update arsse_subscriptions as s, arsse_feeds as f set 
@@ -174,10 +180,6 @@ alter table arsse_subscriptions add unique(owner,url(255));
 alter table arsse_subscriptions drop constraint arsse_subscriptions_ibfk_2;
 alter table arsse_subscriptions drop constraint owner;
 alter table arsse_subscriptions drop column feed;
-
--- Add new columns to the subscriptions table
-alter table arsse_subscriptions add column user_agent longtext;
-alter table arsse_subscriptions add column cookie longtext;
 
 -- Delete unneeded table
 drop table arsse_articles_map;

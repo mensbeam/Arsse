@@ -80,6 +80,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             'author'             => "str",
             'published'          => "datetime",
             'edited'             => "datetime",
+            'added'              => "datetime",
             'modified'           => "datetime",
             'marked'             => "datetime",
             'guid'               => "str",

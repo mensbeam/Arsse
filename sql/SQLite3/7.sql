@@ -39,6 +39,7 @@ create table arsse_articles_new(
     hidden int not null default 0,                                                                          -- whether the article should be excluded from selection by default
     published text,                                                                                         -- time of original publication
     edited text,                                                                                            -- time of last edit by author
+    added text not null default CURRENT_TIMESTAMP,                                                          -- time when article was created in database
     modified text not null default CURRENT_TIMESTAMP,                                                       -- time when article was last modified in database pursuant to an authorial edit
     marked text,                                                                                            -- time at which an article was last modified by the user
     url text,                                                                                               -- URL of article
@@ -60,6 +61,7 @@ insert into arsse_articles_new
         coalesce(m.hidden,0),
         a.published,
         a.edited,
+        a.modified,
         a.modified,
         m.modified,
         a.url,
