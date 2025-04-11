@@ -1235,7 +1235,7 @@ class Database {
             // retrieve the list of categories if the article has any
             $categories = $r['categories'] ? $this->articleCategoriesGet($user, (int) $r['id']) : [];
             // evaluate the rule for the article
-            if (Rule::apply($keep, $block, $r['url'] ?? "", $r['title'], $r['author'] ?? "", $categories)) {
+            if (Rule::apply($keep, $block, $r['url'] ?? "", $r['title'] ?? "", $r['author'] ?? "", $categories)) {
                 $unhide[] = $r['id'];
             } else {
                 $hide[] = $r['id'];
@@ -1390,7 +1390,7 @@ class Database {
                 $article->urlContentHash,
                 $article->titleContentHash,
                 $subID,
-                !Rule::apply($keep, $block, $article->url ?? "", $article->title, $article->author ?? "", $article->categories)
+                !Rule::apply($keep, $block, $article->url ?? "", $article->title ?? "", $article->author ?? "", $article->categories)
             )->lastId();
             $qInsertContent->run($articleID, $article->scrapedContent ?? $article->content);
             // note the new ID for later use
@@ -1409,7 +1409,7 @@ class Database {
         // next update existing artricles which have been edited
         foreach ($feed->changedItems as $articleID => $article) {
             $qUpdateArticle->run(
-                !Rule::apply($keep, $block, $article->url ?? "", $article->title, $article->author ?? "", $article->categories),
+                !Rule::apply($keep, $block, $article->url ?? "", $article->title ?? "", $article->author ?? "", $article->categories),
                 $article->url,
                 $article->title,
                 $article->author,
