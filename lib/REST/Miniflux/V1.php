@@ -594,7 +594,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             'starred'      => (bool) $entry['starred'],
             'reading_time' => 0,
             'enclosures'   => $enclosures,
-            'feed'         => null,
+            'feed'         => null, // filled in elsewhere
+            'tags'         => null, // filled in elsewhere
         ];
     }
 
@@ -1003,8 +1004,15 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $in[$to] = $data[$from];
             }
         }
+        // Miniflux category IDs start at 1, but our root folder is 0, so we always subtract 1
         if (isset($in['folder'])) {
             $in['folder'] -= 1;
+        }
+        // Miniflux interprets the empty string as "default User-Agent" rather
+        //   than "no User-Agent" as we do; we therefore change the value to
+        //   null, which is our value for "default User-Agent"
+        if (isset($in['user_agent']) && !strlen($in['user_agent'])) {
+            $in['user_agent'] = null;
         }
         try {
             Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, (int) $path[1], $in);

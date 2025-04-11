@@ -679,7 +679,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($out);
         }
         $this->assertMessage($exp, $this->req("PUT", "/feeds/2112", $in));
-        \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, $data);
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, $this->identicalTo($data));
     }
 
     public static function provideFeedModifications(): iterable {
@@ -700,6 +700,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             [['username' => "ook"],                  ['username' => "ook"],                 true,                                                        $success],
             [['password' => "ook"],                  ['password' => "ook"],                 true,                                                        $success],
             [['user_agent' => "ook"],                ['user_agent' => "ook"],               true,                                                        $success],
+            [['user_agent' => ""],                   ['user_agent' => null],                true,                                                        $success],
             [['username' => "ook:eek"],              ['username' => "ook:eek"],             new ExceptionInput("invalidValue", ['field' => "username"]), V1::respError(["InvalidInputValue", 'field' => "username"], 422)],
         ];
     }
