@@ -1228,14 +1228,14 @@ class Database {
             // in this case we should halt evaluation and just leave things as they are
             return; // @codeCoverageIgnore
         }
-        $articles = $this->db->prepare("SELECT id, title, coalesce(categories, 0) as categories from arsse_articles as a left join (select article, count(*) as categories from arsse_categories group by article) as c on a.id = c.article where a.subscription = ?", "int")->run($id)->getAll();
+        $articles = $this->db->prepare("SELECT id, url, title, coalesce(categories, 0) as categories from arsse_articles as a left join (select article, count(*) as categories from arsse_categories group by article) as c on a.id = c.article where a.subscription = ?", "int")->run($id)->getAll();
         $hide = [];
         $unhide = [];
         foreach ($articles as $r) {
             // retrieve the list of categories if the article has any
             $categories = $r['categories'] ? $this->articleCategoriesGet($user, (int) $r['id']) : [];
             // evaluate the rule for the article
-            if (Rule::apply($keep, $block, $r['title'], $categories)) {
+            if (Rule::apply($keep, $block, $r['url'] ?? "", $r['title'], $r['author'] ?? "", $categories)) {
                 $unhide[] = $r['id'];
             } else {
                 $hide[] = $r['id'];
@@ -1390,7 +1390,7 @@ class Database {
                 $article->urlContentHash,
                 $article->titleContentHash,
                 $subID,
-                !Rule::apply($keep, $block, $article->title, $article->categories)
+                !Rule::apply($keep, $block, $article->url ?? "", $article->title, $article->author ?? "", $article->categories)
             )->lastId();
             $qInsertContent->run($articleID, $article->scrapedContent ?? $article->content);
             // note the new ID for later use
@@ -1409,7 +1409,7 @@ class Database {
         // next update existing artricles which have been edited
         foreach ($feed->changedItems as $articleID => $article) {
             $qUpdateArticle->run(
-                !Rule::apply($keep, $block, $article->title, $article->categories),
+                !Rule::apply($keep, $block, $article->url ?? "", $article->title, $article->author ?? "", $article->categories),
                 $article->url,
                 $article->title,
                 $article->author,
