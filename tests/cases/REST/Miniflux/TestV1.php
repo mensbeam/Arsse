@@ -934,6 +934,19 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
+    public function testModifyAnEntry(): void {
+        // NOTE: This is a no-op
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn(self::v(self::FEEDS[1]));
+        \Phake::when(Arsse::$db)->articleCategoriesGet->thenReturnCallback(function($user, $id) {
+            return self::TAGS[$id] ?? [];
+        });
+        \Phake::when(Arsse::$db)->articleList->thenReturn(new Result(self::v([self::ENTRIES[0]])));
+        $exp = self::ENTRIES_OUT[0];
+        $exp['feed'] = self::feedsOut()[$exp['feed']];
+        $exp = HTTP::respJson($exp);
+        $this->assertMessage($exp, $this->req("PUT", "/entries/42"));
+    }
+
     #[DataProvider("provideEntryMarkings")]
     public function testMarkEntries(array $in, ?array $data, ResponseInterface $exp): void {
         \Phake::when(Arsse::$db)->articleMark->thenReturn(0);

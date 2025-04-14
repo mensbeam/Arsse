@@ -249,6 +249,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ],
         '/entries/1'                     => [
             'GET'                        => ["getEntry",              false, true,  false, false, []],
+            'PUT'                        => ["updateEntry",           false, true,  true,  false, []],
         ],
         '/entries/1/fetch-content'       => [
             'GET'                        => ["scrapeEntry",           false, true,  false, false, []],
@@ -1400,6 +1401,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             return self::respError("404", 404);
         }
+    }
+
+    protected function updateEntry(array $path, array $data): ResponseInterface {
+        // NOTE: We decline to implement this functionality because the use
+        //   case seems weak and it will probably have odd interactions with
+        //   feed updates
+        return $this->getEntry($path);
     }
 
     protected function updateEntries(array $data): ResponseInterface {

@@ -25,6 +25,7 @@ Miniflux version 2.2.7 is emulated, though not all features are implemented
     - [Global filtering rules](https://miniflux.app/docs/rules.html#global-filtering-rules) (feed filtering rules are supported)
     - The `disabled`, `hide_globally`, `ignore_http_cache`, and `fetch_via_proxy` flags
     - Manually refreshing feeds
+    - Changing the title or content of an entry
 - Third-party integrations features are not supported; attempting to use them has no effect
   - Saving entries to third-party services
   - Integrations status (this will always return `false`)
