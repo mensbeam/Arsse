@@ -63,6 +63,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'starred'          => V::T_BOOL,
         'search'           => V::T_STRING,
         'category_id'      => V::T_INT,
+        'counts'           => V::T_BOOL,
     ];
     /** The list of valid JSON body keys and the types of their values
      * 
@@ -217,7 +218,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     ];
     protected const CALLS = [                // handler method        Admin  Path   Body   Query  Required fields
         '/categories'                    => [
-            'GET'                        => ["getCategories",         false, false, false, false, []],
+            'GET'                        => ["getCategories",         false, false, false, true, []],
             'POST'                       => ["createCategory",        false, false, true,  false, ["title"]],
         ],
         '/categories/1'                  => [
@@ -627,13 +628,18 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
     
     protected function transformCategory(array $folder, int $uid): array {
-        return [
+        $out = [
             // always add 1 to the ID since the root folder will always be 1 instead of 0.
             'id'            => ((int) $folder['id']) + 1,
             'title'         => $folder['name'],
             'user_id'       => $uid,
             'hide_globally' => false,
         ];
+        if (isset($folder['unread'])) {
+            $out['feed_count'] = $folder['feeds'];
+            $out['total_unread'] = $folder['unread'];
+        }
+        return $out;
     }
 
     protected function transformFeed(array $sub, int $uid, string $rootName, \DateTimeZone $tz): array {
@@ -720,9 +726,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function transformEnclosure(array $entry, int $uid): array {
         return [
-            'id'                => $entry['id'], // NOTE: We don't have IDs for enclosures, but we also only have one enclosure per entry, so we can just re-use the same ID
+            'id'                => (int) $entry['id'], // NOTE: We don't have IDs for enclosures, but we also only have one enclosure per entry, so we can just re-use the same ID
             'user_id'           => $uid,
-            'entry_id'          => $entry['id'],
+            'entry_id'          => (int) $entry['id'],
             'url'               => $entry['media_url'],
             'mime_type'         => $entry['media_type'] ?: "application/octet-stream",
             'size'              => 0,
@@ -964,13 +970,37 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ];
     }
 
-    protected function getCategories(): ResponseInterface {
+    protected function getCategories(array $query): ResponseInterface {
+        // if counts are requested, compute unread count for each topmost
+        //   folder, and figure out how many feeds are in the root folder
+        $unread = [];
+        $inRoot = 0;
+        $tr = Arsse::$db->begin();
+        if ($query['counts']) {
+            foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $f) {
+                $top = $f['top_folder'] ?? 0;
+                if (!isset($unread[$top])) {
+                    $unread[$top] = 0;
+                }
+                $unread[$top] += $f['unread'];
+                if ($top === 0) {
+                    $inRoot++;
+                }
+            }
+        }
         $out = [];
         // add the root folder as a category
         $meta = $this->userMeta(Arsse::$user->id);
-        $out[] = $this->transformCategory(['id' => null, 'name' => $meta['root']], $meta['num']);
+        if ($query['counts']) {
+            $out[] = $this->transformCategory(['id' => null, 'name' => $meta['root'], 'feeds' => $inRoot, 'unread' => $unread[0] ?? 0], $meta['num']);
+        } else {
+            $out[] = $this->transformCategory(['id' => null, 'name' => $meta['root']], $meta['num']);
+        }
         // add other top folders as categories
         foreach (Arsse::$db->folderList(Arsse::$user->id, null, false) as $f) {
+            if ($query['counts']) {
+                $f['unread'] = $unread[$f['id']] ?? 0;
+            }
             $out[] = $this->transformCategory($f, $meta['num']);
         }
         return HTTP::respJson($out);
@@ -1068,8 +1098,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function getFeedCounters(): ResponseInterface {
         $out = ['reads' => [], 'unreads' => []];
         foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $r) {
-            $out['reads'][$r['id']] = $r['read'];
-            $out['unreads'][$r['id']] = $r['unread'];
+            $out['reads'][$r['id']] = (int) $r['read'];
+            $out['unreads'][$r['id']] = (int) $r['unread'];
         }
         // if there are no subscriptions, ensure the empty arrays are
         //   serialized as objects

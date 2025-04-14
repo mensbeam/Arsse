@@ -448,6 +448,36 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("GET", "/categories"));
     }
 
+    public function testListCategoriesWithCounts(): void {
+        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result(self::v([
+            ['id' => 1,  'name' => "Science"   , 'feeds' => 0],
+            ['id' => 20, 'name' => "Technology", 'feeds' => 3],
+        ])));
+        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v([
+            ['top_folder' => 20,   'unread' => 5],
+            ['top_folder' => 20,   'unread' => 3],
+            ['top_folder' => 20,   'unread' => 0],
+            ['top_folder' => null, 'unread' => 20],
+            ['top_folder' => null, 'unread' => 42],
+        ])));
+        $exp = HTTP::respJson([
+            ['id' => 1,  'title' => "All",        'user_id' => 42, 'hide_globally' => false, 'feed_count' => 2, 'total_unread' => 62],
+            ['id' => 2,  'title' => "Science",    'user_id' => 42, 'hide_globally' => false, 'feed_count' => 0, 'total_unread' => 0],
+            ['id' => 21, 'title' => "Technology", 'user_id' => 42, 'hide_globally' => false, 'feed_count' => 3, 'total_unread' => 8],
+        ]);
+        $this->assertMessage($exp, $this->req("GET", "/categories?counts=true"));
+        \Phake::verify(Arsse::$db)->folderList("john.doe@example.com", null, false);
+        // run test again with a renamed root folder
+        Arsse::$user = \Phake::mock(User::class);
+        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 47, 'admin' => false, 'root_folder_name' => "Uncategorized"]);
+        $exp = HTTP::respJson([
+            ['id' => 1,  'title' => "Uncategorized", 'user_id' => 47, 'hide_globally' => false, 'feed_count' => 2, 'total_unread' => 62],
+            ['id' => 2,  'title' => "Science",       'user_id' => 47, 'hide_globally' => false, 'feed_count' => 0, 'total_unread' => 0],
+            ['id' => 21, 'title' => "Technology",    'user_id' => 47, 'hide_globally' => false, 'feed_count' => 3, 'total_unread' => 8],
+        ]);
+        $this->assertMessage($exp, $this->req("GET", "/categories?counts=true"));
+    }
+
     #[DataProvider("provideCategoryAdditions")]
     public function testAddACategory($title, ResponseInterface $exp): void {
         if (!strlen((string) $title)) {
