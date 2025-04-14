@@ -130,7 +130,7 @@ class OCS extends \JKingWeb\Arsse\REST\AbstractHandler {
         // retrieve the user's metadata and format a response
         try {
             // this call will throw an exception if the user does not exist
-            $meta = Arsse::$user->propertiesGet($target, false);
+            $meta = Arsse::$user->propertiesGet($target);
             $now = Arsse::$obj->get(\DateTimeImmutable::class)->getTimestamp();
             $data = self::BASE_DATA;
             $data['id'] = $target;

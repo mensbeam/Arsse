@@ -22,6 +22,7 @@ Miniflux version 2.2.7 is emulated, though not all features are implemented
 - JSON Feed format is not suported
 - Various feed-related features are not supported; attempting to use them has no effect
     - Rewrite rules and scraper rules
+    - [Global filtering rules](https://miniflux.app/docs/rules.html#global-filtering-rules) (feed filtering rules are supported)
     - The `disabled`, `hide_globally`, `ignore_http_cache`, and `fetch_via_proxy` flags
     - Manually refreshing feeds
 - Third-party integrations features are not supported; attempting to use them has no effect
@@ -39,14 +40,15 @@ Miniflux version 2.2.7 is emulated, though not all features are implemented
 - The "All" category is treated specially (see below for details)
 - Feed and category titles consisting only of whitespace are rejected along with the empty string
 - Feeds created without a category are placed in the "All" category rather than the most recently modified category
-- Filtering rules may not function identically (see below for details)
+- Feed filtering rules may not function identically (see below for details)
 - The `checked_at` field of feeds indicates when the feed was last updated rather than when it was last checked
 - Search strings will match partial words
 - OPML import either succeeds or fails atomically: if one feed fails, no feeds are imported
+- The Arsse does not track sessions for Miniflux, so the `last_login_at` time of users will always be the current time
 
-# Behaviour of filtering (block and keep) rules
+# Behaviour of feed filtering (block and keep) rules
 
-Miniflux accepts [Google's RE2 regular expression syntax](https://github.com/google/re2/wiki/Syntax) for filter rules. Being a PHP application, The Arsse instead accepts [PCRE2 syntax](https://www.pcre.org/current/doc/html/pcre2syntax.html)), specifically in UTF-8 mode. Delimiters should not be included, and slashes should not be escaped; anchors may be used if desired. For example `^(?i)RE/MAX$` is a valid pattern.
+Miniflux accepts [Google's RE2 regular expression syntax](https://github.com/google/re2/wiki/Syntax) for feed filter rules. Being a PHP application, The Arsse instead accepts [PCRE2 syntax](https://www.pcre.org/current/doc/html/pcre2syntax.html)), specifically in UTF-8 mode. Delimiters should not be included, and slashes should not be escaped; anchors may be used if desired. For example `^(?i)RE/MAX$` is a valid pattern.
 
 For convenience the patterns are tested after collapsing whitespace. Unlike Miniflux, when filter rules are modified they are re-evaluated against all applicable articles immediately.
 

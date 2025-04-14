@@ -43,8 +43,8 @@ class TestOCS extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$user = \Phake::mock(User::class);
         Arsse::$user->id = $this->userId;
         \Phake::when(Arsse::$user)->auth->thenReturn(true);
-        \Phake::when(Arsse::$user)->propertiesGet($this->userId, $this->anything())->thenReturn(['admin' => true, 'lang' => "en_CA"]);
-        \Phake::when(Arsse::$user)->propertiesGet("jane.doe@example.com", $this->anything())->thenReturn(['admin' => false, 'lang' => null]);
+        \Phake::when(Arsse::$user)->propertiesGet($this->userId)->thenReturn(['admin' => true, 'lang' => "en_CA"]);
+        \Phake::when(Arsse::$user)->propertiesGet("jane.doe@example.com")->thenReturn(['admin' => false, 'lang' => null]);
         // produce consistent timestamps
         $this->now = new \DateTimeImmutable();
         \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn($this->now);
@@ -90,7 +90,7 @@ class TestOCS extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testQueryAnotherUserWithoutAuthority(): void {
-        \Phake::when(Arsse::$user)->propertiesGet($this->userId, $this->anything())->thenReturn(['admin' => false, 'lang' => "en_CA"]);
+        \Phake::when(Arsse::$user)->propertiesGet($this->userId)->thenReturn(['admin' => false, 'lang' => "en_CA"]);
         $user = "jane.doe@example.com";
         $exp = HTTP::respXml("<ocs><meta><status>failure</status><statuscode>998</statuscode><message></message></meta><data></data></ocs>", 404);
         $this->assertMessage($exp, $this->req("GET", $user));
@@ -99,7 +99,7 @@ class TestOCS extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testQueryAMissingUser(): void {
-        \Phake::when(Arsse::$user)->propertiesGet("oops", $this->anything())->thenThrow(new ExceptionConflict());
+        \Phake::when(Arsse::$user)->propertiesGet("oops")->thenThrow(new ExceptionConflict());
         $exp = HTTP::respXml("<ocs><meta><status>failure</status><statuscode>404</statuscode><message>User does not exist</message></meta><data></data></ocs>", 404);
         $this->assertMessage($exp, $this->req("GET", "oops"));
         $exp = HTTP::respJson(['ocs' => ['meta' => ['status' => "failure", 'statuscode' => 404, 'message' => "User does not exist"], 'data' => new \stdClass]], 404);

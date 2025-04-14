@@ -16,6 +16,8 @@ Bug fixes:
 
 Changes:
 - Use a simpler User-Agent string to avoid tripping bot defences
+- Remove advisory-only user metadata from command-line interface. Metadata for
+  Miniflux not used by The Arsse itself is now stored separately
 
 Version 0.11.0 (2025-03-18)
 ===========================

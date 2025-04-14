@@ -44,6 +44,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const DEFAULT_ORDER_COL = "modified_date";
     protected const DATE_FORMAT_SEC = "Y-m-d\TH:i:sP";
     protected const DATE_FORMAT_MICRO = "Y-m-d\TH:i:s.uP";
+    /** The list of valid URL query keys and the types they are converted to */
     protected const VALID_QUERY = [
         // All dates are in the form of UNIX timestamps
         'status'           => V::T_STRING + V::M_ARRAY,
@@ -63,44 +64,81 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'search'           => V::T_STRING,
         'category_id'      => V::T_INT,
     ];
+    /** The list of valid JSON body keys and the types of their values
+     * 
+     * If a type in the input does not match, the entire request is rejected,
+     * so we compare against PHP type names instead of using our value
+     * conversion infrastructure.
+     * 
+     * Not all these properties are used by our implementation, but they are
+     * treated with the same strictness as in Miniflux on the assumption this
+     * will ease interoperability.
+     */
     protected const VALID_JSON = [
-        // user properties which map directly to Arsse user metadata are listed separately;
-        // not all these properties are used by our implementation, but they are treated
-        // with the same strictness as in Miniflux to ease cross-compatibility
-        'url'               => "string",
-        'username'          => "string",
-        'password'          => "string",
-        'user_agent'        => "string",
-        'title'             => "string",
-        'feed_url'          => "string",
-        'category_id'       => "integer",
-        'crawler'           => "boolean",
-        'user_agent'        => "string",
-        'scraper_rules'     => "string",
-        'rewrite_rules'     => "string",
-        'keeplist_rules'    => "string",
-        'blocklist_rules'   => "string",
-        'disabled'          => "boolean",
-        'hide_globally'     => "boolean",
-        'ignore_http_cache' => "boolean",
-        'fetch_via_proxy'   => "boolean",
-        'entry_ids'         => "array", // this is a special case: it is an array of integers
-        'status'            => "string",
-        'cookie'            => "string",
+        // 
+        'url'                                  => "string",
+        'username'                             => "string",
+        'password'                             => "string",
+        'user_agent'                           => "string",
+        'title'                                => "string",
+        'feed_url'                             => "string",
+        'category_id'                          => "integer",
+        'crawler'                              => "boolean",
+        'user_agent'                           => "string",
+        'scraper_rules'                        => "string",
+        'rewrite_rules'                        => "string",
+        'keeplist_rules'                       => "string",
+        'blocklist_rules'                      => "string",
+        'disabled'                             => "boolean",
+        'hide_globally'                        => "boolean",
+        'ignore_http_cache'                    => "boolean",
+        'fetch_via_proxy'                      => "boolean",
+        'entry_ids'                            => "array", // this is a special case: it is an array of integers
+        'status'                               => "string",
+        'cookie'                               => "string",
+        'is_admin'                             => "boolean",
+        'theme'                                => "string",
+        'language'                             => "string",
+        'timezone'                             => "string",
+        'entry_sorting_direction'              => "string",
+        'entry_sorting_order'                  => "string",
+        'stylesheet'                           => "string",
+        'custom_js'                            => "string",
+        'external_font_hosts'                  => "string",
+        'entries_per_page'                     => "integer",
+        'keyboard_shortcuts'                   => "boolean",
+        'show_reading_time'                    => "boolean",
+        'entry_swipe'                          => "boolean",
+        'gesture_nav'                          => "string",
+        'display_mode'                         => "string",
+        'default_reading_speed'                => "integer",
+        'cjk_reading_speed'                    => "integer",
+        'default_home_page'                    => "string",
+        'categories_sorting_order'             => "string",
+        'mark_read_on_view'                    => "boolean",
+        'mark_read_on_media_player_completion' => "boolean",
+        'media_playback_rate'                  => "integer",
+        'block_filter_entry_rules'             => "string",
+        'keep_filter_entry_rules'              => "string",
     ];
-    protected const USER_META_MAP = [
-        // Miniflux ID             // Arsse ID        Default value
-        'is_admin'                => ["admin",        false],
-        'theme'                   => ["theme",        "light_serif"],
-        'language'                => ["lang",         "en_US"],
-        'timezone'                => ["tz",           "UTC"],
-        'entry_sorting_direction' => ["sort_asc",     false],
-        'entries_per_page'        => ["page_size",    100],
-        'keyboard_shortcuts'      => ["shortcuts",    true],
-        'show_reading_time'       => ["reading_time", true],
-        'entry_swipe'             => ["swipe",        true],
-        'stylesheet'              => ["stylesheet",   ""],
+    /** The list of inputs which are enumerations, and their valid values
+     * 
+     * This list includes both URL query keys and JSON body keys.
+     */
+    protected const VALID_ENUM = [
+        'order'                    => ["id", "status", "published_at", "category_title", "category_id", "title", "author"],
+        'direction'                => ["asc", "desc"],
+        'status'                   => ["read", "unread", "removed"],
+        'theme'                    => ["dark_sans_serif", "dark_serif", "light_sans_serif", "light_serif", "system_sans_serif", "system_serif"],
+        'entry_sorting_direction'  => ["asc", "desc"],
+        'entry_sorting_order'      => ["published_at", "created_at"],
+        'gesture_nav'              => ["none", "tap", "swipe"],
+        'display_mode'             => ["fullscreen", "standalone", "minimal-ui", "browser"],
+        'default_home_page'        => ["categories", "feeds", "history", "starred", "unread"],
+        'categories_sorting_order' => ["unread_count", "alphabetical"],
     ];
+    /** The list of inputs which must be integers greater than zero */
+    protected const VALID_ONE_OR_MORE = ["category_id", "before_entry_id", "after_entry_id", "entries_per_page", "default_reading_speed", "cjk_reading_speed", "media_playback_rate"];
     /** A map between Miniflux's input properties and our input properties when modifiying feeds
      *
      * Miniflux also allows changing the following properties:
@@ -131,8 +169,44 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'user_agent'      => "user_agent",
         'cookie'          => "cookie",
     ];
+    /** A map between Miniflux's input properties and our input properties when modifiying feeds */
     protected const CATEGORY_META_MAP = [
         'title' => "name",
+    ];
+    /** A map between Miniflux user preferences/metadata and our generic
+     * metadata properties. These are properties which do (or can) apply to
+     * protocols besides Miniflux. Miniflux-specific preferences which have no
+     * effect in The Arsse itself are listed below.
+     */
+    protected const USER_META_MAP = [
+        'id'                                   => "num", // read-only
+        'is_admin'                             => "admin", // write-restricted
+        'language'                             => "lang",
+        'timezone'                             => "tz",
+    ];
+    /** A list of Miniflux-sp */
+    protected const USER_META_DEFAULTS = [
+        'theme'                                => "light_serif",
+        'entry_sorting_direction'              => "asc",
+        'entry_sorting_order'                  => "published_at",
+        'stylesheet'                           => "",
+        'custom_js'                            => "",
+        'external_font_hosts'                  => "",
+        'entries_per_page'                     => 100,
+        'keyboard_shortcuts'                   => true,
+        'show_reading_time'                    => true,
+        'entry_swipe'                          => true,
+        'gesture_nav'                          => "tap",
+        'display_mode'                         => "standalone",
+        'default_reading_speed'                => 265,
+        'cjk_reading_speed'                    => 500,
+        'default_home_page'                    => "unread",
+        'categories_sorting_order'             => "unread_count",
+        'mark_read_on_view'                    => true,
+        'mark_read_on_media_player_completion' => false,
+        'media_playback_rate'                  => 1,
+        'block_filter_entry_rules'             => "",
+        'keep_filter_entry_rules'              => "",
     ];
     protected const ARTICLE_COLUMNS = [
         "id", "url", "title", "subscription",
@@ -398,10 +472,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             } elseif (gettype($body[$k]) !== $t) {
                 return self::respError(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
             } elseif (
-                (in_array($k, ["keeplist_rules", "blocklist_rules"]) && !Rule::validate($body[$k]))
+                (isset(self::VALID_ENUM[$k]) && !in_array($body[$k], self::VALID_ENUM[$k]))
+                || (in_array($k, ["keeplist_rules", "blocklist_rules"]) && !Rule::validate($body[$k]))
                 || (in_array($k, ["url", "feed_url"]) && !URL::absolute($body[$k]))
-                || ($k === "category_id" && $body[$k] < 1)
-                || ($k === "status" && !in_array($body[$k], ["read", "unread", "removed"]))
+                || (in_array($k, self::VALID_ONE_OR_MORE) && $body[$k] < 1)
             ) {
                 return self::respError(["InvalidInputValue", 'field' => $k], 422);
             } elseif ($k === "entry_ids") {
@@ -412,19 +486,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                         return self::respError(["InvalidInputValue", 'field' => $k], 422);
                     }
                 }
-            }
-        }
-        //normalize user-specific input
-        foreach (self::USER_META_MAP as $k => [,$d]) {
-            $t = gettype($d);
-            if (!isset($body[$k])) {
-                $body[$k] = null;
-            } elseif ($k === "entry_sorting_direction") {
-                if (!in_array($body[$k], ["asc", "desc"])) {
-                    return self::respError(["InvalidInputValue", 'field' => $k], 422);
-                }
-            } elseif (gettype($body[$k]) !== $t) {
-                return self::respError(["InvalidInputType", 'field' => $k, 'expected' => $t, 'actual' => gettype($body[$k])], 422);
             }
         }
         // check for any missing required values
@@ -462,8 +523,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return self::respError(["DuplicateInputValue", 'field' => $k], 400);
                 }
                 $seen[$k] = true;
-                if ($v === "") {
+                if ($v === "" || ($t === V::T_DATE && $v === "0")) {
                     // if the value is empty we can discard the value, but subsequent values for the same non-array key are still considered duplicates
+                    // for date fields a value of zero is also considered empty
                     continue;
                 } elseif ($a) {
                     $out[$k][] = V::normalize($v, $t + V::M_STRICT, "unix");
@@ -475,11 +537,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
             // perform additional validation
             if (
-                (in_array($k, ["category_id", "before_entry_id", "after_entry_id"]) && $v < 1)
+                (isset(self::VALID_ENUM[$k]) && !in_array($v, self::VALID_ENUM[$k]))
+                || (in_array($k, self::VALID_ONE_OR_MORE) && $v < 1)
                 || (in_array($k, ["limit", "offset"]) && $v < 0)
-                || ($k === "direction" && !in_array($v, ["asc", "desc"]))
-                || ($k === "order" && !in_array($v, ["id", "status", "published_at", "category_title", "category_id", "title", "author"]))
-                || ($k === "status" && !in_array($v, ["read", "unread", "removed"]))
             ) {
                 return self::respError(["InvalidInputValue", 'field' => $k], 400);
             }
@@ -507,6 +567,65 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
+    protected function transformUser(string $user, array $data, ?\DateTimeImmutable $now = null): array {
+        $now = $now ?? $this->now();
+        $keys = [
+            "id",
+            "username",
+            "is_admin",
+            "theme",
+            "language",
+            "timezone",
+            "entry_sorting_direction",
+            "entry_sorting_order",
+            "stylesheet",
+            "custom_js",
+            "external_font_hosts",
+            "google_id",
+            "openid_connect_id",
+            "entries_per_page",
+            "keyboard_shortcuts",
+            "show_reading_time",
+            "entry_swipe",
+            "gesture_nav",
+            "last_login_at",
+            "display_mode",
+            "default_reading_speed",
+            "cjk_reading_speed",
+            "default_home_page",
+            "categories_sorting_order",
+            "mark_read_on_view",
+            "mark_read_on_media_player_completion",
+            "media_playback_rate",
+            "block_filter_entry_rules",
+            "keep_filter_entry_rules",
+        ];
+        $out = [];
+        foreach ($keys as $k) {
+            switch ($k) {
+                case "username":
+                    $out[$k] = $user;
+                    break;
+                case "language":
+                    $out[$k] = $data[$k] ?? "en_US";
+                    break;
+                case "timezone":
+                    $out[$k] = $data[$k] ?? "UTC";
+                    break;
+                case "google_id":
+                case "openid_connect_id":
+                    $out[$k] = "";
+                    break;
+                case "last_login_at":
+                    $out[$k] = Date::transform($now, "iso8601m");
+                    break;
+                default:
+                    $out[$k] = $data[$k] ?? self::USER_META_DEFAULTS[$k];
+            }
+        }
+        return $out;
+    }
+    
     protected function transformCategory(array $folder, int $uid): array {
         return [
             // always add 1 to the ID since the root folder will always be 1 instead of 0.
@@ -620,62 +739,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ];
     }
 
-    protected function listUsers(array $users, bool $reportMissing): array {
-        $out = [];
-        $now = Date::transform($this->now(), "iso8601m");
-        foreach ($users as $u) {
-            try {
-                $info = Arsse::$user->propertiesGet($u, true);
-            } catch (UserException $e) {
-                if ($reportMissing) {
-                    throw $e;
-                } else {
-                    continue;
-                }
-            }
-            $entry = [
-                'id'                      => $info['num'],
-                'username'                => $u,
-                'last_login_at'           => $now,
-                'google_id'               => "",
-                'openid_connect_id'       => "",
-            ];
-            foreach (self::USER_META_MAP as $ext => [$int, $default]) {
-                $entry[$ext] = $info[$int] ?? $default;
-            }
-            $entry['entry_sorting_direction'] = ($entry['entry_sorting_direction']) ? "asc" : "desc";
-            $out[] = $entry;
-        }
-        return $out;
-    }
-
-    protected function editUser(string $user, array $data): array {
-        // map Miniflux properties to internal metadata properties
-        $in = [];
-        foreach (self::USER_META_MAP as $i => [$o]) {
-            if (isset($data[$i])) {
-                if ($i === "entry_sorting_direction") {
-                    $in[$o] = $data[$i] === "asc";
-                } else {
-                    $in[$o] = $data[$i];
-                }
-            }
-        }
-        // make any requested changes
-        $tr = Arsse::$user->begin();
-        if ($in) {
-            Arsse::$user->propertiesSet($user, $in);
-        }
-        // read out the newly-modified user and commit the changes
-        $out = $this->listUsers([$user], true)[0];
-        $tr->commit();
-        // add the input password if a password change was requested
-        if (isset($data['password'])) {
-            $out['password'] = $data['password'];
-        }
-        return $out;
-    }
-
     protected function discoverSubscriptions(array $data): ResponseInterface {
         try {
             $url = URL::normalize((string) $data['url'], $data['username'], $data['password']);
@@ -697,14 +760,99 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return HTTP::respJson($out);
     }
 
-    protected function getUsers(): ResponseInterface {
+    protected function getPrefs(string $user): array {
         $tr = Arsse::$user->begin();
-        return HTTP::respJson($this->listUsers(Arsse::$user->list(), false));
+        $meta = Arsse::$user->propertiesGet($user);
+        $prefs = Arsse::$db->userPropertiesGet($user);
+        if (isset($prefs['miniflux_prefs'])) {
+            // if there is a key for Miniflux preferences, use it
+            $out = @json_decode($prefs['miniflux_prefs'], true) ?: [];
+        } else {
+            // otherwise map old metadata which may have been set in versions of The Arsse prior to 0.12.0
+            $oldMap = [
+                'theme'                   => ["theme",        V::T_STRING],
+                'entry_sorting_direction' => ["sort_asc",     V::T_BOOL],
+                'entries_per_page'        => ["page_size",    V::T_INT],
+                'keyboard_shortcuts'      => ["shortcuts",    V::T_BOOL],
+                'show_reading_time'       => ["reading_time", V::T_BOOL],
+                'entry_swipe'             => ["gestures",     V::T_BOOL],
+                'stylesheet'              => ["stylesheet",   V::T_STRING],
+            ];
+            $out = [];
+            foreach ($oldMap as $to => [$from, $type]) {
+                if (isset($prefs[$from])) {
+                    $out[$to] = V::normalize($prefs[$from] , $type);
+                }
+            }
+            $out['entry_sorting_direction'] = ($out['entry_sorting_direction'] ?? false) ? "asc" : "desc";
+        }
+        // add general metadata under Miniflux keys
+        foreach (self::USER_META_MAP as $to => $from) {
+            if (isset($meta[$from])) {
+                $out[$to] = $meta[$from];
+            }
+        }
+        return $out;
+    }
+
+    protected function editUserPrefs(string $user, array $data): array {
+        $tr = Arsse::$user->begin();
+        // start by getting the current user metadata and merging in the new data
+        unset($data['id']); // read-only
+        $data = array_merge($this->getPrefs($user), array_filter($data, function($v) {
+            // we filter out nulls because every possible input key is
+            //   populated by our input normalizer, so merging would simply
+            //   overwrite all the defaults, leaving a bunch of nulls
+            return isset($v);
+        }));
+        // map Miniflux properties to internal metadata properties, and filter out anything which is set to its default
+        $meta = [];
+        $prefs = [];
+        foreach (self::USER_META_MAP as $from => $to) {
+            if (isset($data[$from])) {
+                $meta[$to] = $data[$from];
+            }
+        }
+        foreach (self::USER_META_DEFAULTS as $key => $default) {
+            if (isset($data[$key]) && $data[$key] !== $default) {
+                $prefs[$key] = $data[$key];
+            }
+        }
+        // make any requested changes
+        if ($meta) {
+            Arsse::$user->propertiesSet($user, $meta);
+        }
+        if ($prefs) {
+            Arsse::$db->userPropertiesSet($user, ['miniflux_prefs' => json_encode($prefs, \JSON_UNESCAPED_SLASHES)]);
+        }
+        // read out the newly-modified user and commit the changes
+        $out = $this->transformUser($user, $data);
+        $tr->commit();
+        // add the input password if a password change was requested
+        if (isset($data['password'])) {
+            $out['password'] = $data['password'];
+        }
+        return $out;
+    }
+
+    protected function getUsers(): ResponseInterface {
+        $now = $this->now();
+        $tr = Arsse::$user->begin();
+        $out = [];
+        foreach (Arsse::$user->list() as $user) {
+            try {
+                $out[] = $this->transformUser($user, $this->getPrefs($user), $now);
+            } catch (UserException $e) {
+                continue;
+            }
+        }
+        return HTTP::respJson($out);
     }
 
     protected function getUserById(array $path): ResponseInterface {
         try {
-            return HTTP::respJson($this->listUsers([$path[1]], true)[0] ?? new \stdClass);
+            $user = $path[1];
+            return HTTP::respJson($this->transformUser($user, $this->getPrefs($user)));
         } catch (UserException $e) {
             return self::respError("404", 404);
         }
@@ -713,21 +861,22 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function getUserByNum(array $path): ResponseInterface {
         try {
             $user = Arsse::$user->lookup((int) $path[1]);
-            return HTTP::respJson($this->listUsers([$user], true)[0] ?? new \stdClass);
+            return HTTP::respJson($this->transformUser($user, $this->getPrefs($user)));
         } catch (UserException $e) {
             return self::respError("404", 404);
         }
     }
 
     protected function getCurrentUser(): ResponseInterface {
-        return HTTP::respJson($this->listUsers([Arsse::$user->id], false)[0] ?? new \stdClass);
+        $user = Arsse::$user->id;
+        return HTTP::respJson($this->transformUser($user, $this->getPrefs($user)));
     }
 
     protected function createUser(array $data): ResponseInterface {
         try {
             $tr = Arsse::$user->begin();
             $data['password'] = Arsse::$user->add($data['username'], $data['password']);
-            $out = $this->editUser($data['username'], $data);
+            $out = $this->editUserPrefs($data['username'], $data);
             $tr->commit();
         } catch (UserException $e) {
             switch ($e->getCode()) {
@@ -735,8 +884,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return self::respError(["DuplicateUser", 'user' => $data['username']], 409);
                 case 10441:
                     return self::respError(["InvalidInputValue", 'field' => "timezone"], 422);
-                case 10443:
-                    return self::respError(["InvalidInputValue", 'field' => "entries_per_page"], 422);
                 case 10444:
                     return self::respError(["InvalidInputValue", 'field' => "username"], 422);
             }
@@ -747,7 +894,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function updateUserByNum(array $path, array $data): ResponseInterface {
         // this function is restricted to admins unless the affected user and calling user are the same
-        $user = Arsse::$user->propertiesGet(Arsse::$user->id, false);
+        $user = Arsse::$user->propertiesGet(Arsse::$user->id);
         if (((int) $path[1]) === $user['num']) {
             if ($data['is_admin'] && !$user['admin']) {
                 // non-admins should not be able to set themselves as admin
@@ -773,7 +920,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (isset($data['password'])) {
                 Arsse::$user->passwordSet($user, $data['password']);
             }
-            $out = $this->editUser($user, $data);
+            $out = $this->editUserPrefs($user, $data);
             $tr->commit();
         } catch (UserException $e) {
             switch ($e->getCode()) {
@@ -809,7 +956,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
      * - "tz": The time zone preference of the user, or UTC if not set
      */
     protected function userMeta(string $user): array {
-        $meta = Arsse::$user->propertiesGet($user, false);
+        $meta = Arsse::$user->propertiesGet($user);
         return [
             'num'  => $meta['num'],
             'root' => $meta['root_folder_name'] ?? Arsse::$lang->msg("API.Miniflux.DefaultCategoryName"),
@@ -845,7 +992,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return self::respError(["InvalidCategory", 'title' => $data['title']], 422);
             }
         }
-        $meta = Arsse::$user->propertiesGet(Arsse::$user->id, false);
+        $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
         $in['id'] = $id;
         return HTTP::respJson($this->transformCategory($in, $meta['num']), 201);
     }
@@ -1058,16 +1205,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function computeContext(array $query, Context $c): RootContext {
-        // NOTE: Miniflux interprets a zero in a date field as a non-value,
-        //   but we normally treat it as a valid value (1970-01-01T00:00:00),
-        //   so we need these workarounds. The now-discontinued Android client
-        //   "Microflux for Miniflux" relied on this quirk of Miniflux to
-        //   display any articles at all
-        foreach (["before", "published_before", "changed_before", "after", "published_after", "changed_after"] as $d) {
-            if ($query[$d] && $query[$d]->getTimestamp() === 0) {
-                $query[$d] = null; 
-            }
-        }
         $c->limit($query['limit'] ?? self::DEFAULT_ENTRY_LIMIT) // NOTE: This does not honour user preferences
             ->offset($query['offset'])
             ->starred($query['starred'])
@@ -1254,7 +1391,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function markUserByNum(array $path): ResponseInterface {
         // this function is restricted to the logged-in user
-        $user = Arsse::$user->propertiesGet(Arsse::$user->id, false);
+        $user = Arsse::$user->propertiesGet(Arsse::$user->id);
         if (((int) $path[1]) !== $user['num']) {
             return self::respError("403", 403);
         }

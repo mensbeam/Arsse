@@ -354,17 +354,13 @@ class Database {
     /** Retrieves any metadata associated with a user
      *
      * @param string $user The user whose metadata is to be retrieved
-     * @param bool $includeLarge Whether to include values which can be arbitrarily large text
      */
-    public function userPropertiesGet(string $user, bool $includeLarge = true): array {
+    public function userPropertiesGet(string $user): array {
         $basic = $this->db->prepare("SELECT num, admin from arsse_users where id = ?", "str")->run($user)->getRow();
         if (!$basic) {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         $exclude = ["num", "admin"];
-        if (!$includeLarge) {
-            $exclude = array_merge($exclude, User::PROPERTIES_LARGE);
-        }
         [$inClause, $inTypes, $inValues] = $this->generateIn($exclude, "str");
         $meta = $this->db->prepare("SELECT \"key\", value from arsse_user_meta where owner = ? and \"key\" not in ($inClause) order by \"key\"", "str", $inTypes)->run($user, $inValues)->getAll();
         $meta = array_merge($basic, array_combine(array_column($meta, "key"), array_column($meta, "value")));
@@ -375,7 +371,7 @@ class Database {
 
     /** Set one or more metadata properties for a user
      *
-     * @param string $user The user whose metadata is to be sedt
+     * @param string $user The user whose metadata is to be set
      * @param array $data An associative array of property names and values
      */
     public function userPropertiesSet(string $user, array $data): bool {

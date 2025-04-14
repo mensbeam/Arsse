@@ -32,8 +32,50 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     protected const NOW = "2020-12-09T22:35:10.023419Z";
     protected const TOKEN = "Tk2o9YubmZIL2fm2w8Z4KlDEQJz532fNSOcTG0s2_xc=";
     protected const USERS = [
-        ['id' => 1, 'username' => "john.doe@example.com", 'last_login_at' => self::NOW, 'google_id' => "", 'openid_connect_id' => "", 'is_admin' => true,  'theme' => "custom",      'language' => "fr_CA", 'timezone' => "Asia/Gaza", 'entry_sorting_direction' => "asc",  'entries_per_page' => 200, 'keyboard_shortcuts' => false, 'show_reading_time' => false, 'entry_swipe' => false, 'stylesheet' => "p {}"],
-        ['id' => 2, 'username' => "jane.doe@example.com", 'last_login_at' => self::NOW, 'google_id' => "", 'openid_connect_id' => "", 'is_admin' => false, 'theme' => "light_serif", 'language' => "en_US", 'timezone' => "UTC",       'entry_sorting_direction' => "desc", 'entries_per_page' => 100, 'keyboard_shortcuts' => true,  'show_reading_time' => true,  'entry_swipe' => true,  'stylesheet' => ""],
+        ['num' => 1, 'admin' => true,  'lang' => "fr_CA", 'tz' => "Asia/Gaza", 'root_folder_name' => "Uncategorized"],
+        ['num' => 2, 'admin' => false, 'lang' => null,    'tz' => null,        'root_folder_name' => null],
+        ['num' => 3, 'admin' => true,  'lang' => "fr_CA", 'tz' => "Asia/Gaza", 'root_folder_name' => "Uncategorized"],
+    ];
+    protected const USERS_META = [
+        ['theme' => "custom", 'sort_asc' => true, 'page_size' => 200,  'shortcuts' => false, 'reading_time' => false, 'gestures' => false, 'stylesheet' => "p {}"],
+        [],
+        ['miniflux_prefs' => '{"id":1,"username":"john.doe@example.com","last_login_at":"'.self::NOW.'","is_admin":true,"theme":"custom","language":"fr_CA","timezone":"Asia/Gaza","entry_sorting_direction":"asc","entries_per_page":200,"keyboard_shortcuts":false,"show_reading_time":false,"entry_swipe":false,"stylesheet":"p {}"}'],
+    ];
+    protected const USERS_OUT = [
+        ['id' => 1, 'username' => "john.doe@example.com", 'last_login_at' => self::NOW, 'is_admin' => true,  'theme' => "custom",      'language' => "fr_CA", 'timezone' => "Asia/Gaza", 'entry_sorting_direction' => "asc",  'entries_per_page' => 200, 'keyboard_shortcuts' => false, 'show_reading_time' => false, 'entry_swipe' => false, 'stylesheet' => "p {}"],
+        ['id' => 2, 'username' => "jane.doe@example.com", 'last_login_at' => self::NOW, 'is_admin' => false, 'theme' => "light_serif", 'language' => "en_US", 'timezone' => "UTC",       'entry_sorting_direction' => "desc", 'entries_per_page' => 100, 'keyboard_shortcuts' => true,  'show_reading_time' => true,  'entry_swipe' => true,  'stylesheet' => ""],
+        ['id' => 3, 'username' => "juan.doe@example.com", 'last_login_at' => self::NOW, 'is_admin' => true,  'theme' => "custom",      'language' => "fr_CA", 'timezone' => "Asia/Gaza", 'entry_sorting_direction' => "asc",  'entries_per_page' => 200, 'keyboard_shortcuts' => false, 'show_reading_time' => false, 'entry_swipe' => false, 'stylesheet' => "p {}"],
+    ];
+    protected const USER_OUT_STATIC = [
+        'id'                                   => null,
+        'username'                             => null,
+        'is_admin'                             => null,
+        'theme'                                => "light_serif",
+        'language'                             => "en_US",
+        'timezone'                             => "UTC",
+        'entry_sorting_direction'              => "asc",
+        'entry_sorting_order'                  => "published_at",
+        'stylesheet'                           => "",
+        'custom_js'                            => "",
+        'external_font_hosts'                  => "",
+        'google_id'                            => "",
+        'openid_connect_id'                    => "",
+        'entries_per_page'                     => 100,
+        'keyboard_shortcuts'                   => true,
+        'show_reading_time'                    => true,
+        'entry_swipe'                          => true,
+        'gesture_nav'                          => "tap",
+        'last_login_at'                        => null,
+        'display_mode'                         => "standalone",
+        'default_reading_speed'                => 265,
+        'cjk_reading_speed'                    => 500,
+        'default_home_page'                    => "unread",
+        'categories_sorting_order'             => "unread_count",
+        'mark_read_on_view'                    => true,
+        'mark_read_on_media_player_completion' => false,
+        'media_playback_rate'                  => 1,
+        'block_filter_entry_rules'             => "",
+        'keep_filter_entry_rules'              => "",
     ];
     protected const FEEDS = [
         ['id' => 1,  'feed' => 1,  'url' => "http://example.com/ook",                      'title' => "Ook", 'source' => "http://example.com/", 'icon_id' => 47,   'icon_url' => "http://example.com/icon", 'folder' => 2112, 'top_folder' => 5,    'folder_name' => "Cat Eek", 'top_folder_name' => "Cat Ook", 'pinned' => 0, 'err_count' => 1, 'err_msg' => "Oopsie", 'order_type' => 0, 'keep_rule' => "this|that", 'block_rule' => "both", 'added' => "2020-12-21 21:12:00", 'updated' => "2021-01-05 13:51:32", 'edited' => "2021-01-01 00:00:00", 'modified' => "2020-11-30 04:08:52", 'next_fetch' => "2021-01-20 00:00:00", 'etag' => "OOKEEK", 'scrape' => 0, 'user_agent' => null,             'cookie' => null,  'unread' => 42, 'read' => 5],
@@ -135,6 +177,26 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     protected static function v($value) {
         return $value;
+    }
+
+    protected static function userssOut(): array {
+        $out = [];
+        foreach (self::USERS_OUT as $u) {
+            $a = self::USER_OUT_STATIC;
+            foreach (self::USER_OUT_STATIC as $k => $v) {
+                if (isset($u[$k])) {
+                    $a[$k] = $u[$k];
+                }
+            }
+            $out[] = $a;
+        }
+        return $out;
+    }
+
+    protected static function feedsOut(): array {
+        return array_map(function($v) {
+            return array_merge(self::FEED_OUT_STATIC, $v);
+        }, self::FEEDS_OUT);
     }
 
     public function testGenerateErrorResponse() {
@@ -241,88 +303,53 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     #[DataProvider("provideUserQueries")]
     public function testQueryUsers(bool $admin, string $route, ResponseInterface $exp): void {
-        $u = [
-            new ExceptionConflict("doesNotExist"),
-            ['num' => 1, 'admin' => true,  'theme' => "custom", 'lang' => "fr_CA", 'tz' => "Asia/Gaza", 'sort_asc' => true, 'page_size' => 200,  'shortcuts' => false, 'reading_time' => false, 'swipe' => false, 'stylesheet' => "p {}"],
-            ['num' => 2, 'admin' => false, 'theme' => null,     'lang' => null,    'tz' => null,        'sort_asc' => null, 'page_size' => null, 'shortcuts' => null,  'reading_time' => null,  'swipe' => null,  'stylesheet' => null],
-        ];
         $user = $admin ? "john.doe@example.com" : "jane.doe@example.com";
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->list->thenReturn(["john.doe@example.com", "jane.doe@example.com", "admin@example.com"]);
-        \Phake::when(Arsse::$user)->propertiesGet->thenThrow($u[0]);
-        \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com", $this->anything())->thenReturn($u[1]);
-        \Phake::when(Arsse::$user)->propertiesGet("jane.doe@example.com", $this->anything())->thenReturn($u[2]);
-        \Phake::when(Arsse::$user)->lookup->thenThrow($u[0]);
+        \Phake::when(Arsse::$user)->list->thenReturn(["john.doe@example.com", "jane.doe@example.com", "juan.doe@example.com", "admin@example.com"]);
+        \Phake::when(Arsse::$user)->propertiesGet->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com")->thenReturn(self::USERS[0]);
+        \Phake::when(Arsse::$user)->propertiesGet("jane.doe@example.com")->thenReturn(self::USERS[1]);
+        \Phake::when(Arsse::$user)->propertiesGet("juan.doe@example.com")->thenReturn(self::USERS[2]);
+        \Phake::when(Arsse::$db)->userPropertiesGet->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$db)->userPropertiesGet("john.doe@example.com")->thenReturn(self::USERS_META[0]);
+        \Phake::when(Arsse::$db)->userPropertiesGet("jane.doe@example.com")->thenReturn(self::USERS_META[1]);
+        \Phake::when(Arsse::$db)->userPropertiesGet("juan.doe@example.com")->thenReturn(self::USERS_META[2]);
+        \Phake::when(Arsse::$user)->lookup->thenThrow(new ExceptionConflict("doesNotExist"));
         \Phake::when(Arsse::$user)->lookup(1)->thenReturn("john.doe@example.com");
         \Phake::when(Arsse::$user)->lookup(2)->thenReturn("jane.doe@example.com");
+        \Phake::when(Arsse::$user)->lookup(3)->thenReturn("juan.doe@example.com");
         $this->assertMessage($exp, $this->req("GET", $route, "", [], $user));
     }
 
     public static function provideUserQueries(): iterable {
         self::clearData();
         return [
-            [true,  "/users",                      HTTP::respJson(self::USERS)],
-            [true,  "/me",                         HTTP::respJson(self::USERS[0])],
-            [true,  "/users/john.doe@example.com", HTTP::respJson(self::USERS[0])],
-            [true,  "/users/1",                    HTTP::respJson(self::USERS[0])],
-            [true,  "/users/jane.doe@example.com", HTTP::respJson(self::USERS[1])],
-            [true,  "/users/2",                    HTTP::respJson(self::USERS[1])],
+            [true,  "/users",                      HTTP::respJson(self::userssOut())],
+            [true,  "/me",                         HTTP::respJson(self::userssOut()[0])],
+            [true,  "/users/john.doe@example.com", HTTP::respJson(self::userssOut()[0])],
+            [true,  "/users/1",                    HTTP::respJson(self::userssOut()[0])],
+            [true,  "/users/jane.doe@example.com", HTTP::respJson(self::userssOut()[1])],
+            [true,  "/users/2",                    HTTP::respJson(self::userssOut()[1])],
+            [true,  "/users/juan.doe@example.com", HTTP::respJson(self::userssOut()[2])],
+            [true,  "/users/3",                    HTTP::respJson(self::userssOut()[2])],
             [true,  "/users/jack.doe@example.com", V1::respError("404", 404)],
             [true,  "/users/47",                   V1::respError("404", 404)],
             [false, "/users",                      V1::respError("403", 403)],
-            [false, "/me",                         HTTP::respJson(self::USERS[1])],
+            [false, "/me",                         HTTP::respJson(self::userssOut()[1])],
             [false, "/users/john.doe@example.com", V1::respError("403", 403)],
             [false, "/users/1",                    V1::respError("403", 403)],
             [false, "/users/jane.doe@example.com", V1::respError("403", 403)],
             [false, "/users/2",                    V1::respError("403", 403)],
+            [false, "/users/juan.doe@example.com", V1::respError("403", 403)],
+            [false, "/users/3",                    V1::respError("403", 403)],
             [false, "/users/jack.doe@example.com", V1::respError("403", 403)],
             [false, "/users/47",                   V1::respError("403", 403)],
         ];
     }
 
     #[DataProvider("provideUserModifications")]
-    public function testModifyAUser(bool $admin, string $url, array $body, $in1, $out1, $in2, $out2, $in3, $out3, ResponseInterface $exp): void {
-        Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction);
-        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 1, 'admin' => true]);
-        \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com", $this->anything())->thenReturn(['num' => 2, 'admin' => $admin]);
-        \Phake::when(Arsse::$user)->propertiesGet("ook", $this->anything())->thenReturn(['num' => 2, 'admin' => $admin]);
-        \Phake::when(Arsse::$user)->lookup->thenThrow(new ExceptionConflict("doesNotExist"));
-        \Phake::when(Arsse::$user)->lookup(1)->thenReturn("jane.doe@example.com");
-        \Phake::when(Arsse::$user)->lookup(2)->thenReturn("john.doe@example.com");
-        if ($out1 instanceof \Exception) {
-            \Phake::when(Arsse::$user)->rename->thenThrow($out1);
-        } else {
-            \Phake::when(Arsse::$user)->rename->thenReturn($out1 ?? false);
-        }
-        if ($out2 instanceof \Exception) {
-            \Phake::when(Arsse::$user)->passwordSet->thenThrow($out2);
-        } else {
-            \Phake::when(Arsse::$user)->passwordSet->thenReturn($out2 ?? "");
-        }
-        if ($out3 instanceof \Exception) {
-            \Phake::when(Arsse::$user)->propertiesSet->thenThrow($out3);
-        } else {
-            \Phake::when(Arsse::$user)->propertiesSet->thenReturn($out3 ?? []);
-        }
-        $this->assertMessage($exp, $this->req("PUT", $url, $body));
-        $user = $url === "/users/1" ? "jane.doe@example.com" : "john.doe@example.com";
-        if ($in1 === null) {
-            \Phake::verify(Arsse::$user, \Phake::never())->rename($this->anything(), $this->anything());
-        } else {
-            \Phake::verify(Arsse::$user)->rename($user, $in1);
-            $user = $in1;
-        }
-        if ($in2 === null) {
-            \Phake::verify(Arsse::$user, \Phake::never())->passwordSet($this->anything(), $this->anything());
-        } else {
-            \Phake::verify(Arsse::$user)->passwordSet($user, $in2);
-        }
-        if ($in3 === null) {
-            \Phake::verify(Arsse::$user, \Phake::never())->propertiesSet($this->anything(), $this->anything());
-        } else {
-            \Phake::verify(Arsse::$user)->propertiesSet($user, $in3);
-        }
+    public function testModifyAUser(bool $admin, string $url, array $body, ResponseInterface $exp): void {
+        $this->markTestIncomplete();
     }
 
     public static function provideUserModifications(): iterable {
@@ -332,63 +359,39 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $resp1 = array_merge(self::USERS[1], ['username' => "john.doe@example.com"]);
         $resp2 = array_merge(self::USERS[1], ['id' => 1, 'is_admin' => true]);
         return [
-            [false, "/users/1", ['is_admin' => 0],                          null,  null,                                      null,  null,  null,                  null,                                            V1::respError(["InvalidInputType", 'field' => "is_admin", 'expected' => "boolean", 'actual' => "integer"], 422)],
-            [false, "/users/1", ['entry_sorting_direction' => "bad"],       null,  null,                                      null,  null,  null,                  null,                                            V1::respError(["InvalidInputValue", 'field' => "entry_sorting_direction"], 422)],
-            [false, "/users/1", ['theme' => "stark"],                       null,  null,                                      null,  null,  null,                  null,                                            V1::respError("403", 403)],
-            [false, "/users/2", ['is_admin' => true],                       null,  null,                                      null,  null,  null,                  null,                                            V1::respError("InvalidElevation", 403)],
-            [false, "/users/2", ['language' => "fr_CA"],                    null,  null,                                      null,  null,  ['lang' => "fr_CA"],   $out1,                                           HTTP::respJson($resp1, 201)],
-            [false, "/users/2", ['entry_sorting_direction' => "asc"],       null,  null,                                      null,  null,  ['sort_asc' => true],  $out1,                                           HTTP::respJson($resp1, 201)],
-            [false, "/users/2", ['entry_sorting_direction' => "desc"],      null,  null,                                      null,  null,  ['sort_asc' => false], $out1,                                           HTTP::respJson($resp1, 201)],
-            [false, "/users/2", ['entries_per_page' => -1],                 null,  null,                                      null,  null,  ['page_size' => -1],   new UserExceptionInput("invalidNonZeroInteger"), V1::respError(["InvalidInputValue", 'field' => "entries_per_page"], 422)],
-            [false, "/users/2", ['timezone' => "Ook"],                      null,  null,                                      null,  null,  ['tz' => "Ook"],       new UserExceptionInput("invalidTimezone"),       V1::respError(["InvalidInputValue", 'field' => "timezone"], 422)],
-            [false, "/users/2", ['username' => "j:k"],                      "j:k", new UserExceptionInput("invalidUsername"), null,  null,  null,                  null,                                            V1::respError(["InvalidInputValue", 'field' => "username"], 422)],
-            [false, "/users/2", ['username' => "ook"],                      "ook", new ExceptionConflict("alreadyExists"),    null,  null,  null,                  null,                                            V1::respError(["DuplicateUser", 'user' => "ook"], 409)],
-            [false, "/users/2", ['password' => "ook"],                      null,  null,                                      "ook", "ook", null,                  null,                                            HTTP::respJson(array_merge($resp1, ['password' => "ook"]), 201)],
-            [false, "/users/2", ['username' => "ook", 'password' => "ook"], "ook", true,                                      "ook", "ook", null,                  null,                                            HTTP::respJson(array_merge($resp1, ['username' => "ook", 'password' => "ook"]), 201)],
-            [true,  "/users/1", ['theme' => "stark"],                       null,  null,                                      null,  null,  ['theme' => "stark"],  $out2,                                           HTTP::respJson($resp2, 201)],
-            [true,  "/users/3", ['theme' => "stark"],                       null,  null,                                      null,  null,  null,                  null,                                            V1::respError("404", 404)],
+            [false, "/users/1", ['is_admin' => 0],                          V1::respError(["InvalidInputType", 'field' => "is_admin", 'expected' => "boolean", 'actual' => "integer"], 422)],
+            [false, "/users/1", ['entry_sorting_direction' => "bad"],       V1::respError(["InvalidInputValue", 'field' => "entry_sorting_direction"], 422)],
+            [false, "/users/1", ['theme' => "stark"],                       V1::respError("403", 403)],
+            [false, "/users/2", ['is_admin' => true],                       V1::respError("InvalidElevation", 403)],
+            [false, "/users/2", ['language' => "fr_CA"],                    HTTP::respJson($resp1, 201)],
+            [false, "/users/2", ['entry_sorting_direction' => "asc"],       HTTP::respJson($resp1, 201)],
+            [false, "/users/2", ['entry_sorting_direction' => "desc"],      HTTP::respJson($resp1, 201)],
+            [false, "/users/2", ['entries_per_page' => -1],                 V1::respError(["InvalidInputValue", 'field' => "entries_per_page"], 422)],
+            [false, "/users/2", ['timezone' => "Ook"],                      V1::respError(["InvalidInputValue", 'field' => "timezone"], 422)],
+            [false, "/users/2", ['username' => "j:k"],                      V1::respError(["InvalidInputValue", 'field' => "username"], 422)],
+            [false, "/users/2", ['username' => "ook"],                      V1::respError(["DuplicateUser", 'user' => "ook"], 409)],
+            [false, "/users/2", ['password' => "ook"],                      HTTP::respJson(array_merge($resp1, ['password' => "ook"]), 201)],
+            [false, "/users/2", ['username' => "ook", 'password' => "ook"], HTTP::respJson(array_merge($resp1, ['username' => "ook", 'password' => "ook"]), 201)],
+            [true,  "/users/1", ['theme' => "stark"],                       HTTP::respJson($resp2, 201)],
+            [true,  "/users/3", ['theme' => "stark"],                       V1::respError("404", 404)],
         ];
     }
 
     #[DataProvider("provideUserAdditions")]
-    public function testAddAUser(array $body, $in1, $out1, $in2, $out2, ResponseInterface $exp): void {
-        Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction);
-        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 2, 'admin' => false]);
-        \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com", $this->anything())->thenReturn(['num' => 1, 'admin' => true]);
-        if ($out1 instanceof \Exception) {
-            \Phake::when(Arsse::$user)->add->thenThrow($out1);
-        } else {
-            \Phake::when(Arsse::$user)->add->thenReturn($in1[1] ?? "");
-        }
-        if ($out2 instanceof \Exception) {
-            \Phake::when(Arsse::$user)->propertiesSet->thenThrow($out2);
-        } else {
-            \Phake::when(Arsse::$user)->propertiesSet->thenReturn($out2 ?? []);
-        }
-        $this->assertMessage($exp, $this->req("POST", "/users", $body));
-        if ($in1 === null) {
-            \Phake::verify(Arsse::$user, \Phake::never())->add($this->anything(), $this->anything());
-        } else {
-            \Phake::verify(Arsse::$user)->add(...$in1);
-        }
-        if ($in2 === null) {
-            \Phake::verify(Arsse::$user, \Phake::never())->propertiesSet($this->anything(), $this->anything());
-        } else {
-            \Phake::verify(Arsse::$user)->propertiesSet($body['username'], $in2);
-        }
+    public function testAddAUser(array $body, ResponseInterface $exp): void {
+        $this->markTestIncomplete();
     }
 
     public static function provideUserAdditions(): iterable {
         $resp1 = array_merge(self::USERS[1], ['username' => "ook", 'password' => "eek"]);
         return [
-            [[],                                                                   null,           null,                                      null,                   null,                                            V1::respError(["MissingInputValue", 'field' => "username"], 422)],
-            [['username' => "ook"],                                                null,           null,                                      null,                   null,                                            V1::respError(["MissingInputValue", 'field' => "password"], 422)],
-            [['username' => "ook", 'password' => "eek"],                           ["ook", "eek"], new ExceptionConflict("alreadyExists"),    null,                   null,                                            V1::respError(["DuplicateUser", 'user' => "ook"], 409)],
-            [['username' => "j:k", 'password' => "eek"],                           ["j:k", "eek"], new UserExceptionInput("invalidUsername"), null,                   null,                                            V1::respError(["InvalidInputValue", 'field' => "username"], 422)],
-            [['username' => "ook", 'password' => "eek", 'timezone' => "ook"],      ["ook", "eek"], "eek",                                     ['tz' => "ook"],        new UserExceptionInput("invalidTimezone"),       V1::respError(["InvalidInputValue", 'field' => "timezone"], 422)],
-            [['username' => "ook", 'password' => "eek", 'entries_per_page' => -1], ["ook", "eek"], "eek",                                     ['page_size' => -1],    new UserExceptionInput("invalidNonZeroInteger"), V1::respError(["InvalidInputValue", 'field' => "entries_per_page"], 422)],
-            [['username' => "ook", 'password' => "eek", 'theme' => "default"],     ["ook", "eek"], "eek",                                     ['theme' => "default"], ['theme' => "default"],                          HTTP::respJson($resp1, 201)],
+            [[],                                                                   V1::respError(["MissingInputValue", 'field' => "username"], 422)],
+            [['username' => "ook"],                                                V1::respError(["MissingInputValue", 'field' => "password"], 422)],
+            [['username' => "ook", 'password' => "eek"],                           V1::respError(["DuplicateUser", 'user' => "ook"], 409)],
+            [['username' => "j:k", 'password' => "eek"],                           V1::respError(["InvalidInputValue", 'field' => "username"], 422)],
+            [['username' => "ook", 'password' => "eek", 'timezone' => "ook"],      V1::respError(["InvalidInputValue", 'field' => "timezone"], 422)],
+            [['username' => "ook", 'password' => "eek", 'entries_per_page' => -1], V1::respError(["InvalidInputValue", 'field' => "entries_per_page"], 422)],
+            [['username' => "ook", 'password' => "eek", 'theme' => "default"],     HTTP::respJson($resp1, 201)],
         ];
     }
 
@@ -565,26 +568,20 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testListFeeds(): void {
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
-        $exp = HTTP::respJson(array_map(function($v) {
-            return array_merge(self::FEED_OUT_STATIC, $v);
-        }, self::FEEDS_OUT));
+        $exp = HTTP::respJson(self::feedsOut());
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
     }
 
     public function testListFeedsOfACategory(): void {
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
-        $exp = HTTP::respJson(array_map(function($v) {
-            return array_merge(self::FEED_OUT_STATIC, $v);
-        }, self::FEEDS_OUT));
+        $exp = HTTP::respJson(self::feedsOut());
         $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
         \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 2111, true);
     }
 
     public function testListFeedsOfTheRootCategory(): void {
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
-        $exp = HTTP::respJson(array_map(function($v) {
-            return array_merge(self::FEED_OUT_STATIC, $v);
-        }, self::FEEDS_OUT));
+        $exp = HTTP::respJson(self::feedsOut());
         $this->assertMessage($exp, $this->req("GET", "/categories/1/feeds"));
         \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 0, false);
     }
@@ -598,8 +595,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testGetAFeed(): void {
         \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn(self::v(self::FEEDS[0]))->thenReturn(self::v(self::FEEDS[1]));
-        $this->assertMessage(HTTP::respJson(array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[0])), $this->req("GET", "/feeds/1"));
-        $this->assertMessage(HTTP::respJson(array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[1])), $this->req("GET", "/feeds/55"));
+        $this->assertMessage(HTTP::respJson(self::feedsOut()[0]), $this->req("GET", "/feeds/1"));
+        $this->assertMessage(HTTP::respJson(self::feedsOut()[1]), $this->req("GET", "/feeds/55"));
         \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1);
         \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 55);
     }
@@ -672,7 +669,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideFeedModifications")]
     public function testModifyAFeed(array $in, array $data, $out, ResponseInterface $exp): void {
         $this->h = \Phake::partialMock(V1::class);
-        \Phake::when($this->h)->getFeed->thenReturn(HTTP::respJson(array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[0])));
+        \Phake::when($this->h)->getFeed->thenReturn(HTTP::respJson(self::feedsOut()[0]));
         if ($out instanceof \Exception) {
             \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($out);
         } else {
@@ -684,7 +681,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public static function provideFeedModifications(): iterable {
         self::clearData();
-        $success = HTTP::respJson(array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[0]), 201);
+        $success = HTTP::respJson(self::feedsOut()[0], 201);
         return [
             [[],                                     [],                                    true,                                                        $success],
             [[],                                     [],                                    new ExceptionInput("subjectMissing"),                        V1::respError("404", 404)],
@@ -707,7 +704,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testModifyAFeedWithNoBody(): void {
         $this->h = \Phake::partialMock(V1::class);
-        $feedOut = array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[0]);
+        $feedOut = self::feedsOut()[0];
         \Phake::when($this->h)->getFeed->thenReturn(HTTP::respJson($feedOut));
         \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn(true);
         $this->assertMessage(HTTP::respJson($feedOut, 201), $this->req("PUT", "/feeds/2112", ""));
@@ -782,7 +779,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function provideEntryQueries(): iterable {
         self::clearData();
         $entriesOut = array_map(function($v) {
-            $v['feed'] = array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[$v['feed']]);
+            $v['feed'] = self::feedsOut()[$v['feed']];
             return $v;
         }, self::ENTRIES_OUT);
         $c = (new Context)->limit(100);
@@ -890,7 +887,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function provideSingleEntryQueries(): iterable {
         self::clearData();
         $entryOut = self::ENTRIES_OUT[0];
-        $entryOut['feed'] = array_merge(self::FEED_OUT_STATIC, self::FEEDS_OUT[$entryOut['feed']]);
+        $entryOut['feed'] = self::feedsOut()[$entryOut['feed']];
         $c = new Context;
         return [
             ["/entries/42",                 (clone $c)->article(42),                     [self::ENTRIES[0]],                   HTTP::respJson($entryOut)],

@@ -411,13 +411,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             'lang'             => "en-ca",
             'tz'               => "America/Toronto",
             'root_folder_name' => null,
-            'sort_asc'         => true,
-            'theme'            => null,
-            'page_size'        => 50,
-            'shortcuts'        => true,
-            'gestures'         => null,
-            'reading_time'     => false,
-            'stylesheet'       => "body {color:gray}",
         ];
         $exp = implode(\PHP_EOL, [
             "num               42",
@@ -425,13 +418,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             "lang              'en-ca'",
             "tz                'America/Toronto'",
             "root_folder_name  NULL",
-            "sort_asc          true",
-            "theme             NULL",
-            "page_size         50",
-            "shortcuts         true",
-            "gestures          NULL",
-            "reading_time      false",
-            "stylesheet        'body {color:gray}'",
         ]);
         Arsse::$user = \Phake::mock(User::class);
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn($data);

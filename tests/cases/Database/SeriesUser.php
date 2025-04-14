@@ -31,11 +31,9 @@ trait SeriesUser {
                 'rows'    => [
                     ["admin@example.net", "lang", "en"],
                     ["admin@example.net", "tz", "America/Toronto"],
-                    ["admin@example.net", "sort_asc", "0"],
                     ["jane.doe@example.com", "lang", "fr"],
                     ["jane.doe@example.com", "tz", "Asia/Kuala_Lumpur"],
-                    ["jane.doe@example.com", "sort_asc", "1"],
-                    ["john.doe@example.com", "stylesheet", "body {background:lightgray}"],
+                    ["john.doe@example.com", "lang", "de"],
                 ],
             ],
         ];
@@ -126,18 +124,15 @@ trait SeriesUser {
 
     #[DataProvider("provideMetaData")]
     //#[CoversMethod(Database::class, "userPropertiesGet")]
-    public function testGetMetadata(string $user, bool $includeLarge, array $exp): void {
-        $this->assertSame($exp, Arsse::$db->userPropertiesGet($user, $includeLarge));
+    public function testGetMetadata(string $user, array $exp): void {
+        $this->assertSame($exp, Arsse::$db->userPropertiesGet($user));
     }
 
     public static function provideMetadata(): iterable {
         return [
-            ["admin@example.net",    true,  ['num' => 1, 'admin' => 1, 'lang' => "en", 'sort_asc' => "0", 'tz' => "America/Toronto"]],
-            ["jane.doe@example.com", true,  ['num' => 2, 'admin' => 0, 'lang' => "fr", 'sort_asc' => "1", 'tz' => "Asia/Kuala_Lumpur"]],
-            ["john.doe@example.com", true,  ['num' => 3, 'admin' => 0, 'stylesheet' => "body {background:lightgray}"]],
-            ["admin@example.net",    false, ['num' => 1, 'admin' => 1, 'lang' => "en", 'sort_asc' => "0", 'tz' => "America/Toronto"]],
-            ["jane.doe@example.com", false, ['num' => 2, 'admin' => 0, 'lang' => "fr", 'sort_asc' => "1", 'tz' => "Asia/Kuala_Lumpur"]],
-            ["john.doe@example.com", false, ['num' => 3, 'admin' => 0]],
+            ["admin@example.net",    ['num' => 1, 'admin' => 1, 'lang' => "en", 'tz' => "America/Toronto"]],
+            ["jane.doe@example.com", ['num' => 2, 'admin' => 0, 'lang' => "fr", 'tz' => "Asia/Kuala_Lumpur"]],
+            ["john.doe@example.com", ['num' => 3, 'admin' => 0, 'lang' => "de"]],
         ];
     }
 
@@ -151,16 +146,14 @@ trait SeriesUser {
     public function testSetMetadata(): void {
         $in = [
             'admin'    => true,
-            'lang'     => "en-ca",
-            'tz'       => "Atlantic/Reykjavik",
-            'sort_asc' => true,
+            'root_folder_name' => "Uncategorized",
+            'tz'               => "Atlantic/Reykjavik",
         ];
         $this->assertTrue(Arsse::$db->userPropertiesSet("john.doe@example.com", $in));
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id', 'num', 'admin'], 'arsse_user_meta' => ["owner", "key", "value"]]);
         $state['arsse_users']['rows'][2][2] = 1;
-        $state['arsse_user_meta']['rows'][] = ["john.doe@example.com", "lang", "en-ca"];
+        $state['arsse_user_meta']['rows'][] = ["john.doe@example.com", "root_folder_name", "Uncategorized"];
         $state['arsse_user_meta']['rows'][] = ["john.doe@example.com", "tz", "Atlantic/Reykjavik"];
-        $state['arsse_user_meta']['rows'][] = ["john.doe@example.com", "sort_asc", "1"];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -168,7 +161,6 @@ trait SeriesUser {
     public function testSetNoMetadata(): void {
         $in = [
             'num'        => 2112,
-            'stylesheet' => "body {background:lightgray}",
         ];
         $this->assertTrue(Arsse::$db->userPropertiesSet("john.doe@example.com", $in));
         $state = $this->primeExpectations($this->data, ['arsse_users' => ['id', 'num', 'admin'], 'arsse_user_meta' => ["owner", "key", "value"]]);
@@ -202,7 +194,7 @@ trait SeriesUser {
             'arsse_user_meta' => ["owner", "key", "value"],
         ]);
         $state['arsse_users']['rows'][2][0] = "juan.doe@example.com";
-        $state['arsse_user_meta']['rows'][6][0] = "juan.doe@example.com";
+        $state['arsse_user_meta']['rows'][4][0] = "juan.doe@example.com";
         $this->compareExpectations(static::$drv, $state);
     }
 

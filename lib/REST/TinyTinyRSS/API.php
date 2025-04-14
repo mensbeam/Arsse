@@ -1530,7 +1530,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // handle the search string, if any
         if (isset($data['search'])) {
-            $tz = Arsse::$user->propertiesGet(Arsse::$user->id, false)['tz'] ?? "UTC";
+            $tz = Arsse::$user->propertiesGet(Arsse::$user->id)['tz'] ?? "UTC";
             $c = Search::parse($data['search'], $tz, $c);
             if (!$c) {
                 // the search string inherently returns an empty result, either directly or interacting with other input
