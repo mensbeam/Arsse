@@ -97,6 +97,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'entry_ids'                            => "array", // this is a special case: it is an array of integers
         'status'                               => "string",
         'cookie'                               => "string",
+        'description'                          => "string",
+        'site_url'                             => "string",
+        'disable_http2'                        => "boolean",
+        'allow_self_signed_certificates'       => "boolean",
         'is_admin'                             => "boolean",
         'theme'                                => "string",
         'language'                             => "string",
@@ -144,16 +148,21 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
      *
      * Miniflux also allows changing the following properties:
      *
+     * - description
+     * - site_url
      * - scraper_rules
      * - rewrite_rules
      * - disabled
      * - hide_globally
+     * - no_media_player
      * - ignore_http_cache
      * - fetch_via_proxy
+     * - disable_http2
+     * - allow_self_signed_certificates
      *
-     * These do not apply because we do not implement required underlying
-     * functionality like a cache or proxy, nor have the facility to rewrite
-     * the data fetched by the feed parser.
+     * We do not implement these for various reasons, such as due to lack of
+     * underlying functionality in our implementation, or difficulty of
+     * implementation for minimal reward.
      * The properties are still checked for type and syntactic validity
      * where practical, on the assumption Miniflux would also reject
      * invalid values.
@@ -476,7 +485,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             } elseif (
                 (isset(self::VALID_ENUM[$k]) && !in_array($body[$k], self::VALID_ENUM[$k]))
                 || (in_array($k, ["keeplist_rules", "blocklist_rules"]) && !Rule::validate($body[$k]))
-                || (in_array($k, ["url", "feed_url"]) && !URL::absolute($body[$k]))
+                || (in_array($k, ["url", "feed_url", "site_url"]) && !URL::absolute($body[$k]))
                 || (in_array($k, self::VALID_ONE_OR_MORE) && $body[$k] < 1)
             ) {
                 return self::respError(["InvalidInputValue", 'field' => $k], 422);

@@ -23,7 +23,8 @@ Miniflux version 2.2.7 is emulated, though not all features are implemented
 - Various feed-related features are not supported; attempting to use them has no effect
     - Rewrite rules and scraper rules
     - [Global filtering rules](https://miniflux.app/docs/rules.html#global-filtering-rules) (feed filtering rules are supported)
-    - The `disabled`, `hide_globally`, `ignore_http_cache`, and `fetch_via_proxy` flags
+    - The `disabled`, `hide_globally`, `no_media_player`, `disable_http2`, `allow_self_signed_certificates`, `ignore_http_cache`, and `fetch_via_proxy` flags
+    - Modifying the `description` or `site_url` fields
     - Manually refreshing feeds
     - Changing the title or content of an entry
 - Third-party integrations features are not supported; attempting to use them has no effect
