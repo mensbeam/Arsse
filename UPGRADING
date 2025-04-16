@@ -9,6 +9,16 @@ usually prudent:
 - Check for any changes to sample systemd unit or other init files
 - If installing from source, update dependencies with:
   `composer install -o --no-dev`
+
+
+Upgrading from 0.10.6 to 0.11.0
+===============================
+
+- Web server configuration has changed to accommodate new Nextcloud
+  functionality which replaces deprecated Nextcloud News functionality; the
+  following URL paths are affected:
+    - /ocs/v1.php/
+  You may need to restart your Web server for changes to take effect
     
 
 Upgrading from 0.10.6 to 0.11.0

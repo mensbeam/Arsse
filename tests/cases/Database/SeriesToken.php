@@ -13,6 +13,8 @@ use JKingWeb\Arsse\Database;
 use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesToken {
+    protected static $drv;
+
     protected function setUpSeriesToken(): void {
         // set up the test data
         $past = gmdate("Y-m-d H:i:s", strtotime("now - 1 minute"));
@@ -21,25 +23,15 @@ trait SeriesToken {
         $old = gmdate("Y-m-d H:i:s", strtotime("now - 2 days"));
         $this->data = [
             'arsse_users' => [
-                'columns' => [
-                    'id'       => 'str',
-                    'password' => 'str',
-                    'num'      => 'int',
-                ],
-                'rows' => [
+                'columns' => ["id", "password", "num"],
+                'rows'    => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
                 ],
             ],
             'arsse_tokens' => [
-                'columns' => [
-                    'id'      => "str",
-                    'class'   => "str",
-                    'user'    => "str",
-                    'expires' => "datetime",
-                    'data'    => "str",
-                ],
-                'rows' => [
+                'columns' => ["id", "class", "user", "expires", "data"],
+                'rows'    => [
                     ["80fa94c1a11f11e78667001e673b2560", "fever.login",    "jane.doe@example.com", $faroff, null],
                     ["27c6de8da13311e78667001e673b2560", "fever.login",    "jane.doe@example.com", $past, null], // expired
                     ["ab3b3eb8a13311e78667001e673b2560", "class.class",    "jane.doe@example.com", null, null],

@@ -123,11 +123,11 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     #[DataProvider('provideFeedUpdates')]
     public function testRefreshAFeed(string $cmd, int $exitStatus, string $output): void {
-        \Phake::when(Arsse::$db)->feedUpdate(1, true)->thenReturn(true);
-        \Phake::when(Arsse::$db)->feedUpdate(2, true)->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/"], $this->mockGuzzleException(ClientException::class, "", 404)));
+        \Phake::when(Arsse::$db)->subscriptionUpdate(null, 1, true)->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionUpdate(null, 2, true)->thenThrow(new \JKingWeb\Arsse\Feed\Exception("", ['url' => "http://example.com/"], $this->mockGuzzleException(ClientException::class, "", 404)));
         $this->assertConsole($cmd, $exitStatus, $output);
         \Phake::verify($this->cli)->loadConf();
-        \Phake::verify(Arsse::$db)->feedUpdate(\Phake::anyParameters());
+        \Phake::verify(Arsse::$db)->subscriptionUpdate(\Phake::anyParameters());
     }
 
     public static function provideFeedUpdates(): iterable {
@@ -411,13 +411,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             'lang'             => "en-ca",
             'tz'               => "America/Toronto",
             'root_folder_name' => null,
-            'sort_asc'         => true,
-            'theme'            => null,
-            'page_size'        => 50,
-            'shortcuts'        => true,
-            'gestures'         => null,
-            'reading_time'     => false,
-            'stylesheet'       => "body {color:gray}",
         ];
         $exp = implode(\PHP_EOL, [
             "num               42",
@@ -425,13 +418,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             "lang              'en-ca'",
             "tz                'America/Toronto'",
             "root_folder_name  NULL",
-            "sort_asc          true",
-            "theme             NULL",
-            "page_size         50",
-            "shortcuts         true",
-            "gestures          NULL",
-            "reading_time      false",
-            "stylesheet        'body {color:gray}'",
         ]);
         Arsse::$user = \Phake::mock(User::class);
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn($data);

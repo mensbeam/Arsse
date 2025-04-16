@@ -43,8 +43,8 @@ class TestSerial extends \JKingWeb\Arsse\Test\AbstractTest {
         $d = new Driver;
         $d->queue(1, 4, 3);
         $this->assertSame(Arsse::$conf->serviceQueueWidth, $d->exec());
-        \Phake::verify(Arsse::$db)->feedUpdate(1);
-        \Phake::verify(Arsse::$db)->feedUpdate(4);
-        \Phake::verify(Arsse::$db)->feedUpdate(3);
+        \Phake::verify(Arsse::$db)->subscriptionUpdate(null, 1);
+        \Phake::verify(Arsse::$db)->subscriptionUpdate(null, 4);
+        \Phake::verify(Arsse::$db)->subscriptionUpdate(null, 3);
     }
 }

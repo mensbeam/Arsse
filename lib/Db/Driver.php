@@ -73,6 +73,7 @@ interface Driver {
      * The tokens the implementation must understand are:
      *
      * - "greatest": the GREATEST function implemented by PostgreSQL and MySQL
+     * - "least": the LEAST function implemented by PostgreSQL and MySQL
      * - "nocase": the name of a general-purpose case-insensitive collation sequence
      * - "like": the case-insensitive LIKE operator
      * - "integer": the integer type to use for explicit casts
@@ -92,4 +93,7 @@ interface Driver {
      * This should be restricted to quick maintenance; in SQLite terms it might include ANALYZE, but not VACUUM
      */
     public function maintenance(): bool;
+
+    /** Reports whether the implementation will coerce integer and float values to text (string) */
+    public function stringOutput(): bool;
 }

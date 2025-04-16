@@ -13,6 +13,8 @@ use JKingWeb\Arsse\Database;
 use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesMiscellany {
+    protected static $drv;
+
     protected function setUpSeriesMiscellany(): void {
         static::setConf([
             'dbDriver' => static::$dbDriverClass,

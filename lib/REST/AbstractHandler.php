@@ -21,7 +21,7 @@ abstract class AbstractHandler implements Handler {
     }
 
     protected function isAdmin(): bool {
-        return (bool) Arsse::$user->propertiesGet(Arsse::$user->id, false)['admin'];
+        return (bool) Arsse::$user->propertiesGet(Arsse::$user->id)['admin'];
     }
 
     protected function fieldMapNames(array $data, array $map): array {

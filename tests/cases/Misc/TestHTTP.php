@@ -63,4 +63,23 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
         $act = HTTP::challenge($in);
         $this->assertMessage($exp, $act);
     }
+
+
+    #[DataProvider('provideUserNames')]
+    public function testValidateUsernames(string $user, string $exp): void {
+        $this->assertSame($exp, HTTP::userInvalid($user));
+    }
+
+    public static function provideUserNames(): iterable {
+        // output names with control characters
+        foreach (array_merge(range(0x00, 0x1F), [0x7F]) as $ord) {
+            yield [chr($ord), chr($ord)];
+            yield ["john".chr($ord)."doe@example.com", chr($ord)];
+        }
+        // also handle colons
+        yield [":", ":"];
+        yield ["john:doe@example.com", ":"];
+        // pass through a valid name
+        yield ["john.doe@example.com", ""];
+    }
 }

@@ -14,17 +14,14 @@ use JKingWeb\Arsse\Context\Context;
 use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesLabel {
+    protected static $drv;
     protected $checkLabels;
 
     protected function setUpSeriesLabel(): void {
         $this->data = [
             'arsse_users' => [
-                'columns' => [
-                    'id'       => 'str',
-                    'password' => 'str',
-                    'num'      => 'int',
-                ],
-                'rows' => [
+                'columns' => ["id", "password", "num"],
+                'rows'    => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
                     ["john.doe@example.org", "",3],
@@ -32,13 +29,8 @@ trait SeriesLabel {
                 ],
             ],
             'arsse_folders' => [
-                'columns' => [
-                    'id'     => "int",
-                    'owner'  => "str",
-                    'parent' => "int",
-                    'name'   => "str",
-                ],
-                'rows' => [
+                'columns' => ["id", "owner", "parent", "name"],
+                'rows'    => [
                     [1, "john.doe@example.com", null, "Technology"],
                     [2, "john.doe@example.com",    1, "Software"],
                     [3, "john.doe@example.com",    1, "Rocketry"],
@@ -50,180 +42,164 @@ trait SeriesLabel {
                     [9, "john.doe@example.net", null, "Politics"],
                 ],
             ],
-            'arsse_feeds' => [
-                'columns' => [
-                    'id'         => "int",
-                    'url'        => "str",
-                ],
-                'rows' => [
-                    [1,"http://example.com/1"],
-                    [2,"http://example.com/2"],
-                    [3,"http://example.com/3"],
-                    [4,"http://example.com/4"],
-                    [5,"http://example.com/5"],
-                    [6,"http://example.com/6"],
-                    [7,"http://example.com/7"],
-                    [8,"http://example.com/8"],
-                    [9,"http://example.com/9"],
-                    [10,"http://example.com/10"],
-                    [11,"http://example.com/11"],
-                    [12,"http://example.com/12"],
-                    [13,"http://example.com/13"],
-                ],
-            ],
             'arsse_subscriptions' => [
-                'columns' => [
-                    'id'         => "int",
-                    'owner'      => "str",
-                    'feed'       => "int",
-                    'folder'     => "int",
-                ],
-                'rows' => [
-                    [1,"john.doe@example.com",1,null],
-                    [2,"john.doe@example.com",2,null],
-                    [3,"john.doe@example.com",3,1],
-                    [4,"john.doe@example.com",4,6],
-                    [5,"john.doe@example.com",10,5],
-                    [6,"jane.doe@example.com",1,null],
-                    [7,"jane.doe@example.com",10,null],
-                    [8,"john.doe@example.org",11,null],
-                    [9,"john.doe@example.org",12,null],
-                    [10,"john.doe@example.org",13,null],
-                    [11,"john.doe@example.net",10,null],
-                    [12,"john.doe@example.net",2,9],
-                    [13,"john.doe@example.net",3,8],
-                    [14,"john.doe@example.net",4,7],
+                'columns' => ["id", "owner", "url", "folder", "deleted"],
+                'rows'    => [
+                    [1,  "john.doe@example.com", "http://example.com/1",  null, 0],
+                    [2,  "john.doe@example.com", "http://example.com/2",  null, 0],
+                    [3,  "john.doe@example.com", "http://example.com/3",     1, 0],
+                    [4,  "john.doe@example.com", "http://example.com/4",     6, 0],
+                    [5,  "john.doe@example.com", "http://example.com/10"    ,5, 0],
+                    [6,  "jane.doe@example.com", "http://example.com/1",  null, 0],
+                    [7,  "jane.doe@example.com", "http://example.com/10", null, 0],
+                    [8,  "john.doe@example.org", "http://example.com/11", null, 0],
+                    [9,  "john.doe@example.org", "http://example.com/12", null, 0],
+                    [10, "john.doe@example.org", "http://example.com/13", null, 0],
+                    [11, "john.doe@example.net", "http://example.com/10", null, 0],
+                    [12, "john.doe@example.net", "http://example.com/2",     9, 0],
+                    [13, "john.doe@example.net", "http://example.com/3",     8, 0],
+                    [14, "john.doe@example.net", "http://example.com/4",     7, 0],
+                    [16, "john.doe@example.com", "http://example.com/16", null, 1],
                 ],
             ],
             'arsse_articles' => [
                 'columns' => [
-                    'id'                 => "int",
-                    'feed'               => "int",
-                    'url'                => "str",
-                    'title'              => "str",
-                    'author'             => "str",
-                    'published'          => "datetime",
-                    'edited'             => "datetime",
-                    'content'            => "str",
-                    'guid'               => "str",
-                    'url_title_hash'     => "str",
-                    'url_content_hash'   => "str",
-                    'title_content_hash' => "str",
-                    'modified'           => "datetime",
+                    "id", "subscription", "url", "title", "author", "published", "edited", "guid",
+                    "url_title_hash", "url_content_hash", "title_content_hash", "modified",
+                    "read", "starred", "hidden", "marked", "note",
                 ],
                 'rows' => [
-                    [1,1,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [2,1,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [3,2,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [4,2,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [5,3,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [6,3,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [7,4,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [8,4,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [9,5,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [10,5,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [11,6,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [12,6,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [13,7,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [14,7,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [15,8,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [16,8,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [17,9,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [18,9,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [19,10,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z"],
-                    [20,10,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z"],
-                    [101,11,'http://example.com/1','Article title 1','','2000-01-01 00:00:00','2000-01-01 00:00:01','<p>Article content 1</p>','e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda','f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6','fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4','18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207','2000-01-01 01:00:00'],
-                    [102,11,'http://example.com/2','Article title 2','','2000-01-02 00:00:00','2000-01-02 00:00:02','<p>Article content 2</p>','5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7','0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153','13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9','2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e','2000-01-02 02:00:00'],
-                    [103,12,'http://example.com/3','Article title 3','','2000-01-03 00:00:00','2000-01-03 00:00:03','<p>Article content 3</p>','31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92','f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b','b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406','ad622b31e739cd3a3f3c788991082cf4d2f7a8773773008e75f0572e58cd373b','2000-01-03 03:00:00'],
-                    [104,12,'http://example.com/4','Article title 4','','2000-01-04 00:00:00','2000-01-04 00:00:04','<p>Article content 4</p>','804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8','f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3','ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9','2000-01-04 04:00:00'],
-                    [105,13,'http://example.com/5','Article title 5','','2000-01-05 00:00:00','2000-01-05 00:00:05','<p>Article content 5</p>','db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41','d40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022','834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900','43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba','2000-01-05 05:00:00'],
+                    [1,   1,null,                  "Title one",      null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",1,1,0,'2000-01-01 00:00:00',''],
+                    [2,   1,null,                  "Title two",      null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2010-01-01 00:00:00",0,0,0,'2010-01-01 00:00:00','Some Note'],
+                    [3,   2,null,                  "Title three",    null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",0,0,0,null,                 ''],
+                    [4,   2,null,                  null,             "John Doe",null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2010-01-01 00:00:00",0,0,0,null,                 ''],
+                    [5,   3,null,                  null,             "John Doe",null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",0,0,0,null,                 ''],
+                    [6,   3,null,                  null,             "Jane Doe",null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2010-01-01 00:00:00",0,0,1,'2000-01-01 00:00:00',''],
+                    [7,   4,null,                  null,             "Jane Doe",null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",0,0,0,null,                 ''],
+                    [8,   4,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2010-01-01 00:00:00",0,0,1,null,                 ''],
+                    [19,  5,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",1,0,0,'2016-01-01 00:00:00',''],
+                    [20,  5,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2010-01-01 00:00:00",0,1,0,'2005-01-01 00:00:00',''],
+                    [501, 6,null,                  "Title one",      null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",0,1,1,'2000-01-01 00:00:00',''],
+                    [502, 6,null,                  "Title two",      null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2010-01-01 00:00:00",1,0,1,'2010-01-01 00:00:00',''],
+                    [519, 7,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",0,0,0,null,                 ''],
+                    [520, 7,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2010-01-01 00:00:00",1,0,0,'2010-01-01 00:00:00',''],
+                    [101, 8,'http://example.com/1','Article title 1','',        '2000-01-01 00:00:00','2000-01-01 00:00:01','e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda','f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6','fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4','18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207','2000-01-01 01:00:00',0,0,0,null,                 ''],
+                    [102, 8,'http://example.com/2','Article title 2','',        '2000-01-02 00:00:00','2000-01-02 00:00:02','5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7','0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153','13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9','2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e','2000-01-02 02:00:00',1,0,0,'2000-01-02 02:00:00','Note 2'],
+                    [103, 9,'http://example.com/3','Article title 3','',        '2000-01-03 00:00:00','2000-01-03 00:00:03','31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92','f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b','b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406','ad622b31e739cd3a3f3c788991082cf4d2f7a8773773008e75f0572e58cd373b','2000-01-03 03:00:00',0,1,0,'2000-01-03 03:00:00','Note 3'],
+                    [104, 9,'http://example.com/4','Article title 4','',        '2000-01-04 00:00:00','2000-01-04 00:00:04','804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8','f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3','ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9','2000-01-04 04:00:00',1,1,0,'2000-01-04 04:00:00','Note 4'],
+                    [105,10,'http://example.com/5','Article title 5','',        '2000-01-05 00:00:00','2000-01-05 00:00:05','db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41','d40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022','834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900','43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba','2000-01-05 05:00:00',0,0,0,'2000-01-05 05:00:00',''],
+                    [119,11,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",0,0,0,'2017-01-01 00:00:00','ook'],
+                    [120,11,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2010-01-01 00:00:00",1,0,0,'2017-01-01 00:00:00','eek'],
+                    [203,12,null,                  "Title three",    null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",0,1,0,'2017-01-01 00:00:00','ack'],
+                    [204,12,null,                  null,             "John Doe",null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2010-01-01 00:00:00",1,1,0,'2017-01-01 00:00:00','ach'],
+                    [205,13,null,                  null,             "John Doe",null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",0,0,0,null,                 ''],
+                    [206,13,null,                  null,             "Jane Doe",null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2010-01-01 00:00:00",0,0,0,null,                 ''],
+                    [207,14,null,                  null,             "Jane Doe",null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",0,0,0,null,                 ''],
+                    [208,14,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2010-01-01 00:00:00",0,0,0,null,                 ''],
+                    [999,16,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "2000-01-01 00:00:00",1,1,0,null,                 ''],
+                ],
+            ],
+            'arsse_article_contents' => [
+                'columns' => ["id", "content"],
+                'rows' => [
+                    [1,   'First article'],
+                    [2,   'Second article'],
+                    [3,   'third article'],
+                    [4,   ''],
+                    [5,   ''],
+                    [6,   ''],
+                    [7,   ''],
+                    [8,   ''],
+                    [19,  ''],
+                    [20,  ''],
+                    [501,'First article'],
+                    [502,'Second article'],
+                    [519,''],
+                    [520,''],
+                    [101, '<p>Article content 1</p>'],
+                    [102, '<p>Article content 2</p>'],
+                    [103, '<p>Article content 3</p>'],
+                    [104, '<p>Article content 4</p>'],
+                    [105, '<p>Article content 5</p>'],
+                    [119, ''],
+                    [120, ''],
+                    [203, 'third article'],
+                    [204, ''],
+                    [205, ''],
+                    [206, ''],
+                    [207, ''],
+                    [208, ''],
+                ],
+            ],
+            'arsse_editions' => [
+                'columns' => ["id", "article"],
+                'rows'    => [
+                    [   1,  1],
+                    [   2,  2],
+                    [   3,  3],
+                    [   4,  4],
+                    [   5,  5],
+                    [   6,  6],
+                    [   7,  7],
+                    [   8,  8],
+                    [  19, 19],
+                    [  20, 20],
+                    [1001, 20],
+                    [ 101,101],
+                    [ 102,102],
+                    [ 202,102],
+                    [ 103,103],
+                    [ 203,103],
+                    [ 104,104],
+                    [ 204,104],
+                    [ 105,105],
+                    [ 205,105],
+                    [ 305,105],
+                    [ 501,501],
+                    [ 119,119],
+                    [ 120,120],
+                    [1101,120],
+                    [2203,203],
+                    [2204,204],
+                    [2205,205],
+                    [2206,206],
+                    [2207,207],
+                    [2208,208],
+                    [ 502,502],
+                    [ 519,519],
+                    [ 520,520],
+                    [1501,520],
                 ],
             ],
             'arsse_enclosures' => [
-                'columns' => [
-                    'article' => "int",
-                    'url'     => "str",
-                    'type'    => "str",
-                ],
-                'rows' => [
+                'columns' => ["article", "url", "type"],
+                'rows'    => [
                     [102,"http://example.com/text","text/plain"],
                     [103,"http://example.com/video","video/webm"],
                     [104,"http://example.com/image","image/svg+xml"],
                     [105,"http://example.com/audio","audio/ogg"],
-
                 ],
             ],
-            'arsse_editions' => [
-                'columns' => [
-                    'id'       => "int",
-                    'article'  => "int",
-                ],
-                'rows' => [
-                    [1,1],
-                    [2,2],
-                    [3,3],
-                    [4,4],
-                    [5,5],
-                    [6,6],
-                    [7,7],
-                    [8,8],
-                    [9,9],
-                    [10,10],
-                    [11,11],
-                    [12,12],
-                    [13,13],
-                    [14,14],
-                    [15,15],
-                    [16,16],
-                    [17,17],
-                    [18,18],
-                    [19,19],
-                    [20,20],
-                    [101,101],
-                    [102,102],
-                    [103,103],
-                    [104,104],
-                    [105,105],
-                    [202,102],
-                    [203,103],
-                    [204,104],
-                    [205,105],
-                    [305,105],
-                    [1001,20],
+            'arsse_categories' => [ // author-supplied categories
+                'columns' => ["article", "name"],
+                'rows'    => [
+                    [19, "Fascinating"],
+                    [19, "Logical"],
+                    [20, "Interesting"],
+                    [20, "Logical"],
+                    [119,"Fascinating"],
+                    [119,"Logical"],
+                    [120,"Interesting"],
+                    [120,"Logical"],
+                    [519,"Fascinating"],
+                    [519,"Logical"],
+                    [520,"Interesting"],
+                    [520,"Logical"],
                 ],
             ],
-            'arsse_marks' => [
-                'columns' => [
-                    'subscription' => "int",
-                    'article'      => "int",
-                    'read'         => "bool",
-                    'starred'      => "bool",
-                    'modified'     => "datetime",
-                    'hidden'       => "bool",
-                ],
-                'rows' => [
-                    [1,   1,1,1,'2000-01-01 00:00:00',0],
-                    [5,  19,1,0,'2000-01-01 00:00:00',0],
-                    [5,  20,0,1,'2010-01-01 00:00:00',0],
-                    [7,  20,1,0,'2010-01-01 00:00:00',0],
-                    [8, 102,1,0,'2000-01-02 02:00:00',0],
-                    [9, 103,0,1,'2000-01-03 03:00:00',0],
-                    [9, 104,1,1,'2000-01-04 04:00:00',0],
-                    [10,105,0,0,'2000-01-05 05:00:00',0],
-                    [11, 19,0,0,'2017-01-01 00:00:00',0],
-                    [11, 20,1,0,'2017-01-01 00:00:00',0],
-                    [12,  3,0,1,'2017-01-01 00:00:00',0],
-                    [12,  4,1,1,'2017-01-01 00:00:00',0],
-                    [4,   8,0,0,'2000-01-02 02:00:00',1],
-                ],
-            ],
-            'arsse_labels' => [
-                'columns' => [
-                    'id'       => "int",
-                    'owner'    => "str",
-                    'name'     => "str",
-                ],
-                'rows' => [
+            'arsse_labels' => [ // labels applied to articles
+                'columns' => ["id", "owner", "name"],
+                'rows'    => [
                     [1,"john.doe@example.com","Interesting"],
                     [2,"john.doe@example.com","Fascinating"],
                     [3,"jane.doe@example.com","Boring"],
@@ -231,25 +207,22 @@ trait SeriesLabel {
                 ],
             ],
             'arsse_label_members' => [
-                'columns' => [
-                    'label'        => "int",
-                    'article'      => "int",
-                    'subscription' => "int",
-                    'assigned'     => "bool",
-                ],
-                'rows' => [
-                    [1, 1,1,1],
-                    [2, 1,1,1],
-                    [1,19,5,1],
-                    [2,20,5,1],
-                    [1, 5,3,0],
-                    [2, 5,3,1],
-                    [2, 8,4,1],
+                'columns' => ["label", "article", "assigned"],
+                'rows'    => [
+                    [1,  1,1],
+                    [2,  1,1],
+                    [1, 19,1],
+                    [2, 20,1],
+                    [1,  5,0],
+                    [2,  5,1],
+                    [2,  8,1],
+                    [1,999,1],
+                    [2,999,1],
                 ],
             ],
         ];
         $this->checkLabels = ['arsse_labels' => ["id","owner","name"]];
-        $this->checkMembers = ['arsse_label_members' => ["label","article","subscription","assigned"]];
+        $this->checkMembers = ['arsse_label_members' => ["label","article","assigned"]];
         $this->user = "john.doe@example.com";
     }
 
@@ -523,8 +496,8 @@ trait SeriesLabel {
     public function testApplyALabelToArticles(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([2,5]));
         $state = $this->primeExpectations($this->data, $this->checkMembers);
-        $state['arsse_label_members']['rows'][4][3] = 1;
-        $state['arsse_label_members']['rows'][] = [1,2,1,1];
+        $state['arsse_label_members']['rows'][4][2] = 1;
+        $state['arsse_label_members']['rows'][] = [1,2,1];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -533,7 +506,7 @@ trait SeriesLabel {
     public function testClearALabelFromArticles(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([1,5]), Database::ASSOC_REMOVE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
-        $state['arsse_label_members']['rows'][0][3] = 0;
+        $state['arsse_label_members']['rows'][0][2] = 0;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -542,8 +515,8 @@ trait SeriesLabel {
     public function testApplyALabelToArticlesByName(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", "Interesting", (new Context)->articles([2,5]), Database::ASSOC_ADD, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
-        $state['arsse_label_members']['rows'][4][3] = 1;
-        $state['arsse_label_members']['rows'][] = [1,2,1,1];
+        $state['arsse_label_members']['rows'][4][2] = 1;
+        $state['arsse_label_members']['rows'][] = [1,2,1];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -552,7 +525,7 @@ trait SeriesLabel {
     public function testClearALabelFromArticlesByName(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", "Interesting", (new Context)->articles([1,5]), Database::ASSOC_REMOVE, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
-        $state['arsse_label_members']['rows'][0][3] = 0;
+        $state['arsse_label_members']['rows'][0][2] = 0;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -577,10 +550,10 @@ trait SeriesLabel {
     public function testReplaceArticlesOfALabel(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([2,5]), Database::ASSOC_REPLACE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
-        $state['arsse_label_members']['rows'][0][3] = 0;
-        $state['arsse_label_members']['rows'][2][3] = 0;
-        $state['arsse_label_members']['rows'][4][3] = 1;
-        $state['arsse_label_members']['rows'][] = [1,2,1,1];
+        $state['arsse_label_members']['rows'][0][2] = 0;
+        $state['arsse_label_members']['rows'][2][2] = 0;
+        $state['arsse_label_members']['rows'][4][2] = 1;
+        $state['arsse_label_members']['rows'][] = [1,2,1];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -589,8 +562,8 @@ trait SeriesLabel {
     public function testPurgeArticlesOfALabel(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([10000]), Database::ASSOC_REPLACE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
-        $state['arsse_label_members']['rows'][0][3] = 0;
-        $state['arsse_label_members']['rows'][2][3] = 0;
+        $state['arsse_label_members']['rows'][0][2] = 0;
+        $state['arsse_label_members']['rows'][2][2] = 0;
         $this->compareExpectations(static::$drv, $state);
     }
 }

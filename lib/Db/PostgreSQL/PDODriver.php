@@ -61,4 +61,8 @@ class PDODriver extends Driver {
     public function prepareArray(string $query, array $paramTypes): \JKingWeb\Arsse\Db\Statement {
         return new PDOStatement($this->db, $query, $paramTypes);
     }
+
+    public function stringOutput(): bool {
+        return false;
+    }
 }

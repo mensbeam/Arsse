@@ -13,26 +13,19 @@ use JKingWeb\Arsse\Database;
 use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesFolder {
+    protected static $drv;
+
     protected function setUpSeriesFolder(): void {
         $this->data = [
             'arsse_users' => [
-                'columns' => [
-                    'id'       => 'str',
-                    'password' => 'str',
-                    'num'      => 'int',
-                ],
-                'rows' => [
+                'columns' => ["id", "password", "num"],
+                'rows'    => [
                     ["jane.doe@example.com", "",1],
                     ["john.doe@example.com", "",2],
                 ],
             ],
             'arsse_folders' => [
-                'columns' => [
-                    'id'     => "int",
-                    'owner'  => "str",
-                    'parent' => "int",
-                    'name'   => "str",
-                ],
+                'columns' => ["id", "owner", "parent", "name"],
                 /* Layout translates to:
                 Jane
                     Politics
@@ -52,47 +45,21 @@ trait SeriesFolder {
                     [6, "john.doe@example.com",    2, "Politics"],
                 ],
             ],
-            'arsse_feeds' => [
-                'columns' => [
-                    'id'         => "int",
-                    'url'        => "str",
-                    'title'      => "str",
-                ],
-                'rows' => [
-                    [1,"http://example.com/1", "Feed 1"],
-                    [2,"http://example.com/2", "Feed 2"],
-                    [3,"http://example.com/3", "Feed 3"],
-                    [4,"http://example.com/4", "Feed 4"],
-                    [5,"http://example.com/5", "Feed 5"],
-                    [6,"http://example.com/6", "Feed 6"],
-                    [7,"http://example.com/7", "Feed 7"],
-                    [8,"http://example.com/8", "Feed 8"],
-                    [9,"http://example.com/9", "Feed 9"],
-                    [10,"http://example.com/10", "Feed 10"],
-                    [11,"http://example.com/11", "Feed 11"],
-                    [12,"http://example.com/12", "Feed 12"],
-                    [13,"http://example.com/13", "Feed 13"],
-                ],
-            ],
             'arsse_subscriptions' => [
-                'columns' => [
-                    'id'         => "int",
-                    'owner'      => "str",
-                    'feed'       => "int",
-                    'folder'     => "int",
-                ],
-                'rows' => [
-                    [1, "john.doe@example.com",1, null],
-                    [2, "john.doe@example.com",2, null],
-                    [3, "john.doe@example.com",3,    1],
-                    [4, "john.doe@example.com",4,    6],
-                    [5, "john.doe@example.com",5,    5],
-                    [6, "john.doe@example.com",10,   5],
-                    [7, "jane.doe@example.com",1, null],
-                    [8, "jane.doe@example.com",10,null],
-                    [9, "jane.doe@example.com",2,    4],
-                    [10,"jane.doe@example.com",3,    4],
-                    [11,"jane.doe@example.com",4,    4],
+                'columns' => ["id", "owner", "url", "title", "folder", "deleted"],
+                'rows'    => [
+                    [1,   "john.doe@example.com", "http://example.com/1",   "Feed 1",   null, 0],
+                    [2,   "john.doe@example.com", "http://example.com/2",   "Feed 2",   null, 0],
+                    [3,   "john.doe@example.com", "http://example.com/3",   "Feed 3",      1, 0],
+                    [4,   "john.doe@example.com", "http://example.com/4",   "Feed 4",      6, 0],
+                    [5,   "john.doe@example.com", "http://example.com/5",   "Feed 5",      5, 0],
+                    [6,   "john.doe@example.com", "http://example.com/10",  "Feed 10",     5, 0],
+                    [101, "john.doe@example.com", "http://example.com/101", "Feed 101",    1, 1],
+                    [7,   "jane.doe@example.com", "http://example.com/1",   "Feed 1",   null, 0],
+                    [8,   "jane.doe@example.com", "http://example.com/10",  "Feed 10",  null, 0],
+                    [9,   "jane.doe@example.com", "http://example.com/2",   "Feed 2",      4, 0],
+                    [10,  "jane.doe@example.com", "http://example.com/3",   "Feed 3",      4, 0],
+                    [11,  "jane.doe@example.com", "http://example.com/4",   "Feed 4",      4, 0],
                 ],
             ],
         ];

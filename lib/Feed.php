@@ -9,7 +9,8 @@ namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\Feed\Item;
 use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\Rule\Rule;
+use JKingWeb\Arsse\Misc\URL;
+use GuzzleHttp\Exception\GuzzleException;
 use PicoFeed\PicoFeedException;
 use PicoFeed\Config\Config;
 use PicoFeed\Client\Client;
@@ -30,11 +31,10 @@ class Feed {
     public $items = [];
     public $newItems = [];
     public $changedItems = [];
-    public $filteredItems = [];
 
-    public static function discover(string $url, string $username = '', string $password = ''): string {
+    public static function discover(string $url, ?string $userAgent = null, ?string $cookie = null): string {
         // fetch the candidate feed
-        [$client, $reader] = self::download($url, "", "", $username, $password);
+        [$client, $reader] = self::download($url, "", "", $userAgent, $cookie);
         if ($reader->detectFormat($client->getContent())) {
             // if the prospective URL is a feed, use it
             $out = $url;
@@ -49,9 +49,9 @@ class Feed {
         return $out;
     }
 
-    public static function discoverAll(string $url, string $username = '', string $password = ''): array {
+    public static function discoverAll(string $url, ?string $userAgent = null, ?string $cookie = null): array {
         // fetch the candidate feed
-        [$client, $reader] = self::download($url, "", "", $username, $password);
+        [$client, $reader] = self::download($url, "", "", $userAgent, $cookie);
         if ($reader->detectFormat($client->getContent())) {
             // if the prospective URL is a feed, use it
             return [$url];
@@ -60,9 +60,9 @@ class Feed {
         }
     }
 
-    public function __construct(?int $feedID, string $url, string $lastModified = '', string $etag = '', string $username = '', string $password = '', bool $scrape = false) {
+    public function __construct(?int $feedID, string $url, string $lastModified = '', string $etag = '', ?string $userAgent = null, ?string $cookie = null, bool $scrape = false) {
         // fetch the feed
-        [$client, $reader] = self::download($url, $lastModified, $etag, $username, $password);
+        [$client, $reader] = self::download($url, $lastModified, $etag, $userAgent, $cookie);
         // format the HTTP Last-Modified date returned
         $lastMod = $client->getLastModified();
         if (strlen($lastMod ?? "")) {
@@ -84,12 +84,9 @@ class Feed {
             if (!sizeof($this->newItems) && !sizeof($this->changedItems)) {
                 $this->modified = false;
             } else {
-                if ($feedID) {
-                    $this->computeFilterRules($feedID);
-                }
                 // if requested, scrape full content for any new and changed items
                 if ($scrape) {
-                    $this->scrape();
+                    $this->scrape($url, $userAgent, $cookie);
                 }
             }
         }
@@ -97,8 +94,8 @@ class Feed {
         $this->nextFetch = $this->computeNextFetch();
     }
 
-    protected static function configure(): Config {
-        $userAgent = Arsse::$conf->fetchUserAgentString ?? sprintf(
+    protected static function configure(?string $userAgent, ?string $cookie): Config {
+        $userAgent = $userAgent ?? Arsse::$conf->fetchUserAgentString ?? sprintf(
             'Arsse/%s',
             Arsse::VERSION, // Arsse version
         );
@@ -108,17 +105,16 @@ class Feed {
         $config->setGrabberTimeout(Arsse::$conf->fetchTimeout);
         $config->setClientUserAgent($userAgent);
         $config->setGrabberUserAgent($userAgent);
+        $config->setClientHeaders(['Cookie' => $cookie]);
         return $config;
     }
 
-    protected static function download(string $url, string $lastModified, string $etag, string $username, string $password): array {
+    protected static function download(string $url, string $lastModified, string $etag, ?string $userAgent = null, ?string $cookie = null): array {
         try {
-            $reader = new Reader(self::configure());
-            $client = $reader->download($url, $lastModified, $etag, $username, $password);
+            $reader = new Reader(self::configure($userAgent, $cookie));
+            $client = $reader->download($url, $lastModified, $etag, "", "");
             return [$client, $reader];
-        } catch (PicoFeedException $e) {
-            throw new Feed\Exception("", ['url' => $url], $e); // @codeCoverageIgnore
-        } catch (\GuzzleHttp\Exception\GuzzleException $e) {
+        } catch (PicoFeedException|GuzzleException $e) {
             throw new Feed\Exception("", ['url' => $url], $e);
         }
     }
@@ -130,10 +126,8 @@ class Feed {
                 $client->getContent(),
                 $client->getEncoding()
             )->execute();
-        } catch (PicoFeedException $e) {
+        } catch (PicoFeedException|GuzzleException $e) {
             throw new Feed\Exception("", ['url' => $client->getUrl()], $e);
-        } catch (\GuzzleHttp\Exception\GuzzleException $e) { // @codeCoverageIgnore
-            throw new Feed\Exception("", ['url' => $client->getUrl()], $e); // @codeCoverageIgnore
         }
 
         // Grab the favicon for the feed, or null if no valid icon is found
@@ -453,28 +447,34 @@ class Feed {
         return $dates;
     }
 
-    protected function scrape(): void {
-        $scraper = new Scraper(self::configure());
+    protected function scrape(string $feedUrl, ?string $userAgent = null, ?string $cookie = null): void {
+        $scraper = new Scraper(self::configure($userAgent, $cookie));
         foreach (array_merge($this->newItems, $this->changedItems) as $item) {
-            $scraper->setUrl($item->url);
-            $scraper->execute();
-            if ($scraper->hasRelevantContent()) {
-                $item->scrapedContent = $scraper->getFilteredContent();
+            try {
+                $url = URL::credentialsApply($item->url, $feedUrl);
+                $scraper->setUrl($url);
+                $scraper->execute();
+                if ($scraper->hasRelevantContent()) {
+                    $item->scrapedContent = $scraper->getFilteredContent();
+                }
+            } catch (PicoFeedException|GuzzleException $e) {
+                continue;
             }
         }
     }
 
-    protected function computeFilterRules(int $feedID): void {
-        $rules = Arsse::$db->feedRulesGet($feedID);
-        foreach ($rules as $user => $r) {
-            $stats = ['new' => [], 'changed' => []];
-            foreach ($this->newItems as $index => $item) {
-                $stats['new'][$index] = Rule::apply($r['keep'], $r['block'], $item->title, $item->categories);
+    public static function scrapeSingle(string $url, ?string $feedUrl, ?string $userAgent = null, ?string $cookie = null): string {
+        $url = URL::credentialsApply($url, $feedUrl ?? "");
+        try {
+            $scraper = new Scraper(self::configure($userAgent, $cookie));
+            $scraper->setUrl($url);
+            $scraper->execute();
+            if ($scraper->hasRelevantContent()) {
+                return $scraper->getFilteredContent();
             }
-            foreach ($this->changedItems as $index => $item) {
-                $stats['changed'][$index] = Rule::apply($r['keep'], $r['block'], $item->title, $item->categories);
-            }
-            $this->filteredItems[$user] = $stats;
+            return "";
+        } catch (PicoFeedException|GuzzleException $e) {
+            throw new Feed\Exception("", ['url' => $url], $e);
         }
     }
 }

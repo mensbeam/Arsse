@@ -31,7 +31,7 @@ create table arsse_folders(
     owner varchar(255) not null,
     parent bigint,
     name varchar(255) not null,
-    modified datetime(0) not null default CURRENT_TIMESTAMP,                                                       --
+    modified datetime(0) not null default CURRENT_TIMESTAMP,
     unique(owner,name,parent)
 ) character set utf8mb4;
 

@@ -42,11 +42,11 @@ abstract class Rule {
         return true;
     }
 
-    /** applies keep and block rules against the title and categories of an article
+    /** applies keep and block rules against the title, URL, author, and categories of an article
      *
      * Returns true if the article is to be kept, and false if it is to be suppressed
      */
-    public static function apply(string $keepPattern, string $blockPattern, string $title, array $categories = []): bool {
+    public static function apply(string $keepPattern, string $blockPattern, string $url, string $title, string $author, array $categories): bool {
         // ensure input is valid
         assert(!strlen($keepPattern) || @preg_match($keepPattern, "") !== false, new \Exception("Keep pattern is invalid"));
         assert(!strlen($blockPattern) || @preg_match($blockPattern, "") !== false, new \Exception("Block pattern is invalid"));
@@ -58,7 +58,7 @@ abstract class Rule {
         // merge and clean the data to match
         $data = array_map(function($str) {
             return preg_replace('/\s+/', " ", $str);
-        }, array_merge([$title], $categories));
+        }, array_merge([$title, $url, $author], $categories));
         // process the keep rule if it exists
         if (strlen($keepPattern)) {
             // if a keep rule is specified the default state is now not to keep

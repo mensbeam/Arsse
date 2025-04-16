@@ -16,6 +16,7 @@ use PHPUnit\Framework\Attributes\CoversMethod;
 
 #[CoversClass(Database::class)]
 class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected static $drv;
     protected $db = null;
 
     public function setUp(): void {
@@ -62,7 +63,7 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
             ["?,?",                [null, null],  [null, null],                         "str"],
             ["null",               [],            array_fill(0, $l, null),              "str"],
             ["$intList",           [],            $ints,                                "int"],
-            ["$intList,".($l + 1),   [],            array_merge($ints, [$l + 1]),           "int"],
+            ["$intList,".($l + 1), [],            array_merge($ints, [$l + 1]),         "int"],
             ["$intList,0",         [],            array_merge($ints, ["OOK"]),          "int"],
             ["$intList",           [],            array_merge($ints, [null]),           "int"],
             ["$stringList,''",     [],            array_merge($strings, [""]),          "str"],

@@ -438,7 +438,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return HTTP::respEmpty(403);
         }
         try {
-            Arsse::$db->feedUpdate($data['feedId']);
+            Arsse::$db->subscriptionUpdate($data['userId'], $data['feedId']);
         } catch (ExceptionInput $e) {
             switch ($e->getCode()) {
                 case 10239: // feed does not exist
@@ -459,8 +459,12 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, (string) $data['url']);
         } catch (ExceptionInput $e) {
-            // feed already exists
-            return HTTP::respEmpty(409);
+            if ($e->getCode() === 10236) {
+                // feed already exists
+                return HTTP::respEmpty(409);
+            }
+            // Bad URL or feed username
+            return HTTP::respEmpty(422);
         } catch (FeedException $e) {
             // feed could not be retrieved
             return HTTP::respEmpty(422);

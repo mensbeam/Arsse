@@ -13,16 +13,15 @@ use JKingWeb\Arsse\Database;
 use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesMeta {
+    protected static $drv;
+
     protected function setUpSeriesMeta(): void {
         $dataBare = [
             'arsse_meta' => [
-                'columns' => [
-                    'key'   => 'str',
-                    'value' => 'str',
-                ],
-                'rows' => [
-                //['schema_version', "".\JKingWeb\Arsse\Database::SCHEMA_VERSION],
-                ['album',"A Farewell to Kings"],
+                'columns' => ["key", "value"],
+                'rows'    => [
+                    //['schema_version', "".\JKingWeb\Arsse\Database::SCHEMA_VERSION],
+                    ['album',"A Farewell to Kings"],
                 ],
             ],
         ];

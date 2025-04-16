@@ -321,7 +321,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db = \Phake::mock(Database::class);
         \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
         //initialize a handler
-        $this->h = new V1_2();
+        $this->h = new V1_2;
     }
 
     protected static function v($value) {
@@ -553,7 +553,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             [['url' => "http://example.org/news.atom", 'folderId' => 8],  42,                                        4758915, self::$feeds['db'][1], true,                                HTTP::respJson(['feeds' => [self::$feeds['rest'][1]], 'newestItemId' => 4758915])],
             [['url' => "http://example.com/news.atom", 'folderId' => 3],  new ExceptionInput("constraintViolation"), 0,       self::$feeds['db'][0], new ExceptionInput("idMissing"),     HTTP::respEmpty(409)],
             [['url' => "http://example.org/news.atom", 'folderId' => 8],  new ExceptionInput("constraintViolation"), 4758915, self::$feeds['db'][1], true,                                HTTP::respEmpty(409)],
-            [[],                                                          $feedException,                            0,       [],                    false,                               HTTP::respEmpty(422)],
+            [['url' => "http://example.com/bad"],                         $feedException,                            0,       [],                    false,                               HTTP::respEmpty(422)],
+            [['url' => "relative"],                                       new ExceptionInput("invalidValue"),        0,       [],                    false,                               HTTP::respEmpty(422)],
             [['url' => "http://example.net/news.atom", 'folderId' => -1], 47,                                        2112,    self::$feeds['db'][2], new ExceptionInput("typeViolation"), HTTP::respJson(['feeds' => [self::$feeds['rest'][2]], 'newestItemId' => 2112])],
         ];
     }
@@ -681,32 +682,32 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::never())->feedListStale(\Phake::anyParameters());
     }
 
-    public function testUpdateAFeed(): void {
-        $in = [
-            ['feedId' =>    42], // valid
-            ['feedId' => 2112], // feed does not exist
-            ['feedId' => "ook"], // invalid ID
-            ['feedId' => -1], // invalid ID
-            ['feed'   => 42], // invalid input
+    #[DataProvider("provideFeedUpdates")]
+    public function testUpdateAFeed(array $in, int $exp): void {
+        \Phake::when(Arsse::$db)->subscriptionUpdate("ook", 42)->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionUpdate("eek", 2112)->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionUpdate(null, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionUpdate($this->anything(), $this->lessThan(1))->thenThrow(new ExceptionInput("typeViolation"));
+        $exp = HTTP::respEmpty($exp);
+        $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in)));
+    }
+
+    public static function provideFeedUpdates(): iterable {
+        return [
+            'Valid input'  => [['userId' => "ook", 'feedId' => 42],    204],
+            'Missing feed' => [['userId' => "eek", 'feedId' => 2112],  404],
+            'String ID'    => [['userId' => "ook", 'feedId' => "ook"], 422],
+            'Negative ID'  => [['userId' => "ook", 'feedId' => -1],    422],
+            'Bad input 1'  => [['userId' => "ook", 'feed'   => 42],    422],
+            'Bad input 2'  => [['user'   => "ook", 'feedId' => 42],    404],
         ];
-        \Phake::when(Arsse::$db)->feedUpdate(42)->thenReturn(true);
-        \Phake::when(Arsse::$db)->feedUpdate(2112)->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->feedUpdate($this->lessThan(1))->thenThrow(new ExceptionInput("typeViolation"));
-        $exp = HTTP::respEmpty(204);
-        $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[0])));
-        $exp = HTTP::respEmpty(404);
-        $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[1])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[2])));
-        $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[3])));
-        $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in[4])));
     }
 
     public function testUpdateAFeedWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => false]);
         $exp = HTTP::respEmpty(403);
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", ['feedId' => 42]));
-        \Phake::verify(Arsse::$db, \Phake::never())->feedUpdate(\Phake::anyParameters());
+        \Phake::verify(Arsse::$db, \Phake::never())->subscriptionUpdate(\Phake::anyParameters());
     }
 
     #[DataProvider("provideArticleQueries")]
@@ -902,17 +903,17 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testCleanUpBeforeUpdate(): void {
-        \Phake::when(Arsse::$db)->feedCleanup()->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionCleanup()->thenReturn(true);
         $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
-        \Phake::verify(Arsse::$db)->feedCleanup();
+        \Phake::verify(Arsse::$db)->subscriptionCleanup();
     }
 
     public function testCleanUpBeforeUpdateWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => false]);
         $exp = HTTP::respEmpty(403);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
-        \Phake::verify(Arsse::$db, \Phake::never())->feedCleanup(\Phake::anyParameters());
+        \Phake::verify(Arsse::$db, \Phake::never())->subscriptionCleanup(\Phake::anyParameters());
     }
 
     public function testCleanUpAfterUpdate(): void {
@@ -926,7 +927,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => false]);
         $exp = HTTP::respEmpty(403);
         $this->assertMessage($exp, $this->req("GET", "/cleanup/after-update"));
-        \Phake::verify(Arsse::$db, \Phake::never())->feedCleanup(\Phake::anyParameters());
+        \Phake::verify(Arsse::$db, \Phake::never())->subscriptionCleanup(\Phake::anyParameters());
     }
 
     public function testQueryTheUserStatus(): void {

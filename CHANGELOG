@@ -1,3 +1,24 @@
+Version 0.12.0 (2025-??-??)
+===========================
+
+New features:
+- Implementations of previously missing Miniflux features:
+  - Custom User-Agent during feed fetching
+  - Modifying the URL, username, and password of a feed
+- Updated Miniflux implementation in line with Miniflux 2.2.7 (see manual
+  for details)
+
+Bug fixes:
+- Always present enclosures as an array in the Miniflux protocol; this restores
+  synchronization with the Newsflash client
+- Handle errors during article scraping gracefully
+- Use authentication while scraping where appropriate
+
+Changes:
+- Use a simpler User-Agent string to avoid tripping bot defences
+- Remove advisory-only user metadata from command-line interface. Metadata for
+  Miniflux not used by The Arsse itself is now stored separately
+
 Version 0.11.0 (2025-03-18)
 ===========================
 

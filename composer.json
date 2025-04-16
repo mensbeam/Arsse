@@ -28,7 +28,7 @@
         "jkingweb/druuid": "3.*",
         "hosteurope/password-generator": "1.*",
         "docopt/docopt": "dev-master",
-        "nicolus/picofeed": "dev-php84",
+        "nicolus/picofeed": "dev-arsse",
         "guzzlehttp/psr7": "2.*",
         "laminas/laminas-xml": "dev-fixup as 1.4.0",
         "laminas/laminas-httphandlerrunner": "2.*"

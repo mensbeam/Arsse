@@ -233,4 +233,8 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $this->exec("ANALYZE");
         return true;
     }
+
+    public function stringOutput(): bool {
+        return true;
+    }
 }

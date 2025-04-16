@@ -95,7 +95,6 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-
     #[DataProvider('provideUnnormalizedOrigins')]
     public function testNormalizeOrigins(string $origin, string $exp, ?array $ports = null): void {
         $r = new REST;

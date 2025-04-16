@@ -10,6 +10,7 @@ namespace JKingWeb\Arsse\TestCase\Feed;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Feed;
+use JKingWeb\Arsse\Misc\URL;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -76,5 +77,45 @@ class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$conf->fetchTimeout = 1;
         $this->assertException("timeout", "Feed");
         new Feed(null, $this->base."Fetching/Timeout");
+    }
+
+    public function testFetchWithCustomUserAgent(): void {
+        $exp = "Custom";
+        $f = new Feed(null, $this->base."Fetching/UserAgent", "", "", $exp);
+        $this->assertSame($exp, $f->title);
+        $this->assertSame("<p>Partial content</p>", $f->items[0]->content);
+        // Scraping should also use the custom UA
+        $f = new Feed(null, $this->base."Fetching/UserAgent", "", "", "Custom", null, true);
+        $this->assertSame($exp, $f->title);
+        $this->assertSame($exp, $f->items[0]->scrapedContent);
+        // Explicit scraping should, too
+        $this->assertSame($exp, Feed::scrapeSingle($this->base."Scraping/UserAgent", $this->base."Fetching/UserAgent", $exp, null));
+    }
+
+    public function testFetchWithCookie(): void {
+        $exp = '{"a":"b","c":"d"}';
+        $in = "a=b; c=d";
+        $f = new Feed(null, $this->base."Fetching/Cookie", "", "", null, $in);
+        $this->assertSame($exp, $f->title);
+        $this->assertSame("<p>Partial content</p>", $f->items[0]->content);
+        // Scraping should also use the cookie
+        $f = new Feed(null, $this->base."Fetching/Cookie", "", "", null, $in, true);
+        $this->assertSame($exp, $f->title);
+        $this->assertSame(htmlspecialchars($exp), $f->items[0]->scrapedContent);
+        // Explicit scraping should, too
+        $this->assertSame(htmlspecialchars($exp), Feed::scrapeSingle($this->base."Scraping/Cookie", $this->base."Fetching/Cookie", null, $in));
+    }
+
+    public function testFetchWithCredentials(): void {
+        $url = URL::normalize($this->base."Scraping/FeedPW", "user", "pass");
+        $f = new Feed(null, $url, "", "", null, "a=b; c=d");
+        $this->assertSame('Test feed', $f->title);
+        $this->assertSame("<p>Partial content</p>", $f->items[0]->content);
+        // Scraping should also use the credentials
+        $f = new Feed(null, $url, "", "", null, "a=b; c=d", true);
+        $this->assertSame('Test feed', $f->title);
+        $this->assertSame("<p>Partial content, followed by more content</p>", $f->items[0]->scrapedContent);
+        // Explicit scraping should, too
+        $this->assertSame("<p>Partial content, followed by more content</p>", Feed::scrapeSingle($this->base."Scraping/DocumentPW", $url));
     }
 }

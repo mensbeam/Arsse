@@ -19,17 +19,14 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesArticle {
+    protected static $drv;
     protected $fields;
 
     protected function setUpSeriesArticle(): void {
         $this->data = [
             'arsse_users' => [
-                'columns' => [
-                    'id'       => 'str',
-                    'password' => 'str',
-                    'num'      => 'int',
-                ],
-                'rows' => [
+                'columns' => ["id", "password", "num"],
+                'rows'    => [
                     ["jane.doe@example.com", "", 1],
                     ["john.doe@example.com", "", 2],
                     ["john.doe@example.org", "", 3],
@@ -37,36 +34,9 @@ trait SeriesArticle {
                     ["jill.doe@example.com", "", 5],
                 ],
             ],
-            'arsse_feeds' => [
-                'columns' => [
-                    'id'         => "int",
-                    'url'        => "str",
-                    'title'      => "str",
-                ],
-                'rows' => [
-                    [1,"http://example.com/1", "Feed 1"],
-                    [2,"http://example.com/2", "Feed 2"],
-                    [3,"http://example.com/3", "Feed 3"],
-                    [4,"http://example.com/4", "Feed 4"],
-                    [5,"http://example.com/5", "Feed 5"],
-                    [6,"http://example.com/6", "Feed 6"],
-                    [7,"http://example.com/7", "Feed 7"],
-                    [8,"http://example.com/8", "Feed 8"],
-                    [9,"http://example.com/9", "Feed 9"],
-                    [10,"http://example.com/10", "Feed 10"],
-                    [11,"http://example.com/11", "Feed 11"],
-                    [12,"http://example.com/12", "Feed 12"],
-                    [13,"http://example.com/13", "Feed 13"],
-                ],
-            ],
             'arsse_folders' => [
-                'columns' => [
-                    'id'     => "int",
-                    'owner'  => "str",
-                    'parent' => "int",
-                    'name'   => "str",
-                ],
-                'rows' => [
+                'columns' => ["id", "owner", "parent", "name"],
+                'rows'    => [
                     [1, "john.doe@example.com", null, "Technology"],
                     [2, "john.doe@example.com",    1, "Software"],
                     [3, "john.doe@example.com",    1, "Rocketry"],
@@ -79,12 +49,8 @@ trait SeriesArticle {
                 ],
             ],
             'arsse_tags' => [
-                'columns' => [
-                    'id'    => "int",
-                    'owner' => "str",
-                    'name'  => "str",
-                ],
-                'rows' => [
+                'columns' => ["id", "owner", "name"],
+                'rows'    => [
                     [1, "john.doe@example.com", "Technology"],
                     [2, "john.doe@example.com", "Software"],
                     [3, "john.doe@example.com", "Rocketry"],
@@ -96,39 +62,29 @@ trait SeriesArticle {
                 ],
             ],
             'arsse_subscriptions' => [
-                'columns' => [
-                    'id'         => "int",
-                    'owner'      => "str",
-                    'feed'       => "int",
-                    'folder'     => "int",
-                    'title'      => "str",
-                    'scrape'     => "bool",
-                ],
-                'rows' => [
-                    [1, "john.doe@example.com",1, null,"Subscription 1",0],
-                    [2, "john.doe@example.com",2, null,null,0],
-                    [3, "john.doe@example.com",3,    1,"Subscription 3",0],
-                    [4, "john.doe@example.com",4,    6,null,0],
-                    [5, "john.doe@example.com",10,   5,"Subscription 5",0],
-                    [6, "jane.doe@example.com",1, null,null,0],
-                    [7, "jane.doe@example.com",10,null,"Subscription 7",0],
-                    [8, "john.doe@example.org",11,null,null,0],
-                    [9, "john.doe@example.org",12,null,"Subscription 9",0],
-                    [10,"john.doe@example.org",13,null,null,0],
-                    [11,"john.doe@example.net",10,null,"Subscription 11",0],
-                    [12,"john.doe@example.net",2,    9,null,0],
-                    [13,"john.doe@example.net",3,    8,"Subscription 13",0],
-                    [14,"john.doe@example.net",4,    7,null,0],
-                    [15,"jill.doe@example.com",11,null,null,1],
+                'columns' => ["id", "owner", "url", "feed_title", "folder", "title", "scrape", "deleted"],
+                'rows'    => [
+                    [1, "john.doe@example.com","http://example.com/1",  "Feed 1", null,"Subscription 1", 0,0],
+                    [2, "john.doe@example.com","http://example.com/2",  "Feed 2", null,null,             0,0],
+                    [3, "john.doe@example.com","http://example.com/3",  "Feed 3",    1,"Subscription 3", 0,0],
+                    [4, "john.doe@example.com","http://example.com/4",  "Feed 4",    6,null,             0,0],
+                    [5, "john.doe@example.com","http://example.com/10", "Feed 10",   5,"Subscription 5", 0,0],
+                    [6, "jane.doe@example.com","http://example.com/1",  "Feed 1", null,null,             0,0],
+                    [7, "jane.doe@example.com","http://example.com/10", "Feed 10",null,"Subscription 7", 0,0],
+                    [8, "john.doe@example.org","http://example.com/11", "Feed 11",null,null,             0,0],
+                    [9, "john.doe@example.org","http://example.com/12", "Feed 12",null,"Subscription 9", 0,0],
+                    [10,"john.doe@example.org","http://example.com/13", "Feed 13",null,null,             0,0],
+                    [11,"john.doe@example.net","http://example.com/10", "Feed 10",null,"Subscription 11",0,0],
+                    [12,"john.doe@example.net","http://example.com/2",  "Feed 2",    9,null,             0,0],
+                    [13,"john.doe@example.net","http://example.com/3",  "Feed 3",    8,"Subscription 13",0,0],
+                    [14,"john.doe@example.net","http://example.com/4",  "Feed 4",    7,null,             0,0],
+                    [15,"jill.doe@example.com","http://example.com/11", "Feed 11",null,null,             1,0],
+                    [16,"john.doe@example.com","http://example.com/16", "Feed 16",   1,"Subscription 16",0,1],
                 ],
             ],
             'arsse_tag_members' => [
-                'columns' => [
-                    'tag'          => "int",
-                    'subscription' => "int",
-                    'assigned'     => "bool",
-                ],
-                'rows' => [
+                'columns' => ["tag", "subscription", "assigned"],
+                'rows'    => [
                     [1,3,1],
                     [1,4,1],
                     [2,4,1],
@@ -143,150 +99,151 @@ trait SeriesArticle {
             ],
             'arsse_articles' => [
                 'columns' => [
-                    'id'                 => "int",
-                    'feed'               => "int",
-                    'url'                => "str",
-                    'title'              => "str",
-                    'author'             => "str",
-                    'published'          => "datetime",
-                    'edited'             => "datetime",
-                    'content'            => "str",
-                    'guid'               => "str",
-                    'url_title_hash'     => "str",
-                    'url_content_hash'   => "str",
-                    'title_content_hash' => "str",
-                    'modified'           => "datetime",
-                    'content_scraped'    => "str",
+                    "id", "subscription", "url", "title", "author", "published", "edited", "guid",
+                    "url_title_hash", "url_content_hash", "title_content_hash", "added", "modified",
+                    "read", "starred", "hidden", "marked", "note",
                 ],
                 'rows' => [
-                    [1,1,null,"Title one",  null,null,null,"First article", null,"","","","2000-01-01T00:00:00Z",null],
-                    [2,1,null,"Title two",  null,null,null,"Second article",null,"","","","2010-01-01T00:00:00Z",null],
-                    [3,2,null,"Title three",null,null,null,"Third article", null,"","","","2000-01-01T00:00:00Z",null],
-                    [4,2,null,null,"John Doe",null,null,null,null,"","","","2010-01-01T00:00:00Z",null],
-                    [5,3,null,null,"John Doe",null,null,null,null,"","","","2000-01-01T00:00:00Z",null],
-                    [6,3,null,null,"Jane Doe",null,null,null,null,"","","","2010-01-01T00:00:00Z",null],
-                    [7,4,null,null,"Jane Doe",null,null,null,null,"","","","2000-01-01T00:00:00Z",null],
-                    [8,4,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z",null],
-                    [9,5,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z",null],
-                    [10,5,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z",null],
-                    [11,6,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z",null],
-                    [12,6,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z",null],
-                    [13,7,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z",null],
-                    [14,7,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z",null],
-                    [15,8,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z",null],
-                    [16,8,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z",null],
-                    [17,9,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z",null],
-                    [18,9,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z",null],
-                    [19,10,null,null,null,null,null,null,null,"","","","2000-01-01T00:00:00Z",null],
-                    [20,10,null,null,null,null,null,null,null,"","","","2010-01-01T00:00:00Z",null],
-                    [101,11,'http://example.com/1','Article title 1','','2000-01-01 00:00:00','2000-01-01 00:00:01','<p>Article content 1</p>','e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda','f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6','fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4','18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207','2000-01-01 01:00:00',"<p>Scraped content 1</p>"],
-                    [102,11,'http://example.com/2','Article title 2','','2000-01-02 00:00:00','2000-01-02 00:00:02','<p>Article content 2</p>','5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7','0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153','13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9','2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e','2000-01-02 02:00:00',null],
-                    [103,12,'http://example.com/3','Article title 3','','2000-01-03 00:00:00','2000-01-03 00:00:03','<p>Article content 3</p>','31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92','f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b','b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406','ad622b31e739cd3a3f3c788991082cf4d2f7a8773773008e75f0572e58cd373b','2000-01-03 03:00:00',null],
-                    [104,12,'http://example.com/4','Article title 4','','2000-01-04 00:00:00','2000-01-04 00:00:04','<p>Article content 4</p>','804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8','f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3','ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9','2000-01-04 04:00:00',null],
-                    [105,13,'http://example.com/5','Article title 5','','2000-01-05 00:00:00','2000-01-05 00:00:05','<p>Article content 5</p>','db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41','d40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022','834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900','43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba','2000-01-05 05:00:00',null],
+                    [1,   1,null,                  "Title one",      null,      "1800-01-01 00:00:00",null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1900-01-01 00:00:00","2000-01-01 00:00:00",1,1,0,'2000-01-01 00:00:00',''],
+                    [2,   1,null,                  "Title two",      null,      "1810-01-01 00:00:00",null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1910-01-01 00:00:00","2010-01-01 00:00:00",0,0,0,'2010-01-01 00:00:00','Some Note'],
+                    [3,   2,null,                  "Title three",    null,      "1800-01-01 00:00:00",null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1900-01-01 00:00:00","2000-01-01 00:00:00",0,0,0,null,                 ''],
+                    [4,   2,null,                  null,             "John Doe","1810-01-01 00:00:00",null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1910-01-01 00:00:00","2010-01-01 00:00:00",0,0,0,null,                 ''],
+                    [5,   3,null,                  null,             "John Doe","1800-01-01 00:00:00",null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1900-01-01 00:00:00","2000-01-01 00:00:00",0,0,0,null,                 ''],
+                    [6,   3,null,                  null,             "Jane Doe","1810-01-01 00:00:00",null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1910-01-01 00:00:00","2010-01-01 00:00:00",0,0,1,'2000-01-01 00:00:00',''],
+                    [7,   4,null,                  null,             "Jane Doe","1800-01-01 00:00:00",null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1900-01-01 00:00:00","2000-01-01 00:00:00",0,0,0,null,                 ''],
+                    [8,   4,null,                  null,             null,      "1810-01-01 00:00:00",null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1910-01-01 00:00:00","2010-01-01 00:00:00",0,0,0,null,                 ''],
+                    [19,  5,null,                  null,             null,      "1800-01-01 00:00:00",null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1900-01-01 00:00:00","2000-01-01 00:00:00",1,0,0,'2016-01-01 00:00:00',''],
+                    [20,  5,null,                  null,             null,      "1810-01-01 00:00:00",null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1910-01-01 00:00:00","2010-01-01 00:00:00",0,1,0,'2005-01-01 00:00:00',''],
+                    [501, 6,null,                  "Title one",      null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1900-01-01 00:00:00","2000-01-01 00:00:00",0,1,1,'2000-01-01 00:00:00',''],
+                    [502, 6,null,                  "Title two",      null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1910-01-01 00:00:00","2010-01-01 00:00:00",1,0,1,'2010-01-01 00:00:00',''],
+                    [519, 7,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1900-01-01 00:00:00","2000-01-01 00:00:00",0,0,0,null,                 ''],
+                    [520, 7,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1910-01-01 00:00:00","2010-01-01 00:00:00",1,0,0,'2010-01-01 00:00:00',''],
+                    [101, 8,'http://example.com/1','Article title 1','',        '2000-01-01 00:00:00','2000-01-01 00:00:01','e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda','f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6','fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4','18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207','1900-01-01 01:00:00','2000-01-01 01:00:00',0,0,0,null,                 ''],
+                    [102, 8,'http://example.com/2','Article title 2','',        '2000-01-02 00:00:00','2000-01-02 00:00:02','5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7','0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153','13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9','2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e','1900-01-02 02:00:00','2000-01-02 02:00:00',1,0,0,'2000-01-02 02:00:00','Note 2'],
+                    [103, 9,'http://example.com/3','Article title 3','',        '2000-01-03 00:00:00','2000-01-03 00:00:03','31a6594500a48b59fcc8a075ce82b946c9c3c782460d088bd7b8ef3ede97ad92','f74b06b240bd08abf4d3fdfc20dba6a6f6eb8b4f1a00e9a617efd63a87180a4b','b278380e984cefe63f0e412b88ffc9cb0befdfa06fdc00bace1da99a8daff406','ad622b31e739cd3a3f3c788991082cf4d2f7a8773773008e75f0572e58cd373b','1900-01-03 03:00:00','2000-01-03 03:00:00',0,1,0,'2000-01-03 03:00:00','Note 3'],
+                    [104, 9,'http://example.com/4','Article title 4','',        '2000-01-04 00:00:00','2000-01-04 00:00:04','804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','f3615c7f16336d3ea242d35cf3fc17dbc4ee3afb78376bf49da2dd7a5a25dec8','f11c2b4046f207579aeb9c69a8c20ca5461cef49756ccfa5ba5e2344266da3b3','ab2da63276acce431250b18d3d49b988b226a99c7faadf275c90b751aee05be9','1900-01-04 04:00:00','2000-01-04 04:00:00',1,1,0,'2000-01-04 04:00:00','Note 4'],
+                    [105,10,'http://example.com/5','Article title 5','',        '2000-01-05 00:00:00','2000-01-05 00:00:05','db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41','d40da96e39eea6c55948ccbe9b3d275b5f931298288dbe953990c5f496097022','834240f84501b5341d375414718204ec421561f3825d34c22bf9182203e42900','43b970ac6ec5f8a9647b2c7e4eed8b1d7f62e154a95eed748b0294c1256764ba','1900-01-05 05:00:00','2000-01-05 05:00:00',0,0,0,'2000-01-05 05:00:00',''],
+                    [119,11,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1900-01-01 00:00:00","2000-01-01 00:00:00",0,0,0,'2017-01-01 00:00:00','ook'],
+                    [120,11,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1910-01-01 00:00:00","2010-01-01 00:00:00",1,0,0,'2017-01-01 00:00:00','eek'],
+                    [203,12,null,                  "Title three",    null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1900-01-01 00:00:00","2000-01-01 00:00:00",0,1,0,'2017-01-01 00:00:00','ack'],
+                    [204,12,null,                  null,             "John Doe",null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1910-01-01 00:00:00","2010-01-01 00:00:00",1,1,0,'2017-01-01 00:00:00','ach'],
+                    [205,13,null,                  null,             "John Doe",null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1900-01-01 00:00:00","2000-01-01 00:00:00",0,0,0,null,                 ''],
+                    [206,13,null,                  null,             "Jane Doe",null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1910-01-01 00:00:00","2010-01-01 00:00:00",0,0,0,null,                 ''],
+                    [207,14,null,                  null,             "Jane Doe",null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1900-01-01 00:00:00","2000-01-01 00:00:00",0,0,0,null,                 ''],
+                    [208,14,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1910-01-01 00:00:00","2010-01-01 00:00:00",0,0,0,null,                 ''],
+                    [801,15,'http://example.com/1','Article title 1','',        '2000-01-01 00:00:00','2000-01-01 00:00:01','e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda','f5cb8bfc1c7396dc9816af212a3e2ac5221585c2a00bf7ccb6aabd95dcfcd6a6','fb0bc8f8cb08913dc5a497db700e327f1d34e4987402687d494a5891f24714d4','18fdd4fa93d693128c43b004399e5c9cea6c261ddfa002518d3669f55d8c2207','1900-01-01 01:00:00','2000-01-01 01:00:00',0,0,0,null,                 ''],
+                    [802,15,'http://example.com/2','Article title 2','',        '2000-01-02 00:00:00','2000-01-02 00:00:02','5be8a5a46ecd52ed132191c8d27fb1af6b3d4edc00234c5d9f8f0e10562ed3b7','0e86d2de822a174fe3c44a466953e63ca1f1a58a19cbf475fce0855d4e3d5153','13075894189c47ffcfafd1dfe7fbb539f7c74a69d35a399b3abf8518952714f9','2abd0a8cba83b8214a66c8f0293ba63e467d720540e29ff8ddcdab069d4f1c9e','1900-01-02 02:00:00','2000-01-02 02:00:00',0,0,0,null,                 ''],
+                    [999,16,null,                  null,             null,      null,                 null,                 null,                                                              "",                                                                "",                                                                "",                                                                "1900-01-01 00:00:00","2000-01-01 00:00:00",0,1,0,null,                 ''],
+                ],
+            ],
+            'arsse_article_contents' => [
+                'columns' => ["id", "content"],
+                'rows' => [
+                    [1,   'First article'],
+                    [2,   'Second article'],
+                    [3,   'third article'],
+                    [4,   ''],
+                    [5,   ''],
+                    [6,   ''],
+                    [7,   ''],
+                    [8,   ''],
+                    [19,  ''],
+                    [20,  ''],
+                    [501,'First article'],
+                    [502,'Second article'],
+                    [519,''],
+                    [520,''],
+                    [101, '<p>Article content 1</p>'],
+                    [102, '<p>Article content 2</p>'],
+                    [103, '<p>Article content 3</p>'],
+                    [104, '<p>Article content 4</p>'],
+                    [105, '<p>Article content 5</p>'],
+                    [119, ''],
+                    [120, ''],
+                    [203, 'third article'],
+                    [204, ''],
+                    [205, ''],
+                    [206, ''],
+                    [207, ''],
+                    [208, ''],
+                    [801,'<p>Scraped content 1</p>'],
+                    [802,'<p>Article content 2</p>'],
+                ],
+            ],
+            'arsse_editions' => [
+                'columns' => ["id", "article"],
+                'rows'    => [
+                    [   1,  1],
+                    [   2,  2],
+                    [   3,  3],
+                    [   4,  4],
+                    [   5,  5],
+                    [   6,  6],
+                    [   7,  7],
+                    [   8,  8],
+                    [  19, 19],
+                    [  20, 20],
+                    [1001, 20],
+                    [ 101,101],
+                    [ 102,102],
+                    [ 202,102],
+                    [ 103,103],
+                    [ 203,103],
+                    [ 104,104],
+                    [ 204,104],
+                    [ 105,105],
+                    [ 205,105],
+                    [ 305,105],
+                    [ 501,501],
+                    [ 119,119],
+                    [ 120,120],
+                    [1101,120],
+                    [2203,203],
+                    [2204,204],
+                    [2205,205],
+                    [2206,206],
+                    [2207,207],
+                    [2208,208],
+                    [ 502,502],
+                    [ 519,519],
+                    [ 520,520],
+                    [1501,520],
+                    [ 801,801],
+                    [ 802,802],
+                    [ 902,802],
+                    [ 999,999],
                 ],
             ],
             'arsse_enclosures' => [
-                'columns' => [
-                    'article' => "int",
-                    'url'     => "str",
-                    'type'    => "str",
-                ],
-                'rows' => [
+                'columns' => ["article", "url", "type"],
+                'rows'    => [
                     [102,"http://example.com/text","text/plain"],
                     [103,"http://example.com/video","video/webm"],
                     [104,"http://example.com/image","image/svg+xml"],
                     [105,"http://example.com/audio","audio/ogg"],
-
-                ],
-            ],
-            'arsse_editions' => [
-                'columns' => [
-                    'id'       => "int",
-                    'article'  => "int",
-                ],
-                'rows' => [
-                    [1,1],
-                    [2,2],
-                    [3,3],
-                    [4,4],
-                    [5,5],
-                    [6,6],
-                    [7,7],
-                    [8,8],
-                    [9,9],
-                    [10,10],
-                    [11,11],
-                    [12,12],
-                    [13,13],
-                    [14,14],
-                    [15,15],
-                    [16,16],
-                    [17,17],
-                    [18,18],
-                    [19,19],
-                    [20,20],
-                    [101,101],
-                    [102,102],
-                    [103,103],
-                    [104,104],
-                    [105,105],
-                    [202,102],
-                    [203,103],
-                    [204,104],
-                    [205,105],
-                    [305,105],
-                    [1001,20],
-                ],
-            ],
-            'arsse_marks' => [
-                'columns' => [
-                    'subscription' => "int",
-                    'article'      => "int",
-                    'read'         => "bool",
-                    'starred'      => "bool",
-                    'modified'     => "datetime",
-                    'note'         => "str",
-                    'hidden'       => "bool",
-                ],
-                'rows' => [
-                    [1,   1,1,1,'2000-01-01 00:00:00','',0],
-                    [5,  19,1,0,'2016-01-01 00:00:00','',0],
-                    [5,  20,0,1,'2005-01-01 00:00:00','',0],
-                    [7,  20,1,0,'2010-01-01 00:00:00','',0],
-                    [8, 102,1,0,'2000-01-02 02:00:00','Note 2',0],
-                    [9, 103,0,1,'2000-01-03 03:00:00','Note 3',0],
-                    [9, 104,1,1,'2000-01-04 04:00:00','Note 4',0],
-                    [10,105,0,0,'2000-01-05 05:00:00','',0],
-                    [11, 19,0,0,'2017-01-01 00:00:00','ook',0],
-                    [11, 20,1,0,'2017-01-01 00:00:00','eek',0],
-                    [12,  3,0,1,'2017-01-01 00:00:00','ack',0],
-                    [12,  4,1,1,'2017-01-01 00:00:00','ach',0],
-                    [1,   2,0,0,'2010-01-01 00:00:00','Some Note',0],
-                    [3,   6,0,0,'2000-01-01 00:00:00','',1],
-                    [6,   1,0,1,'2010-01-01 00:00:00','',1],
-                    [6,   2,1,0,'2010-01-01 00:00:00','',1],
+                    [802,"http://example.com/text","text/plain"],
                 ],
             ],
             'arsse_categories' => [ // author-supplied categories
-                'columns' => [
-                    'article'  => "int",
-                    'name'     => "str",
-                ],
-                'rows' => [
-                    [19,"Fascinating"],
-                    [19,"Logical"],
-                    [20,"Interesting"],
-                    [20,"Logical"],
+                'columns' => ["article", "name"],
+                'rows'    => [
+                    [19, "Fascinating"],
+                    [19, "Logical"],
+                    [20, "Interesting"],
+                    [20, "Logical"],
+                    [119,"Fascinating"],
+                    [119,"Logical"],
+                    [120,"Interesting"],
+                    [120,"Logical"],
+                    [519,"Fascinating"],
+                    [519,"Logical"],
+                    [520,"Interesting"],
+                    [520,"Logical"],
                 ],
             ],
-            'arsse_labels' => [
-                'columns' => [
-                    'id'       => "int",
-                    'owner'    => "str",
-                    'name'     => "str",
-                ],
-                'rows' => [
+            'arsse_labels' => [ // labels applied to articles
+                'columns' => ["id", "owner", "name"],
+                'rows'    => [
                     [1,"john.doe@example.com","Interesting"],
                     [2,"john.doe@example.com","Fascinating"],
                     [3,"jane.doe@example.com","Boring"],
@@ -294,22 +251,17 @@ trait SeriesArticle {
                 ],
             ],
             'arsse_label_members' => [
-                'columns' => [
-                    'label'        => "int",
-                    'article'      => "int",
-                    'subscription' => "int",
-                    'assigned'     => "bool",
-                    'modified'     => "datetime",
-                ],
-                'rows' => [
-                    [1, 1,1,1,'2000-01-01 00:00:00'],
-                    [2, 1,1,1,'2000-01-01 00:00:00'],
-                    [1,19,5,1,'2000-01-01 00:00:00'],
-                    [2,20,5,1,'2000-01-01 00:00:00'],
-                    [1, 5,3,0,'2000-01-01 00:00:00'],
-                    [2, 5,3,1,'2000-01-01 00:00:00'],
-                    [4, 7,4,0,'2000-01-01 00:00:00'],
-                    [4, 8,4,1,'2015-01-01 00:00:00'],
+                'columns' => ["label", "article", "assigned", "modified"],
+                'rows'    => [
+                    [1,  1,1,'2000-01-01 00:00:00'],
+                    [2,  1,1,'2000-01-01 00:00:00'],
+                    [1, 19,1,'2000-01-01 00:00:00'],
+                    [2, 20,1,'2000-01-01 00:00:00'],
+                    [1,  5,0,'2000-01-01 00:00:00'],
+                    [2,  5,1,'2000-01-01 00:00:00'],
+                    [4,  7,0,'2000-01-01 00:00:00'],
+                    [4,  8,1,'2015-01-01 00:00:00'],
+                    [1,999,1,'2000-01-01 00:00:00'],
                 ],
             ],
         ];
@@ -416,13 +368,13 @@ trait SeriesArticle {
             ],
         ];
         $this->fields = [
-            "id", "subscription", "feed", "modified_date", "marked_date", "unread", "starred", "hidden", "edition", "edited_date",
+            "id", "subscription", "modified_date", "marked_date", "unread", "starred", "hidden", "edition", "edited_date",
             "url", "title", "subscription_title", "author", "guid", "published_date", "fingerprint",
             "folder", "top_folder", "folder_name", "top_folder_name",
             "content", "media_url", "media_type",
             "note",
         ];
-        $this->checkTables = ['arsse_marks' => ["subscription", "article", "read", "starred", "modified", "note", "hidden"]];
+        $this->checkTables = ['arsse_articles' => ["id", "read", "starred", "hidden", "marked", "note"]];
         $this->user = "john.doe@example.net";
     }
 
@@ -440,6 +392,9 @@ trait SeriesArticle {
     #[DataProvider("provideContextMatches")]
     public function testListArticlesCheckingContext(RootContext $c, array $exp): void {
         $ids = array_column($ids = Arsse::$db->articleList("john.doe@example.com", $c, ["id"], ["id"])->getAll(), "id");
+        $ids = array_map(function($v) {
+            return (int) $v;
+        }, $ids);
         sort($ids);
         sort($exp);
         $this->assertEquals($exp, $ids);
@@ -477,10 +432,18 @@ trait SeriesArticle {
             'Not before edition 1001'                                    => [(new Context)->subscription(5)->editionRange(1001, null), [20]],
             'Not after article 3'                                        => [(new Context)->articleRange(null, 3), [1,2,3]],
             'Not before article 19'                                      => [(new Context)->articleRange(19, null), [19,20]],
-            'Modified by author since 2005'                              => [(new Context)->modifiedRange("2005-01-01T00:00:00Z", null), [2,4,6,8,20]],
-            'Modified by author since 2010'                              => [(new Context)->modifiedRange("2010-01-01T00:00:00Z", null), [2,4,6,8,20]],
-            'Not modified by author since 2005'                          => [(new Context)->modifiedRange(null, "2005-01-01T00:00:00Z"), [1,3,5,7,19]],
-            'Not modified by author since 2000'                          => [(new Context)->modifiedRange(null, "2000-01-01T00:00:00Z"), [1,3,5,7,19]],
+            'Modified in database since 2005'                            => [(new Context)->modifiedRange("2005-01-01T00:00:00Z", null), [2,4,6,8,20]],
+            'Modified in database since 2010'                            => [(new Context)->modifiedRange("2010-01-01T00:00:00Z", null), [2,4,6,8,20]],
+            'Not modified in database since 2005'                        => [(new Context)->modifiedRange(null, "2005-01-01T00:00:00Z"), [1,3,5,7,19]],
+            'Not modified in database since 2000'                        => [(new Context)->modifiedRange(null, "2000-01-01T00:00:00Z"), [1,3,5,7,19]],
+            'Added to database since 1905'                               => [(new Context)->addedRange("1905-01-01T00:00:00Z", null), [2,4,6,8,20]],
+            'Added to database since 1910'                               => [(new Context)->addedRange("1910-01-01T00:00:00Z", null), [2,4,6,8,20]],
+            'Not added to database since 1905'                           => [(new Context)->addedRange(null, "1905-01-01T00:00:00Z"), [1,3,5,7,19]],
+            'Not added to database since 1900'                           => [(new Context)->addedRange(null, "1900-01-01T00:00:00Z"), [1,3,5,7,19]],
+            'Published since 1805'                                       => [(new Context)->publishedRange("1805-01-01T00:00:00Z", null), [2,4,6,8,20]],
+            'Published since 1810'                                       => [(new Context)->publishedRange("1810-01-01T00:00:00Z", null), [2,4,6,8,20]],
+            'Not Published since 1805'                                   => [(new Context)->publishedRange(null, "1805-01-01T00:00:00Z"), [1,3,5,7,19]],
+            'Not Published since 1800'                                   => [(new Context)->publishedRange(null, "1800-01-01T00:00:00Z"), [1,3,5,7,19]],
             'Marked or labelled since 2014'                              => [(new Context)->markedRange("2014-01-01T00:00:00Z", null), [8,19]],
             'Marked or labelled since 2010'                              => [(new Context)->markedRange("2010-01-01T00:00:00Z", null), [2,4,6,8,19,20]],
             'Not marked or labelled since 2014'                          => [(new Context)->markedRange(null, "2014-01-01T00:00:00Z"), [1,2,3,4,5,6,7,20]],
@@ -495,6 +458,7 @@ trait SeriesArticle {
             'With label "Fascinating"'                                   => [(new Context)->labelName("Fascinating"), [1,5,20]],
             'With label "Interesting" or "Fascinating"'                  => [(new Context)->labelNames(["Interesting","Fascinating"]), [1,5,19,20]],
             'Article ID 20'                                              => [(new Context)->article(20), [20]],
+            'Edition ID 20'                                              => [(new Context)->edition(20), []],
             'Edition ID 1001'                                            => [(new Context)->edition(1001), [20]],
             'Multiple articles'                                          => [(new Context)->articles([1,20,50]), [1,20]],
             'Multiple starred articles'                                  => [(new Context)->articles([1,2,3])->starred(true), [1]],
@@ -553,6 +517,14 @@ trait SeriesArticle {
             'Not modified in 2010 or 2015'                               => [(new Context)->not->modifiedRanges([["2010-01-01T00:00:00Z", "2010-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", "2015-12-31T23:59:59Z"]]), [1,3,5,7,19]],
             'Modified prior to 2010 or since 2015'                       => [(new Context)->modifiedRanges([[null, "2009-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", null]]), [1,3,5,7,19]],
             'Not modified prior to 2010 or since 2015'                   => [(new Context)->not->modifiedRanges([[null, "2009-12-31T23:59:59Z"], ["2015-01-01T00:00:00Z", null]]), [2,4,6,8,20]],
+            'Added in 1910 or 1915'                                      => [(new Context)->addedRanges([["1910-01-01T00:00:00Z", "1910-12-31T23:59:59Z"], ["1915-01-01T00:00:00Z", "1915-12-31T23:59:59Z"]]), [2,4,6,8,20]],
+            'Not added in 1910 or 1915'                                  => [(new Context)->not->addedRanges([["1910-01-01T00:00:00Z", "1910-12-31T23:59:59Z"], ["1915-01-01T00:00:00Z", "1915-12-31T23:59:59Z"]]), [1,3,5,7,19]],
+            'Added prior to 1910 or since 1915'                          => [(new Context)->addedRanges([[null, "1909-12-31T23:59:59Z"], ["1915-01-01T00:00:00Z", null]]), [1,3,5,7,19]],
+            'Not added prior to 1910 or since 1915'                      => [(new Context)->not->addedRanges([[null, "1909-12-31T23:59:59Z"], ["1915-01-01T00:00:00Z", null]]), [2,4,6,8,20]],
+            'Published in 1810 or 1815'                                  => [(new Context)->publishedRanges([["1810-01-01T00:00:00Z", "1810-12-31T23:59:59Z"], ["1815-01-01T00:00:00Z", "1815-12-31T23:59:59Z"]]), [2,4,6,8,20]],
+            'Not published in 1810 or 1815'                              => [(new Context)->not->publishedRanges([["1810-01-01T00:00:00Z", "1810-12-31T23:59:59Z"], ["1815-01-01T00:00:00Z", "1815-12-31T23:59:59Z"]]), [1,3,5,7,19]],
+            'Published prior to 1810 or since 1815'                      => [(new Context)->publishedRanges([[null, "1809-12-31T23:59:59Z"], ["1815-01-01T00:00:00Z", null]]), [1,3,5,7,19]],
+            'Not published prior to 1810 or since 1815'                  => [(new Context)->not->publishedRanges([[null, "1809-12-31T23:59:59Z"], ["1815-01-01T00:00:00Z", null]]), [2,4,6,8,20]],
             'Either read or hidden'                                      => [(new UnionContext((new Context)->unread(false), (new Context)->hidden(true))), [1, 6, 19]],
         ];
     }
@@ -573,16 +545,6 @@ trait SeriesArticle {
             6    => 6,
             7    => 7,
             8    => 8,
-            9    => 9,
-            10   => 10,
-            11   => 11,
-            12   => 12,
-            13   => 13,
-            14   => 14,
-            15   => 15,
-            16   => 16,
-            17   => 17,
-            18   => 18,
             19   => 19,
             20   => 20,
             101  => 101,
@@ -590,14 +552,28 @@ trait SeriesArticle {
             103  => 103,
             104  => 104,
             105  => 105,
+            119  => 119,
+            120  => 120,
             202  => 102,
             203  => 103,
             204  => 104,
             205  => 105,
             305  => 105,
+            501  => 501,
+            502  => 502,
+            519  => 519,
+            520  => 520,
+            801  => 801,
+            802  => 802,
+            902  => 802,
+            999  => 999,
             1001 => 20,
         ];
-        $this->assertEquals($exp, Arsse::$db->editionArticle(...range(1, 1001)));
+        $act = Arsse::$db->editionArticle(...range(1, 1001));
+        $act = array_map(function($v) {
+            return (int) $v;
+        }, $act);
+        $this->assertEquals($exp, $act);
     }
 
 
@@ -621,6 +597,11 @@ trait SeriesArticle {
     public function testListArticlesOfAMissingSubscription(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->articleList($this->user, (new Context)->subscription(1));
+    }
+
+    public function testListArticlesOfADeletedSubscription(): void {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Arsse::$db->articleList($this->user, (new Context)->subscription(16));
     }
 
     //#[CoversMethod(Database::class, "articleList")]
@@ -687,10 +668,10 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => false]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][9][2] = 0;
-        $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][11][2] = 0;
-        $state['arsse_marks']['rows'][11][4] = $now;
+        $state['arsse_articles']['rows'][20][1] = 0;
+        $state['arsse_articles']['rows'][20][4] = $now;
+        $state['arsse_articles']['rows'][22][1] = 0;
+        $state['arsse_articles']['rows'][22][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -704,14 +685,12 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][8][2] = 1;
-        $state['arsse_marks']['rows'][8][4] = $now;
-        $state['arsse_marks']['rows'][10][2] = 1;
-        $state['arsse_marks']['rows'][10][4] = $now;
-        $state['arsse_marks']['rows'][] = [13,5,1,0,$now,'',0];
-        $state['arsse_marks']['rows'][] = [13,6,1,0,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,7,1,0,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,8,1,0,$now,'',0];
+        $state['arsse_articles']['rows'][19] = [119,1,0,0,$now,"ook"];
+        $state['arsse_articles']['rows'][21] = [203,1,1,0,$now,"ack"];
+        $state['arsse_articles']['rows'][23] = [205,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,1,0,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -725,10 +704,10 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['starred' => false]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][10][3] = 0;
-        $state['arsse_marks']['rows'][10][4] = $now;
-        $state['arsse_marks']['rows'][11][3] = 0;
-        $state['arsse_marks']['rows'][11][4] = $now;
+        $state['arsse_articles']['rows'][21][2] = 0;
+        $state['arsse_articles']['rows'][21][4] = $now;
+        $state['arsse_articles']['rows'][22][2] = 0;
+        $state['arsse_articles']['rows'][22][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -742,14 +721,12 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['starred' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][8][3] = 1;
-        $state['arsse_marks']['rows'][8][4] = $now;
-        $state['arsse_marks']['rows'][9][3] = 1;
-        $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][] = [13,5,0,1,$now,'',0];
-        $state['arsse_marks']['rows'][] = [13,6,0,1,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,8,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][19] = [119,0,1,0,$now,"ook"];
+        $state['arsse_articles']['rows'][20] = [120,1,1,0,$now,"eek"];
+        $state['arsse_articles']['rows'][23] = [205,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -763,13 +740,9 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => false]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][9][2] = 0;
-        $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][10][3] = 0;
-        $state['arsse_marks']['rows'][10][4] = $now;
-        $state['arsse_marks']['rows'][11][2] = 0;
-        $state['arsse_marks']['rows'][11][3] = 0;
-        $state['arsse_marks']['rows'][11][4] = $now;
+        $state['arsse_articles']['rows'][20] = [120,0,0,0,$now,"eek"];
+        $state['arsse_articles']['rows'][21] = [203,0,0,0,$now,"ack"];
+        $state['arsse_articles']['rows'][22] = [204,0,0,0,$now,"ach"];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -783,17 +756,13 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => true,'starred' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][8][2] = 1;
-        $state['arsse_marks']['rows'][8][3] = 1;
-        $state['arsse_marks']['rows'][8][4] = $now;
-        $state['arsse_marks']['rows'][9][3] = 1;
-        $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][10][2] = 1;
-        $state['arsse_marks']['rows'][10][4] = $now;
-        $state['arsse_marks']['rows'][] = [13,5,1,1,$now,'',0];
-        $state['arsse_marks']['rows'][] = [13,6,1,1,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,7,1,1,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,8,1,1,$now,'',0];
+        $state['arsse_articles']['rows'][19] = [119,1,1,0,$now,"ook"];
+        $state['arsse_articles']['rows'][20] = [120,1,1,0,$now,"eek"];
+        $state['arsse_articles']['rows'][21] = [203,1,1,0,$now,"ack"];
+        $state['arsse_articles']['rows'][23] = [205,1,1,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,1,1,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,1,1,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,1,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -807,17 +776,13 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][8][3] = 1;
-        $state['arsse_marks']['rows'][8][4] = $now;
-        $state['arsse_marks']['rows'][9][2] = 0;
-        $state['arsse_marks']['rows'][9][3] = 1;
-        $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][11][2] = 0;
-        $state['arsse_marks']['rows'][11][4] = $now;
-        $state['arsse_marks']['rows'][] = [13,5,0,1,$now,'',0];
-        $state['arsse_marks']['rows'][] = [13,6,0,1,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,8,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][19] = [119,0,1,0,$now,"ook"];
+        $state['arsse_articles']['rows'][20] = [120,0,1,0,$now,"eek"];
+        $state['arsse_articles']['rows'][22] = [204,0,1,0,$now,"ach"];
+        $state['arsse_articles']['rows'][23] = [205,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -831,17 +796,13 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => true,'starred' => false]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][8][2] = 1;
-        $state['arsse_marks']['rows'][8][4] = $now;
-        $state['arsse_marks']['rows'][10][2] = 1;
-        $state['arsse_marks']['rows'][10][3] = 0;
-        $state['arsse_marks']['rows'][10][4] = $now;
-        $state['arsse_marks']['rows'][11][3] = 0;
-        $state['arsse_marks']['rows'][11][4] = $now;
-        $state['arsse_marks']['rows'][] = [13,5,1,0,$now,'',0];
-        $state['arsse_marks']['rows'][] = [13,6,1,0,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,7,1,0,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,8,1,0,$now,'',0];
+        $state['arsse_articles']['rows'][19] = [119,1,0,0,$now,"ook"];
+        $state['arsse_articles']['rows'][21] = [203,1,0,0,$now,"ack"];
+        $state['arsse_articles']['rows'][22] = [204,1,0,0,$now,"ach"];
+        $state['arsse_articles']['rows'][23] = [205,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,1,0,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -855,18 +816,14 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['note' => "New note"]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][8][5] = "New note";
-        $state['arsse_marks']['rows'][8][4] = $now;
-        $state['arsse_marks']['rows'][9][5] = "New note";
-        $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][10][5] = "New note";
-        $state['arsse_marks']['rows'][10][4] = $now;
-        $state['arsse_marks']['rows'][11][5] = "New note";
-        $state['arsse_marks']['rows'][11][4] = $now;
-        $state['arsse_marks']['rows'][] = [13,5,0,0,$now,'New note',0];
-        $state['arsse_marks']['rows'][] = [13,6,0,0,$now,'New note',0];
-        $state['arsse_marks']['rows'][] = [14,7,0,0,$now,'New note',0];
-        $state['arsse_marks']['rows'][] = [14,8,0,0,$now,'New note',0];
+        $state['arsse_articles']['rows'][19] = [119,0,0,0,$now,"New note"];
+        $state['arsse_articles']['rows'][20] = [120,1,0,0,$now,"New note"];
+        $state['arsse_articles']['rows'][21] = [203,0,1,0,$now,"New note"];
+        $state['arsse_articles']['rows'][22] = [204,1,1,0,$now,"New note"];
+        $state['arsse_articles']['rows'][23] = [205,0,0,0,$now,"New note"];
+        $state['arsse_articles']['rows'][24] = [206,0,0,0,$now,"New note"];
+        $state['arsse_articles']['rows'][25] = [207,0,0,0,$now,"New note"];
+        $state['arsse_articles']['rows'][26] = [208,0,0,0,$now,"New note"];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -880,10 +837,10 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->folder(7));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][] = [13,5,1,0,$now,'',0];
-        $state['arsse_marks']['rows'][] = [13,6,1,0,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,7,1,0,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,8,1,0,$now,'',0];
+        $state['arsse_articles']['rows'][23] = [205,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,1,0,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -897,8 +854,8 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->folder(8));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][] = [13,5,1,0,$now,'',0];
-        $state['arsse_marks']['rows'][] = [13,6,1,0,$now,'',0];
+        $state['arsse_articles']['rows'][23] = [205,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,1,0,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -917,8 +874,8 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->subscription(13));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][] = [13,5,1,0,$now,'',0];
-        $state['arsse_marks']['rows'][] = [13,6,1,0,$now,'',0];
+        $state['arsse_articles']['rows'][23] = [205,1,0,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,1,0,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -930,7 +887,12 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAMissingSubscription(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
-        Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->folder(2112));
+        Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->subscription(1));
+    }
+
+    public function testMarkADeletedSubscription(): void {
+        $this->assertException("idMissing", "Db", "ExceptionInput");
+        Arsse::$db->articleMark("john.doe@example.com", ['read' => true], (new Context)->subscription(16));
     }
 
     //#[CoversMethod(Database::class, "articleMark")]
@@ -940,11 +902,11 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAnArticle(): void {
-        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->article(20));
+        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->article(120));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][9][3] = 1;
-        $state['arsse_marks']['rows'][9][4] = $now;
+        $state['arsse_articles']['rows'][20][2] = 1;
+        $state['arsse_articles']['rows'][20][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -955,12 +917,11 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleArticles(): void {
-        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->articles([2,4,7,20]));
+        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->articles([202,204,207,120]));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][9][3] = 1;
-        $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][20] = [120,1,1,0,$now,"eek"];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -971,15 +932,12 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleArticlessUnreadAndStarred(): void {
-        Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->articles([2,4,7,20]));
+        Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->articles([202,204,207,120]));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][9][2] = 0;
-        $state['arsse_marks']['rows'][9][3] = 1;
-        $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][11][2] = 0;
-        $state['arsse_marks']['rows'][11][4] = $now;
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][20] = [120,0,1,0,$now,"eek"];
+        $state['arsse_articles']['rows'][22] = [204,0,1,0,$now,"ach"];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -991,7 +949,7 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkTooManyMultipleArticles(): void {
         $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
-        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->articles(range(1, $setSize * 3))));
+        $this->assertSame(7, Arsse::$db->articleMark("john.doe@example.com", ['read' => false,'starred' => true], (new Context)->articles(range(3, $setSize * 3))));
     }
 
     //#[CoversMethod(Database::class, "articleMark")]
@@ -1005,6 +963,11 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->article(1));
     }
 
+    public function testMarkAnArticleOfADeletedSubscription(): void {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->articleMark("john.doe@example.com", ['starred' => true], (new Context)->article(999));
+    }
+
     //#[CoversMethod(Database::class, "articleMark")]
     //#[CoversMethod(Database::class, "articleQuery")]
     //#[CoversMethod(Database::class, "articleValidateId")]
@@ -1012,11 +975,11 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAnEdition(): void {
-        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(1001));
+        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(1101));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][9][3] = 1;
-        $state['arsse_marks']['rows'][9][4] = $now;
+        $state['arsse_articles']['rows'][20][2] = 1;
+        $state['arsse_articles']['rows'][20][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1027,12 +990,11 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditions(): void {
-        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editions([2,4,7,20]));
+        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editions([2202,2204,2207,120]));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][9][3] = 1;
-        $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][20] = [120,1,1,0,$now,"eek"];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1043,7 +1005,7 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleMissingEditions(): void {
-        $this->assertSame(0, Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editions([500,501])));
+        $this->assertSame(0, Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editions([56458, 1851855])));
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
@@ -1055,13 +1017,11 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditionsUnread(): void {
-        Arsse::$db->articleMark($this->user, ['read' => false], (new Context)->editions([2,4,7,1001]));
+        Arsse::$db->articleMark($this->user, ['read' => false], (new Context)->editions([2202,2204,2207,1101]));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][9][2] = 0;
-        $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][11][2] = 0;
-        $state['arsse_marks']['rows'][11][4] = $now;
+        $state['arsse_articles']['rows'][20] = [120,0,0,0,$now,"eek"];
+        $state['arsse_articles']['rows'][22] = [204,0,1,0,$now,"ach"];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1072,11 +1032,11 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditionsUnreadWithStale(): void {
-        Arsse::$db->articleMark($this->user, ['read' => false], (new Context)->editions([2,4,7,20]));
+        Arsse::$db->articleMark($this->user, ['read' => false], (new Context)->editions([2202,2204,2207,120]));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][11][2] = 0;
-        $state['arsse_marks']['rows'][11][4] = $now;
+        $state['arsse_articles']['rows'][22][1] = 0;
+        $state['arsse_articles']['rows'][22][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1087,14 +1047,12 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditionsUnreadAndStarredWithStale(): void {
-        Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->editions([2,4,7,20]));
+        Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->editions([2202,2204,2207,120]));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][9][3] = 1;
-        $state['arsse_marks']['rows'][9][4] = $now;
-        $state['arsse_marks']['rows'][11][2] = 0;
-        $state['arsse_marks']['rows'][11][4] = $now;
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][20] = [120,1,1,0,$now,"eek"];
+        $state['arsse_articles']['rows'][22] = [204,0,1,0,$now,"ach"];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1105,7 +1063,7 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkTooManyMultipleEditions(): void {
-        $this->assertSame(7, Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->editions(range(1, 51))));
+        $this->assertSame(7, Arsse::$db->articleMark("john.doe@example.com", ['read' => false,'starred' => true], (new Context)->editions(range(3, 51))));
     }
 
     //#[CoversMethod(Database::class, "articleMark")]
@@ -1114,7 +1072,7 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleValidateEdition")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnread(): void {
-        Arsse::$db->articleMark($this->user, ['read' => false], (new Context)->edition(20)); // no changes occur
+        Arsse::$db->articleMark($this->user, ['read' => false], (new Context)->edition(120)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
@@ -1126,11 +1084,11 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionStarred(): void {
-        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(20));
+        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(120));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][9][3] = 1;
-        $state['arsse_marks']['rows'][9][4] = $now;
+        $state['arsse_articles']['rows'][20][2] = 1;
+        $state['arsse_articles']['rows'][20][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1141,11 +1099,11 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnreadAndStarred(): void {
-        Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->edition(20)); // only starred is changed
+        Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->edition(120)); // only starred is changed
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][9][3] = 1;
-        $state['arsse_marks']['rows'][9][4] = $now;
+        $state['arsse_articles']['rows'][20][2] = 1;
+        $state['arsse_articles']['rows'][20][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1156,7 +1114,7 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnreadAndUnstarred(): void {
-        Arsse::$db->articleMark($this->user, ['read' => false,'starred' => false], (new Context)->edition(20)); // no changes occur
+        Arsse::$db->articleMark($this->user, ['read' => false,'starred' => false], (new Context)->edition(120)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
@@ -1172,6 +1130,11 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(2));
     }
 
+    public function testMarkAnEditionOfADeletedSubscription(): void {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->articleMark("john.doe@example.com", ['starred' => false], (new Context)->edition(999));
+    }
+
     //#[CoversMethod(Database::class, "articleMark")]
     //#[CoversMethod(Database::class, "articleQuery")]
     //#[CoversMethod(Database::class, "articleValidateId")]
@@ -1179,13 +1142,13 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkByOldestEdition(): void {
-        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editionRange(19, null));
+        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editionRange(2205, null));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][8][3] = 1;
-        $state['arsse_marks']['rows'][8][4] = $now;
-        $state['arsse_marks']['rows'][9][3] = 1;
-        $state['arsse_marks']['rows'][9][4] = $now;
+        $state['arsse_articles']['rows'][23] = [205,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][24] = [206,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][26] = [208,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1196,15 +1159,11 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkByLatestEdition(): void {
-        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editionRange(null, 20));
+        Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editionRange(null, 120));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][8][3] = 1;
-        $state['arsse_marks']['rows'][8][4] = $now;
-        $state['arsse_marks']['rows'][] = [13,5,0,1,$now,'',0];
-        $state['arsse_marks']['rows'][] = [13,6,0,1,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,8,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][19][2] = 1;
+        $state['arsse_articles']['rows'][19][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1218,10 +1177,10 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->markedRange('2017-01-01T00:00:00Z', null));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][8][3] = 1;
-        $state['arsse_marks']['rows'][8][4] = $now;
-        $state['arsse_marks']['rows'][9][3] = 1;
-        $state['arsse_marks']['rows'][9][4] = $now;
+        $state['arsse_articles']['rows'][19][2] = 1;
+        $state['arsse_articles']['rows'][19][4] = $now;
+        $state['arsse_articles']['rows'][20][2] = 1;
+        $state['arsse_articles']['rows'][20][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1235,8 +1194,8 @@ trait SeriesArticle {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->markedRange(null, '2000-01-01T00:00:00Z'));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][] = [13,5,0,1,$now,'',0];
-        $state['arsse_marks']['rows'][] = [14,7,0,1,$now,'',0];
+        $state['arsse_articles']['rows'][23] = [205,0,1,0,$now,""];
+        $state['arsse_articles']['rows'][25] = [207,0,1,0,$now,""];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1264,8 +1223,8 @@ trait SeriesArticle {
 
     //#[CoversMethod(Database::class, "editionLatest")]
     public function testFetchLatestEdition(): void {
-        $this->assertSame(1001, Arsse::$db->editionLatest($this->user));
-        $this->assertSame(4, Arsse::$db->editionLatest($this->user, (new Context)->subscription(12)));
+        $this->assertSame(2208, Arsse::$db->editionLatest($this->user));
+        $this->assertSame(2204, Arsse::$db->editionLatest($this->user, (new Context)->subscription(12)));
         $this->assertSame(5, Arsse::$db->editionLatest("john.doe@example.com", (new Context)->subscription(3)->hidden(false)));
     }
 
@@ -1294,11 +1253,11 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleCategoriesGet")]
     public function testListTheCategoriesOfAnArticle(): void {
         $exp = ["Fascinating", "Logical"];
-        $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 19));
+        $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 119));
         $exp = ["Interesting", "Logical"];
-        $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 20));
+        $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 120));
         $exp = [];
-        $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 4));
+        $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 204));
     }
 
     //#[CoversMethod(Database::class, "articleCategoriesGet")]
@@ -1341,10 +1300,10 @@ trait SeriesArticle {
         Arsse::$db->articleMark("jane.doe@example.com", ['hidden' => false]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][14][6] = 0;
-        $state['arsse_marks']['rows'][14][4] = $now;
-        $state['arsse_marks']['rows'][15][6] = 0;
-        $state['arsse_marks']['rows'][15][4] = $now;
+        $state['arsse_articles']['rows'][10][3] = 0;
+        $state['arsse_articles']['rows'][10][4] = $now;
+        $state['arsse_articles']['rows'][11][3] = 0;
+        $state['arsse_articles']['rows'][11][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1358,9 +1317,10 @@ trait SeriesArticle {
         Arsse::$db->articleMark("jane.doe@example.com", ['hidden' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][3][6] = 1;
-        $state['arsse_marks']['rows'][3][4] = $now;
-        $state['arsse_marks']['rows'][] = [7,19,0,0,$now,'',1];
+        $state['arsse_articles']['rows'][12][3] = 1;
+        $state['arsse_articles']['rows'][12][4] = $now;
+        $state['arsse_articles']['rows'][13][3] = 1;
+        $state['arsse_articles']['rows'][13][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1374,13 +1334,9 @@ trait SeriesArticle {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false, 'hidden' => false]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][3][2] = 0;
-        $state['arsse_marks']['rows'][3][4] = $now;
-        $state['arsse_marks']['rows'][14][6] = 0;
-        $state['arsse_marks']['rows'][14][4] = $now;
-        $state['arsse_marks']['rows'][15][2] = 0;
-        $state['arsse_marks']['rows'][15][6] = 0;
-        $state['arsse_marks']['rows'][15][4] = $now;
+        $state['arsse_articles']['rows'][10] = [501,0,1,0,$now,''];
+        $state['arsse_articles']['rows'][11] = [502,0,0,0,$now,''];
+        $state['arsse_articles']['rows'][13] = [520,0,0,0,$now,''];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1394,11 +1350,9 @@ trait SeriesArticle {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => true, 'hidden' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][3][6] = 1;
-        $state['arsse_marks']['rows'][3][4] = $now;
-        $state['arsse_marks']['rows'][14][2] = 1;
-        $state['arsse_marks']['rows'][14][4] = $now;
-        $state['arsse_marks']['rows'][] = [7,19,1,0,$now,'',1];
+        $state['arsse_articles']['rows'][10] = [501,1,1,1,$now,''];
+        $state['arsse_articles']['rows'][12] = [519,1,0,1,$now,''];
+        $state['arsse_articles']['rows'][13] = [520,1,0,1,$now,''];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1412,12 +1366,9 @@ trait SeriesArticle {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][3][2] = 0;
-        $state['arsse_marks']['rows'][3][6] = 1;
-        $state['arsse_marks']['rows'][3][4] = $now;
-        $state['arsse_marks']['rows'][15][2] = 0;
-        $state['arsse_marks']['rows'][15][4] = $now;
-        $state['arsse_marks']['rows'][] = [7,19,0,0,$now,'',1];
+        $state['arsse_articles']['rows'][11] = [502,0,0,1,$now,''];
+        $state['arsse_articles']['rows'][12] = [519,0,0,1,$now,''];
+        $state['arsse_articles']['rows'][13] = [520,0,0,1,$now,''];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1431,12 +1382,9 @@ trait SeriesArticle {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => true,'hidden' => false]);
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][14][2] = 1;
-        $state['arsse_marks']['rows'][14][6] = 0;
-        $state['arsse_marks']['rows'][14][4] = $now;
-        $state['arsse_marks']['rows'][15][6] = 0;
-        $state['arsse_marks']['rows'][15][4] = $now;
-        $state['arsse_marks']['rows'][] = [7,19,1,0,$now,'',0];
+        $state['arsse_articles']['rows'][10] = [501,1,1,0,$now,''];
+        $state['arsse_articles']['rows'][11] = [502,1,0,0,$now,''];
+        $state['arsse_articles']['rows'][12] = [519,1,0,0,$now,''];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1447,15 +1395,12 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditionsUnreadAndHiddenWithStale(): void {
-        Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true], (new Context)->editions([1,2,19,20]));
+        Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true], (new Context)->editions([501,502,519,520]));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][3][6] = 1;
-        $state['arsse_marks']['rows'][3][4] = $now;
-        $state['arsse_marks']['rows'][15][2] = 0;
-        $state['arsse_marks']['rows'][15][6] = 1;
-        $state['arsse_marks']['rows'][15][4] = $now;
-        $state['arsse_marks']['rows'][] = [7,19,0,0,$now,'',1];
+        $state['arsse_articles']['rows'][11] = [502,0,0,1,$now,''];
+        $state['arsse_articles']['rows'][12] = [519,0,0,1,$now,''];
+        $state['arsse_articles']['rows'][13] = [520,1,0,1,$now,''];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1466,11 +1411,11 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionHidden(): void {
-        Arsse::$db->articleMark("jane.doe@example.com", ['hidden' => true], (new Context)->edition(20));
+        Arsse::$db->articleMark("jane.doe@example.com", ['hidden' => true], (new Context)->edition(520));
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][3][6] = 1;
-        $state['arsse_marks']['rows'][3][4] = $now;
+        $state['arsse_articles']['rows'][13][3] = 1;
+        $state['arsse_articles']['rows'][13][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1481,11 +1426,11 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnreadAndHidden(): void {
-        Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true], (new Context)->edition(20)); // only starred is changed
+        Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true], (new Context)->edition(520)); // only hidden is changed
         $now = Date::transform(time(), "sql");
         $state = $this->primeExpectations($this->data, $this->checkTables);
-        $state['arsse_marks']['rows'][3][6] = 1;
-        $state['arsse_marks']['rows'][3][4] = $now;
+        $state['arsse_articles']['rows'][13][3] = 1;
+        $state['arsse_articles']['rows'][13][4] = $now;
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -1496,7 +1441,7 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnreadAndNotHidden(): void {
-        Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => false], (new Context)->edition(20)); // no changes occur
+        Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => false], (new Context)->edition(520)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
@@ -1514,8 +1459,8 @@ trait SeriesArticle {
         ];
         $this->assertResult($exp, Arsse::$db->articleList("john.doe@example.org", (new Context)->subscription(8), ["id", "content"]));
         $exp = [
-            ['id' => 101, 'content' => "<p>Scraped content 1</p>"],
-            ['id' => 102, 'content' => "<p>Article content 2</p>"],
+            ['id' => 801, 'content' => "<p>Scraped content 1</p>"],
+            ['id' => 802, 'content' => "<p>Article content 2</p>"],
         ];
         $this->assertResult($exp, Arsse::$db->articleList("jill.doe@example.com", (new Context)->subscription(15), ["id", "content"]));
     }
@@ -1528,12 +1473,12 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleFilter")]
     public function testSearchScrapedContent(): void {
         $exp = [
-            ['id' => 101, 'content' => "<p>Scraped content 1</p>"],
-            ['id' => 102, 'content' => "<p>Article content 2</p>"],
+            ['id' => 801, 'content' => "<p>Scraped content 1</p>"],
+            ['id' => 802, 'content' => "<p>Article content 2</p>"],
         ];
         $this->assertResult($exp, Arsse::$db->articleList("jill.doe@example.com", (new Context)->subscription(15)->searchTerms(["article"]), ["id", "content"]));
         $exp = [
-            ['id' => 101, 'content' => "<p>Scraped content 1</p>"],
+            ['id' => 801, 'content' => "<p>Scraped content 1</p>"],
         ];
         $this->assertResult($exp, Arsse::$db->articleList("jill.doe@example.com", (new Context)->subscription(15)->searchTerms(["scraped"]), ["id", "content"]));
     }

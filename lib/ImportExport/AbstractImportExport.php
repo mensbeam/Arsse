@@ -35,9 +35,18 @@ abstract class AbstractImportExport {
                 $folderMap[$f['parent']][$f['name']] = true;
             }
         }
-        // get feed IDs for each URL, adding feeds where necessary
+        // add any new feeds, and try an initial fetch on them
+        $feedMap = [];
         foreach ($feeds as $k => $f) {
-            $feeds[$k]['id'] = Arsse::$db->feedAdd(($f['url']));
+            try {
+                $feedMap[$k] = Arsse::$db->subscriptionReserve($user, $f['url']);
+            } catch (InputException $e) {
+                // duplication is not an error in this case
+            }
+        }
+        foreach ($feedMap as $f) {
+            // this may fail with an exception, halting the process before visible modifications are made to the database
+            Arsse::$db->subscriptionUpdate($user, $f, true);
         }
         // start a transaction for atomic rollback
         $tr = Arsse::$db->begin();
@@ -62,27 +71,26 @@ abstract class AbstractImportExport {
             }
         }
         // process newsfeed subscriptions
-        $feedMap = [];
         $tagMap = [];
-        foreach ($feeds as $f) {
+        foreach ($feeds as $k => $f) {
             $folder = $folderMap[$f['folder']];
             $title = strlen(trim($f['title'])) ? $f['title'] : null;
-            $found = false;
-            // find a match for the import feed is existing subscriptions
-            foreach ($feedsDb as $db) {
-                if ((int) $db['feed'] == $f['id']) {
-                    $found = true;
-                    $feedMap[$f['id']] = (int) $db['id'];
-                    break;
+            $new = false;
+            // find a match for the import feed in existing subscriptions, if necessary; reveal the subscription if it's just been added
+            if (!isset($feedMap[$k])) {
+                foreach ($feedsDb as $db) {
+                    if ($db['url'] === $f['url']) {
+                        $feedMap[$k] = (int) $db['id'];
+                        break;
+                    }
                 }
+            } else {
+                $new = true;
+                Arsse::$db->subscriptionReveal($user, $feedMap[$k]);
             }
-            if (!$found) {
-                // if no subscription exists, add one
-                $feedMap[$f['id']] = Arsse::$db->subscriptionAdd($user, $f['url']);
-            }
-            if (!$found || $replace) {
+            if ($new || $replace) {
                 // set the subscription's properties, if this is a new feed or we're doing a full replacement
-                Arsse::$db->subscriptionPropertiesSet($user, $feedMap[$f['id']], ['title' => $title, 'folder' => $folder]);
+                Arsse::$db->subscriptionPropertiesSet($user, $feedMap[$k], ['title' => $title, 'folder' => $folder]);
                 // compile the set of used tags, if this is a new feed or we're doing a full replacement
                 foreach ($f['tags'] as $t) {
                     if (!strlen(trim($t))) {
@@ -93,7 +101,7 @@ abstract class AbstractImportExport {
                         // populate the tag map
                         $tagMap[$t] = [];
                     }
-                    $tagMap[$t][] = $f['id'];
+                    $tagMap[$t][] = $feedMap[$k];
                 }
             }
         }

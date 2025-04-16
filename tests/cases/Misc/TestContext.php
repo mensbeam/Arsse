@@ -19,8 +19,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 #[CoversClass(\JKingWeb\Arsse\Context\ExclusionContext::class)]
 #[CoversClass(\JKingWeb\Arsse\Context\UnionContext::class)]
 class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
-    protected $ranges = ['modifiedRange', 'markedRange', 'articleRange', 'editionRange'];
-    protected $times = ['modifiedRange', 'markedRange'];
+    protected $ranges = ['modifiedRange', 'markedRange', 'publishedRange', 'addedRange', 'articleRange', 'editionRange'];
+    protected $times = ['modifiedRange', 'markedRange', 'publishedRange', 'addedRange'];
 
     #[DataProvider("provideContextOptions")]
     public function testSetContextOptions(string $method, array $input, $output, bool $not): void {
@@ -91,6 +91,8 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'authorTerms'      => [[["foo", "bar"]],                                 ["foo", "bar"]],
             'modifiedRange'    => [["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"], ["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"]],
             'markedRange'      => [["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"], ["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"]],
+            'publishedRange'   => [["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"], ["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"]],
+            'addedRange'       => [["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"], ["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"]],
             'articleRange'     => [[1, 100],                                         [1, 100]],
             'editionRange'     => [[1, 100],                                         [1, 100]],
         ];
@@ -104,7 +106,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testCleanIdArrayValues(): void {
         $methods = ["articles", "editions", "tags", "labels", "subscriptions"];
-        $in = [1, "2", 3.5, 4.0, 4, "ook", 0, -20, true, false, null, new \DateTime(), -1.0];
+        $in = [1, "2", 3.5, 4.0, 4, "ook", 0, -20, true, false, null, new \DateTime, -1.0];
         $out = [1, 2, 4];
         $c = new Context;
         foreach ($methods as $method) {
@@ -114,7 +116,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testCleanFolderIdArrayValues(): void {
         $methods = ["folders", "foldersShallow"];
-        $in = [1, "2", 3.5, 4.0, 4, "ook", 0, -20, true, false, null, new \DateTime(), -1.0];
+        $in = [1, "2", 3.5, 4.0, 4, "ook", 0, -20, true, false, null, new \DateTime, -1.0];
         $out = [1, 2, 4, 0];
         $c = new Context;
         foreach ($methods as $method) {
@@ -134,7 +136,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testCleanDateRangeArrayValues(): void {
-        $methods = ["modifiedRanges", "markedRanges"];
+        $methods = ["modifiedRanges", "markedRanges", "publishedRanges", "addedRanges"];
         $in = [null, 1, [1, 2, 3], [1], [null, null], ["ook", null], ["2022-09-13T06:46:28 America/Los_angeles", new \DateTime("2022-01-23T00:33:49Z")], [0, null], [null, 0]];
         $out = [[Date::normalize("2022-09-13T13:46:28Z"), Date::normalize("2022-01-23T00:33:49Z")], [Date::normalize(0), null], [null, Date::normalize(0)]];
         $c = new Context;

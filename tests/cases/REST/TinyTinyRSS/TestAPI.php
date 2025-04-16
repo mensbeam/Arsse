@@ -725,20 +725,21 @@ LONG_STRING;
 
     public static function provideFeedSubscriptions(): iterable {
         return [
-            [['feed_url' => "http://example.com/0"],                                 [self::$userId, "http://example.com/0", "", ""],                         2,                                         self::respGood(['code' => 1, 'feed_id' => 2])],
-            [['feed_url' => "http://example.com/1", 'category_id' => 42],            [self::$userId, "http://example.com/1", "", ""],                         new FeedException("unauthorized"),         self::respGood(['code' => 5, 'message' => (new FeedException("unauthorized"))->getMessage()])],
-            [['feed_url' => "http://example.com/2", 'category_id' => 2112],          null,                                                                    null,                                      self::respGood(['code' => 1, 'feed_id' => 0])],
-            [['feed_url' => "http://example.com/3"],                                 [self::$userId, "http://example.com/3", "", ""],                         new ExceptionInput("constraintViolation"), self::respGood(['code' => 0, 'feed_id' => 3])],
-            [['feed_url' => "http://localhost:8000/Feed/Discovery/Valid"],           [self::$userId, "http://localhost:8000/Feed/Discovery/Valid", "", ""],   new ExceptionInput("constraintViolation"), self::respGood(['code' => 0, 'feed_id' => 1])],
-            [['feed_url' => "http://localhost:8000/Feed/Discovery/Invalid"],         [self::$userId, "http://localhost:8000/Feed/Discovery/Invalid", "", ""], new ExceptionInput("constraintViolation"), self::respGood(['code' => 3, 'message' => (new FeedException("subscriptionNotFound", ['url' => "http://localhost:8000/Feed/Discovery/Invalid"]))->getMessage()])],
-            [['feed_url' => "http://example.com/6"],                                 [self::$userId, "http://example.com/6", "", ""],                         new FeedException("invalidUrl"),           self::respGood(['code' => 2, 'message' => (new FeedException("invalidUrl"))->getMessage()])],
-            [['feed_url' => "http://example.com/7"],                                 [self::$userId, "http://example.com/7", "", ""],                         new FeedException("malformedXml"),         self::respGood(['code' => 6, 'message' => (new FeedException("malformedXml"))->getMessage()])],
-            [['feed_url' => "http://example.com/8", 'category_id' => 47],            [self::$userId, "http://example.com/8", "", ""],                         4,                                         self::respGood(['code' => 1, 'feed_id' => 4])],
-            [['feed_url' => "http://example.com/9", 'category_id' => 1],             [self::$userId, "http://example.com/9", "", ""],                         new ExceptionInput("constraintViolation"), self::respGood(['code' => 0, 'feed_id' => 4])],
-            [[],                                                                     null,                                                                    null,                                      self::respErr("INCORRECT_USAGE")],
-            [['feed_url' => "http://example.com/", 'login' => []],                   null,                                                                    null,                                      self::respErr("INCORRECT_USAGE")],
-            [['feed_url' => "http://example.com/", 'login' => "", 'password' => []], null,                                                                    null,                                      self::respErr("INCORRECT_USAGE")],
-            [['feed_url' => "http://example.com/", 'category_id' => -1],             null,                                                                    null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_url' => "http://example.com/0"],                                 [self::$userId, "http://example.com/0", true, ['username' => null, 'password' => null]],                         2,                                         self::respGood(['code' => 1, 'feed_id' => 2])],
+            [['feed_url' => "http://example.com/1", 'category_id' => 42],            [self::$userId, "http://example.com/1", true, ['username' => null, 'password' => null]],                         new FeedException("unauthorized"),         self::respGood(['code' => 5, 'message' => (new FeedException("unauthorized"))->getMessage()])],
+            [['feed_url' => "http://example.com/2", 'category_id' => 2112],          null,                                                                                                            null,                                      self::respGood(['code' => 1, 'feed_id' => 0])],
+            [['feed_url' => "http://example.com/3"],                                 [self::$userId, "http://example.com/3", true, ['username' => null, 'password' => null]],                         new ExceptionInput("constraintViolation"), self::respGood(['code' => 0, 'feed_id' => 3])],
+            [['feed_url' => "http://localhost:8000/Feed/Discovery/Valid"],           [self::$userId, "http://localhost:8000/Feed/Discovery/Valid", true, ['username' => null, 'password' => null]],   new ExceptionInput("constraintViolation"), self::respGood(['code' => 0, 'feed_id' => 1])],
+            [['feed_url' => "http://localhost:8000/Feed/Discovery/Invalid"],         [self::$userId, "http://localhost:8000/Feed/Discovery/Invalid", true, ['username' => null, 'password' => null]], new ExceptionInput("constraintViolation"), self::respGood(['code' => 3, 'message' => (new FeedException("subscriptionNotFound", ['url' => "http://localhost:8000/Feed/Discovery/Invalid"]))->getMessage()])],
+            [['feed_url' => "http://example.com/6"],                                 [self::$userId, "http://example.com/6", true, ['username' => null, 'password' => null]],                         new FeedException("invalidUrl"),           self::respGood(['code' => 2, 'message' => (new FeedException("invalidUrl"))->getMessage()])],
+            [['feed_url' => "http://example.com/7"],                                 [self::$userId, "http://example.com/7", true, ['username' => null, 'password' => null]],                         new FeedException("malformedXml"),         self::respGood(['code' => 6, 'message' => (new FeedException("malformedXml"))->getMessage()])],
+            [['feed_url' => "http://example.com/8", 'category_id' => 47],            [self::$userId, "http://example.com/8", true, ['username' => null, 'password' => null]],                         4,                                         self::respGood(['code' => 1, 'feed_id' => 4])],
+            [['feed_url' => "http://example.com/9", 'category_id' => 1],             [self::$userId, "http://example.com/9", true, ['username' => null, 'password' => null]],                         new ExceptionInput("constraintViolation"), self::respGood(['code' => 0, 'feed_id' => 4])],
+            [[],                                                                     null,                                                                                                            null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_url' => "http://example.com/", 'login' => []],                   null,                                                                                                            null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_url' => "http://example.com/", 'login' => "", 'password' => []], null,                                                                                                            null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_url' => "http://example.com/", 'category_id' => -1],             null,                                                                                                            null,                                      self::respErr("INCORRECT_USAGE")],
+            [['feed_url' => "relative"],                                             [self::$userId, "relative", true, ['username' => null, 'password' => null]],                                     new ExceptionInput("invalidValue"),        self::respGood(['code' => 2, 'message' => (new ExceptionInput("invalidValue"))->getMessage()])],
         ];
     }
 
@@ -841,30 +842,24 @@ LONG_STRING;
     }
 
     #[DataProvider("provideFeedUpdates")]
-    public function testUpdateAFeed(array $in, ?array $data, $out, ?int $id, ResponseInterface $exp): void {
+    public function testUpdateAFeed(array $in, ?array $data, $out, ResponseInterface $exp): void {
         $in = array_merge(['op' => "updateFeed", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->$action($out);
-        \Phake::when(Arsse::$db)->feedUpdate->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionUpdate->$action($out);
         $this->assertMessage($exp, $this->req($in));
         if ($data !== null) {
-            \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(...$data);
+            \Phake::verify(Arsse::$db)->subscriptionUpdate(...$data);
         } else {
-            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesGet(\Phake::anyParameters());
-        }
-        if ($id !== null) {
-            \Phake::verify(Arsse::$db)->feedUpdate($id);
-        } else {
-            \Phake::verify(Arsse::$db, \Phake::never())->feedUpdate(\Phake::anyParameters());
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionUpdate(\Phake::anyParameters());
         }
     }
 
     public static function provideFeedUpdates(): iterable {
         return [
-            [['feed_id' => 1],  [self::$userId, 1], self::v(['id' => 1, 'feed' => 11]),  11,   self::respGood(['status' => "OK"])],
-            [['feed_id' => 2],  [self::$userId, 2], new ExceptionInput("subjectMissing"), null, self::respErr("FEED_NOT_FOUND")],
-            [['feed_id' => -1], null,               null,                                 null, self::respErr("INCORRECT_USAGE")],
-            [[],                null,               null,                                 null, self::respErr("INCORRECT_USAGE")],
+            [['feed_id' => 1],  [self::$userId, 1], true,                                 self::respGood(['status' => "OK"])],
+            [['feed_id' => 2],  [self::$userId, 2], new ExceptionInput("subjectMissing"), self::respErr("FEED_NOT_FOUND")],
+            [['feed_id' => -1], null,               null,                                 self::respErr("INCORRECT_USAGE")],
+            [[],                null,               null,                                 self::respErr("INCORRECT_USAGE")],
         ];
     }
 

@@ -45,7 +45,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testPerformPreCleanup(): void {
         $this->assertTrue(Service::cleanupPre());
-        \Phake::verify(Arsse::$db)->feedCleanup(\Phake::anyParameters());
+        \Phake::verify(Arsse::$db)->subscriptionCleanup(\Phake::anyParameters());
         \Phake::verify(Arsse::$db)->iconCleanup(\Phake::anyParameters());
         \Phake::verify(Arsse::$db)->sessionCleanup(\Phake::anyParameters());
     }
@@ -67,7 +67,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testRefreshFeeds(): void {
         // set up mock database actions
         \Phake::when(Arsse::$db)->metaSet->thenReturn(true);
-        \Phake::when(Arsse::$db)->feedCleanup->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionCleanup->thenReturn(true);
         \Phake::when(Arsse::$db)->sessionCleanup->thenReturn(true);
         \Phake::when(Arsse::$db)->articleCleanup->thenReturn(0);
         \Phake::when(Arsse::$db)->feedListStale->thenReturn([1,2,3]);
@@ -79,7 +79,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($d)->queue(1, 2, 3);
         \Phake::verify($d)->exec(\Phake::anyParameters());
         \Phake::verify($d)->clean(\Phake::anyParameters());
-        \Phake::verify(Arsse::$db)->feedCleanup(\Phake::anyParameters());
+        \Phake::verify(Arsse::$db)->subscriptionCleanup(\Phake::anyParameters());
         \Phake::verify(Arsse::$db)->iconCleanup(\Phake::anyParameters());
         \Phake::verify(Arsse::$db)->sessionCleanup(\Phake::anyParameters());
         \Phake::verify(Arsse::$db)->articleCleanup(\Phake::anyParameters());

@@ -265,34 +265,12 @@ Administrators may manage other users via the Miniflux protocol,
 and also may trigger feed updates manually via the Nextcloud News protocol.
 .It Cm lang No (string)
 The preferred language of the user as a BCP 47 language tag, for example "en-ca".
-Note that since The Arsse currently only includes English text it is not used by The Arsse itself,
+Note that since The Arsse currently only includes English text this is effectively not used by The Arsse itself,
 but clients may use this metadatum in protocols which expose it.
 .It Cm tz No (string)
 The time zone of the user as a Time Zone Database identifier, for example "America/Los_Angeles".
 .It Cm root_folder_name No (string)
 The name of the root folder, in protocols which allow it to be renamed.
-.It Cm sort_asc No (boolean)
-Whether the user prefers ascending sort order for articles.
-Descending order is usually the default,
-but explicitly setting this property false will also make a preference for descending order explicit.
-.It Cm theme No (string)
-The user's preferred user-interface theme.
-This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
-.It Cm page_size No (integer)
-The user's preferred page size when listing articles.
-This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
-.It Cm shortcuts No (boolean)
-Whether to enable keyboard shortcuts.
-This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
-.It Cm gestures No (boolean)
-Whether to enable touch gestures.
-This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
-.It Cm reading_time No (boolean)
-Whether to calculate and display the estimated reading time for articles.
-Currently The Arsse does not calculate reading time, so changing this will likely have no effect.
-.It Cm stylesheet No (string)
-A user stylesheet in CSS format.
-This is not used by The Arsse itself, but clients may use this metadatum in protocols which expose it.
 .El
 .
 .

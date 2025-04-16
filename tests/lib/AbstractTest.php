@@ -17,7 +17,6 @@ use JKingWeb\Arsse\Db\Driver;
 use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Factory;
 use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\Misc\URL;
 use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\MessageInterface;
@@ -29,6 +28,145 @@ use PHPUnit\Framework\Attributes\CoversClass;
 
 #[CoversClass(Database::class)]
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
+    protected const COL_DEFS = [
+        'arsse_meta' => [
+            'key'   => "str",
+            'value' => "str",
+        ],
+        'arsse_users' => [
+            'id'       => "str",
+            'password' => "str",
+            'num'      => "int",
+            'admin'    => "bool",
+        ],
+        'arsse_user_meta' => [
+            'owner'    => "str",
+            'key'      => "str",
+            'modified' => "datetime",
+            'value'    => "str",
+        ],
+        'arsse_sessions' => [
+            'id'      => "str",
+            'created' => "datetime",
+            'expires' => "datetime",
+            'user'    => "str",
+        ],
+        'arsse_tokens' => [
+            'id'      => "str",
+            'class'   => "str",
+            'user'    => "str",
+            'created' => "datetime",
+            'expires' => "datetime",
+            'data'    => "str",
+        ],
+        'arsse_icons' => [
+            'id'         => "int",
+            'url'        => "str",
+            'modified'   => "datetime",
+            'etag'       => "str",
+            'next_fetch' => "datetime",
+            'orphaned'   => "datetime",
+            'type'       => "str",
+            'data'       => "blob",
+        ],
+        'arsse_articles' => [
+            'id'                 => "int",
+            'subscription'       => "int",
+            'read'               => "bool",
+            'starred'            => "bool",
+            'hidden'             => "bool",
+            'url'                => "str",
+            'title'              => "str",
+            'author'             => "str",
+            'published'          => "datetime",
+            'edited'             => "datetime",
+            'added'              => "datetime",
+            'modified'           => "datetime",
+            'marked'             => "datetime",
+            'guid'               => "str",
+            'url_title_hash'     => "str",
+            'url_content_hash'   => "str",
+            'title_content_hash' => "str",
+            'note'               => "str",
+        ],
+        'arsse_article_contents' => [
+            'id'      => "int",
+            'content' => "str",
+        ],
+        'arsse_editions' => [
+            'id'       => "int",
+            'article'  => "int",
+            'modified' => "datetime",
+        ],
+        'arsse_enclosures' => [
+            'article' => "int",
+            'url'     => "str",
+            'type'    => "str",
+        ],
+        'arsse_categories' => [
+            'article' => "int",
+            'name'    => "str",
+        ],
+        'arsse_subscriptions' => [
+            'id'         => "int",
+            'owner'      => "str",
+            'url'        => "str",
+            'feed_title' => "str",
+            'title'      => "str",
+            'folder'     => "int",
+            'last_mod'   => "datetime",
+            'etag'       => "str",
+            'next_fetch' => "datetime",
+            'added'      => "datetime",
+            'source'     => "str",
+            'updated'    => "datetime",
+            'err_count'  => "int",
+            'err_msg'    => "str",
+            'size'       => "int",
+            'icon'       => "int",
+            'modified'   => "datetime",
+            'order_type' => "int",
+            'pinned'     => "bool",
+            'scrape'     => "bool",
+            'keep_rule'  => "str",
+            'block_rule' => "str",
+            'deleted'    => "bool",
+            'user_agent' => "str",
+            'cookie'     => "str",
+        ],
+        'arsse_folders' => [
+            'id'       => "int",
+            'owner'    => "str",
+            'parent'   => "int",
+            'name'     => "str",
+            'modified' => "datetime",
+        ],
+        'arsse_tags' => [
+            'id'       => "int",
+            'owner'    => "str",
+            'name'     => "str",
+            'modified' => "datetime",
+        ],
+        'arsse_tag_members' => [
+            'tag'          => "int",
+            'subscription' => "int",
+            'assigned'     => "bool",
+            'modified'     => "datetime",
+        ],
+        'arsse_labels' => [
+            'id'       => "int",
+            'owner'    => "str",
+            'name'     => "str",
+            'modified' => "datetime",
+        ],
+        'arsse_label_members' => [
+            'label'        => "int",
+            'article'      => "int",
+            'assigned'     => "bool",
+            'modified'     => "datetime",
+        ],
+    ];
+
     public function setUp(): void {
         self::clearData();
         // create the object factory as a mock
@@ -46,7 +184,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             Arsse::$$prop = null;
         }
         if ($loadLang) {
-            Arsse::$lang = new \JKingWeb\Arsse\Lang();
+            Arsse::$lang = new \JKingWeb\Arsse\Lang;
         }
     }
 
@@ -190,9 +328,12 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             $this->assertSame($exp->getRequestTarget(), $act->getRequestTarget(), $text);
         }
         if ($exp instanceof ResponseInterface && HTTP::matchType($exp, ["application/json", "text/json"], false)) {
-            $expBody = @json_decode((string) $exp->getBody(), true);
-            $actBody = @json_decode((string) $act->getBody(), true);
-            $this->assertSame(\JSON_ERROR_NONE, json_last_error(), "Response body is not valid JSON");
+            $expBody = json_encode(@json_decode((string) $exp->getBody(), false), \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
+            try {
+                $actBody = json_encode(@json_decode((string) $act->getBody(), false, 512, \JSON_THROW_ON_ERROR), \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
+            } catch (\JsonException $e) {
+                $actBody = (string) $act->getBody();
+            }
             $this->assertSame($expBody, $actBody, $text);
         } elseif ($exp instanceof ResponseInterface && HTTP::matchType($exp, ["application/xml", "text/xml"], false)) {
             $this->assertXmlStringEqualsXmlString((string) $exp->getBody(), (string) $act->getBody(), $text);
@@ -249,14 +390,34 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return $value;
     }
 
+    /** Inserts into the database test data in the following format:
+     *
+     * ```php
+     * $data = [
+     *  'some_table' => [
+     *   'columns' => ["id", "name"],
+     *   'rows'    => [
+     *    [1,"Dupond"],
+     *    [2,"Dupont"],
+     *   ]
+     *  ],
+     *  'other_table' => [
+     *   ...
+     *  ]
+     * ];
+     * ```
+     */
     public function primeDatabase(Driver $drv, array $data): bool {
         $tr = $drv->begin();
         foreach ($data as $table => $info) {
             $cols = array_map(function($v) {
                 return '"'.str_replace('"', '""', $v).'"';
-            }, array_keys($info['columns']));
+            }, $info['columns']);
             $cols = implode(",", $cols);
-            $bindings = array_values($info['columns']);
+            $bindings = array_map(function($c) use ($table) {
+                assert(isset(self::COL_DEFS[$table][$c]), new \Exception("Type for column $table.$c is not defined in ".__FILE__));
+                return self::COL_DEFS[$table][$c];
+            }, $info['columns']);
             $params = implode(",", array_fill(0, sizeof($info['columns']), "?"));
             $s = $drv->prepareArray("INSERT INTO $table($cols) values($params)", $bindings);
             foreach ($info['rows'] as $row) {
@@ -268,70 +429,104 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return true;
     }
 
-    public function compareExpectations(Driver $drv, array $expected): bool {
+    public function compareExpectations(Driver $drv, array $expected): void {
         foreach ($expected as $table => $info) {
-            $cols = array_map(function($v) {
-                return '"'.str_replace('"', '""', $v).'"';
-            }, array_keys($info['columns']));
-            $cols = implode(",", $cols);
-            $types = $info['columns'];
-            $data = $drv->prepare("SELECT $cols from $table")->run()->getAll();
-            $cols = array_keys($info['columns']);
-            foreach ($info['rows'] as $index => $row) {
-                $this->assertCount(sizeof($cols), $row, "The number of columns in array index $index of expectations for table $table does not match its definition");
-                $row = array_combine($cols, $row);
-                foreach ($data as $index => $test) {
-                    foreach ($test as $col => $value) {
-                        switch ($types[$col]) {
-                            case "datetime":
-                                $test[$col] = $this->approximateTime($row[$col], $value);
-                                break;
-                            case "int":
-                                $test[$col] = ValueInfo::normalize($value, ValueInfo::T_INT | ValueInfo::M_DROP | valueInfo::M_NULL);
-                                break;
-                            case "float":
-                                $test[$col] = ValueInfo::normalize($value, ValueInfo::T_FLOAT | ValueInfo::M_DROP | valueInfo::M_NULL);
-                                break;
-                            case "bool":
-                                $test[$col] = (int) ValueInfo::normalize($value, ValueInfo::T_BOOL | ValueInfo::M_DROP | valueInfo::M_NULL);
-                                break;
-                        }
+            // serialize the rows of the expected output
+            $exp = [];
+            $dates = [];
+            foreach ($info['rows'] as $r) {
+                $row = [];
+                foreach ($r as $c => $v) {
+                    // store any date values for later comparison
+                    if (is_string($v) && preg_match("/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/", $v)) {
+                        $dates[] = $v;
                     }
-                    if ($row === $test) {
-                        $data[$index] = $test;
-                        break;
+                    // serialize to CSV, null being represented by no value
+                    if ($v === null) {
+                        $row[] = "";
+                    } elseif ($drv->stringOutput() || is_string($v)) {
+                        $row[] = '"'.str_replace('"', '""', (string) $v).'"';
+                    } else {
+                        $row[] = (string) $v;
                     }
                 }
-                $this->assertContains($row, $data, "Actual Table $table does not contain record at expected array index $index");
-                $found = array_search($row, $data, true);
-                unset($data[$found]);
+                $exp[] = implode(",", $row);
             }
-            $this->assertSame([], $data, "Actual table $table contains extra rows not in expectations");
+            // serialize the rows of the actual output
+            $cols = implode(",", array_map(function($v) {
+                return '"'.str_replace('"', '""', $v).'"';
+            }, $info['columns']));
+            $data = $drv->prepare("SELECT $cols from $table")->run()->getAll();
+            $act = [];
+            $extra = [];
+            foreach ($data as $r) {
+                $row = [];
+                foreach ($r as $c => $v) {
+                    // account for dates which might be off by one second
+                    if (is_string($v) && preg_match("/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/", $v)) {
+                        if (array_search($v, $dates, true) === false) {
+                            $v = Date::transform(Date::sub("PT1S", $v), "sql");
+                            if (array_search($v, $dates, true) === false) {
+                                $v = Date::transform(Date::add("PT2S", $v), "sql");
+                                if (array_search($v, $dates, true) === false) {
+                                    $v = Date::transform(Date::sub("PT1S", $v), "sql");
+                                }
+                            }
+                        }
+                    }
+                    if ($v === null) {
+                        $row[] = "";
+                    } elseif (is_string($v)) {
+                        $row[] = '"'.str_replace('"', '""', (string) $v).'"';
+                    } else {
+                        $row[] = (string) $v;
+                    }
+                }
+                $row = implode(",", $row);
+                // now search for the actual output row in the expected output
+                $found = array_keys($exp, $row, true);
+                foreach ($found as $k) {
+                    if (!isset($act[$k])) {
+                        $act[$k] = $row;
+                        // skip to the next row
+                        continue 2;
+                    }
+                }
+                // if the row was not found, add it to a buffer which will be added to the actual output once all found rows are processed
+                $extra[] = $row;
+            }
+            // add any unfound rows to the end of the actual array
+            $base = sizeof($exp);
+            foreach ($extra as $k => $v) {
+                $act[$base + $k] = $v;
+            }
+            // sort the actual output by keys
+            ksort($act);
+            // finally perform the comparison to be shown to the tester
+            $this->assertSame($exp, $act, "Actual table $table does not match expectations");
         }
-        return true;
     }
 
     public function primeExpectations(array $source, array $tableSpecs): array {
         $out = [];
         foreach ($tableSpecs as $table => $columns) {
             // make sure the source has the table we want
-            $this->assertArrayHasKey($table, $source, "Source for expectations does not contain requested table $table.");
+            if (!isset($source[$table])) {
+                throw new \Exception("Source for expectations does not contain requested table $table.");
+            }
+            // fill the output, particularly the correct number of (empty) rows
+            $rows = sizeof($source[$table]['rows']);
             $out[$table] = [
-                'columns' => [],
-                'rows'    => array_fill(0, sizeof($source[$table]['rows']), []),
+                'columns' => $columns,
+                'rows'    => array_fill(0, $rows, []),
             ];
-            // make sure the source has all the columns we want for the table
-            $cols = array_flip($columns);
-            $cols = array_intersect_key($cols, $source[$table]['columns']);
-            $this->assertSame(array_keys($cols), $columns, "Source for table $table does not contain all requested columns");
-            // get a map of source value offsets and keys
-            $targets = array_flip(array_keys($source[$table]['columns']));
-            foreach ($cols as $key => $order) {
-                // fill the column-spec
-                $out[$table]['columns'][$key] = $source[$table]['columns'][$key];
-                foreach ($source[$table]['rows'] as $index => $row) {
-                    // fill each row column-wise with re-ordered values
-                    $out[$table]['rows'][$index][$order] = $row[$targets[$key]];
+            // fill the rows with the requested data, column-wise
+            foreach ($columns as $c) {
+                if (($index = array_search($c, $source[$table]['columns'], true)) === false) {
+                    throw new \Exception("Expected column $table.$c is not present in test data");
+                }
+                for ($a = 0; $a < $rows; $a++) {
+                    $out[$table]['rows'][$a][] = $source[$table]['rows'][$a][$index];
                 }
             }
         }
@@ -343,12 +538,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         // stringify our expectations if necessary
         if (static::$stringOutput ?? false) {
             $expected = $this->stringify($expected);
-            // MySQL is extra-special and mixes strings and integers, so we cast the data, too
-            if ((static::$implementation ?? "") === "MySQL") {
-                $data = $this->stringify($data);
-            }
         }
-        $this->assertSameSize($expected, $data, "Number of result rows (".sizeof($data).") differs from number of expected rows (".sizeof($expected).")");
         if (sizeof($expected)) {
             // make sure the expectations are consistent
             foreach ($expected as $exp) {

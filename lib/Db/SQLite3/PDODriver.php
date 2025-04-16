@@ -82,4 +82,8 @@ class PDODriver extends AbstractPDODriver {
             }
         }
     }
+
+    public function stringOutput(): bool {
+        return true;
+    }
 }

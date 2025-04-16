@@ -1,4 +1,4 @@
-<?php
+ <?php
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -20,6 +20,8 @@ $paths = [
     BASE."tests/server.php",
 ];
 $rules = [
+    // PSR standard to apply
+    '@PSR12'                                    => true,
     // house rules where PSR series is silent
     'align_multiline_comment'                   => ['comment_type' => "phpdocs_only"],
     'array_syntax'                              => ['syntax' => "short"],
@@ -56,17 +58,20 @@ $rules = [
     'trailing_comma_in_multiline'               => ['elements' => ["arrays"]],
     'unary_operator_spaces'                     => true,
     'yoda_style'                                => false,
-    // PSR standard to apply
-    '@PSR12' => true,
     // house exceptions to PSR rules
     'curly_braces_position'                     => [
         'functions_opening_brace' => "same_line",
         'classes_opening_brace'   => "same_line",
     ],
     'function_declaration'                      => ['closure_function_spacing' => "none"],
-    'new_with_braces'                           => false, // no option to specify absence of braces
+    'new_with_braces'                           => [
+        'anonymous_class' => false,
+        'named_class'     => false,
+    ],
+    'single_blank_line_before_namespace'        => false,
+    'blank_line_after_opening_tag'              => false,
     'php_unit_attributes'                       => true,
-    ];
+];
 
 $finder = \PhpCsFixer\Finder::create();
 foreach ($paths as $path) {

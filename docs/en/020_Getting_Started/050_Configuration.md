@@ -385,7 +385,7 @@ Arsse/0.6.0
 |------------------|-----------|
 | interval or null | `"PT24H"` |
 
-How long to keep a newsfeed and its articles in the database after all its subscriptions have been deleted. Specifying `null` will retain unsubscribed newsfeeds forever, whereas an interval evaluating to zero (e.g. `"PT0S"`) will delete them immediately.
+How long to keep a newsfeed subscription and its articles in the database after it has been soft-deleted by its owner. Specifying `null` will retain unsubscribed newsfeeds forever, whereas an interval evaluating to zero (e.g. `"PT0S"`) will delete them immediately.
 
 Note that articles of orphaned newsfeeds are still subject to the `purgeArticleUnread` threshold below.
 
@@ -395,11 +395,9 @@ Note that articles of orphaned newsfeeds are still subject to the `purgeArticleU
 |------------------|---------|
 | interval or null | `"P7D"` |
 
-How long to keep a an article in the database after all users subscribed to its newsfeed have read it. Specifying `null` will retain articles up to the `purgeArticlesUnread` threshold below, whereas an interval evaluating to zero (e.g. `"PT0S"`) will delete them immediately. 
+How long to keep a an article in the database after it has been read. Specifying `null` will retain articles up to the `purgeArticlesUnread` threshold below, whereas an interval evaluating to zero (e.g. `"PT0S"`) will delete them immediately. 
 
-If an article is starred by any user, it is retained indefinitely regardless of this setting.
-
-This setting also governs when an article is hidden from a user after being read by that user, regardless of its actual presence in the database.
+If an article is starred by its owner, it is retained indefinitely regardless of this setting.
 
 ### purgeArticlesUnread
 
@@ -407,9 +405,9 @@ This setting also governs when an article is hidden from a user after being read
 |------------------|----------|
 | interval or null | `"P21D"` |
 
-How long to keep a an article in the database regardless of whether any users have read it. Specifying `null` will retain articles forever, whereas an interval evaluating to zero (e.g. `"PT0S"`) will delete them immediately. 
+How long to keep a an article in the database regardless of whether it has been read. Specifying `null` will retain articles forever, whereas an interval evaluating to zero (e.g. `"PT0S"`) will delete them immediately. 
 
-If an article is starred by any user, it is retained indefinitely regardless of this setting.
+If an article is starred by its owner, it is retained indefinitely regardless of this setting.
 
 # Obsolete settings
 

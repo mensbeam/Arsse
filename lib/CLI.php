@@ -108,7 +108,7 @@ USAGE_TEXT;
                     }
                     return 0;
                 case "feed refresh":
-                    return (int) !Arsse::$db->feedUpdate((int) $args['<n>'], true);
+                    return (int) !Arsse::$db->subscriptionUpdate(null, (int) $args['<n>'], true);
                 case "feed refresh-all":
                     Arsse::$obj->get(Service::class)->watch(false);
                     return 0;

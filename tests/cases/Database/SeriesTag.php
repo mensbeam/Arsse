@@ -13,77 +13,45 @@ use JKingWeb\Arsse\Database;
 use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesTag {
+    protected static $drv;
+
     protected $checkMembers;
     protected $checkTags;
 
     protected function setUpSeriesTag(): void {
         $this->data = [
             'arsse_users' => [
-                'columns' => [
-                    'id'       => 'str',
-                    'password' => 'str',
-                    'num'      => 'int',
-                ],
-                'rows' => [
-                    ["jane.doe@example.com", "",1],
-                    ["john.doe@example.com", "",2],
-                    ["john.doe@example.org", "",3],
-                    ["john.doe@example.net", "",4],
-                ],
-            ],
-            'arsse_feeds' => [
-                'columns' => [
-                    'id'         => "int",
-                    'url'        => "str",
-                    'title'      => "str",
-                ],
-                'rows' => [
-                    [1,"http://example.com/1",""],
-                    [2,"http://example.com/2",""],
-                    [3,"http://example.com/3","Feed Title"],
-                    [4,"http://example.com/4",""],
-                    [5,"http://example.com/5","Feed Title"],
-                    [6,"http://example.com/6",""],
-                    [7,"http://example.com/7",""],
-                    [8,"http://example.com/8",""],
-                    [9,"http://example.com/9",""],
-                    [10,"http://example.com/10",""],
-                    [11,"http://example.com/11",""],
-                    [12,"http://example.com/12",""],
-                    [13,"http://example.com/13",""],
+                'columns' => ["id", "password", "num"],
+                'rows'    => [
+                    ["jane.doe@example.com", "", 1],
+                    ["john.doe@example.com", "", 2],
+                    ["john.doe@example.org", "", 3],
+                    ["john.doe@example.net", "", 4],
                 ],
             ],
             'arsse_subscriptions' => [
-                'columns' => [
-                    'id'         => "int",
-                    'owner'      => "str",
-                    'feed'       => "int",
-                    'title'      => "str",
-                ],
-                'rows' => [
-                    [1, "john.doe@example.com", 1,"Lord of Carrots"],
-                    [2, "john.doe@example.com", 2,null],
-                    [3, "john.doe@example.com", 3,"Subscription Title"],
-                    [4, "john.doe@example.com", 4,null],
-                    [5, "john.doe@example.com",10,null],
-                    [6, "jane.doe@example.com", 1,null],
-                    [7, "jane.doe@example.com",10,null],
-                    [8, "john.doe@example.org",11,null],
-                    [9, "john.doe@example.org",12,null],
-                    [10,"john.doe@example.org",13,null],
-                    [11,"john.doe@example.net",10,null],
-                    [12,"john.doe@example.net", 2,null],
-                    [13,"john.doe@example.net", 3,null],
-                    [14,"john.doe@example.net", 4,null],
+                'columns' => ["id", "owner", "url", "feed_title", "title", "deleted"],
+                'rows'    => [
+                    [1,  "john.doe@example.com", "http://example.com/1",  "",           "Lord of Carrots",    0],
+                    [2,  "john.doe@example.com", "http://example.com/2",  "",           null,                 0],
+                    [3,  "john.doe@example.com", "http://example.com/3",  "Feed Title", "Subscription Title", 0],
+                    [4,  "john.doe@example.com", "http://example.com/4",  "",           null,                 0],
+                    [5,  "john.doe@example.com", "http://example.com/10", "",           null,                 0],
+                    [6,  "jane.doe@example.com", "http://example.com/1",  "",           null,                 0],
+                    [7,  "jane.doe@example.com", "http://example.com/10", "",           null,                 0],
+                    [8,  "john.doe@example.org", "http://example.com/11", "",           null,                 0],
+                    [9,  "john.doe@example.org", "http://example.com/12", "",           null,                 0],
+                    [10, "john.doe@example.org", "http://example.com/13", "",           null,                 0],
+                    [11, "john.doe@example.net", "http://example.com/10", "",           null,                 0],
+                    [12, "john.doe@example.net", "http://example.com/2",  "",           null,                 0],
+                    [13, "john.doe@example.net", "http://example.com/3",  "Feed Title", null,                 0],
+                    [14, "john.doe@example.net", "http://example.com/4",  "",           null,                 0],
+                    [16, "john.doe@example.com", "http://example.com/16", "",           null,                 1],
                 ],
             ],
             'arsse_tags' => [
-                'columns' => [
-                    'id'       => "int",
-                    'owner'    => "str",
-                    'name'     => "str",
-                ],
-                'rows' => [
+                'columns' => ["id", "owner", "name"],
+                'rows'    => [
                     [1,"john.doe@example.com","Interesting"],
                     [2,"john.doe@example.com","Fascinating"],
                     [3,"jane.doe@example.com","Boring"],
@@ -91,18 +59,16 @@ trait SeriesTag {
                 ],
             ],
             'arsse_tag_members' => [
-                'columns' => [
-                    'tag'          => "int",
-                    'subscription' => "int",
-                    'assigned'     => "bool",
-                ],
-                'rows' => [
-                    [1,1,1],
-                    [1,3,0],
-                    [1,5,1],
-                    [2,1,1],
-                    [2,3,1],
-                    [2,5,1],
+                'columns' => ["tag", "subscription", "assigned"],
+                'rows'    => [
+                    [1, 1,1],
+                    [1, 3,0],
+                    [1, 5,1],
+                    [2, 1,1],
+                    [2, 3,1],
+                    [2, 5,1],
+                    [1,16,1],
+                    [2,16,1],
                 ],
             ],
         ];
@@ -157,13 +123,13 @@ trait SeriesTag {
     //#[CoversMethod(Database::class, "tagList")]
     public function testListTags(): void {
         $exp = [
-            ['id' => 2, 'name' => "Fascinating"],
-            ['id' => 1, 'name' => "Interesting"],
-            ['id' => 4, 'name' => "Lonely"],
+            ['id' => 2, 'name' => "Fascinating", 'subscriptions' => 3],
+            ['id' => 1, 'name' => "Interesting", 'subscriptions' => 2],
+            ['id' => 4, 'name' => "Lonely",      'subscriptions' => 0],
         ];
         $this->assertResult($exp, Arsse::$db->tagList("john.doe@example.com"));
         $exp = [
-            ['id' => 3, 'name' => "Boring"],
+            ['id' => 3, 'name' => "Boring", 'subscriptions' => 0],
         ];
         $this->assertResult($exp, Arsse::$db->tagList("jane.doe@example.com"));
         $exp = [];

@@ -33,24 +33,30 @@ class TestRule extends \JKingWeb\Arsse\Test\AbstractTest {
 
 
     #[DataProvider('provideApplications')]
-    public function testApplyRules(string $keepRule, string $blockRule, string $title, array $categories, $exp): void {
+    public function testApplyRules(string $keepRule, string $blockRule, string $url, string $title, string $author, array $categories, $exp): void {
         $keepRule = Rule::prep($keepRule);
         $blockRule = Rule::prep($blockRule);
-        $this->assertSame($exp, Rule::apply($keepRule, $blockRule, $title, $categories));
+        $this->assertSame($exp, Rule::apply($keepRule, $blockRule, $url, $title, $author, $categories));
     }
 
     public static function provideApplications(): iterable {
         return [
-            ["",           "",           "Title",   ["Dummy", "Category"], true],
-            ["^Title$",    "",           "Title",   ["Dummy", "Category"], true],
-            ["^Category$", "",           "Title",   ["Dummy", "Category"], true],
-            ["^Naught$",   "",           "Title",   ["Dummy", "Category"], false],
-            ["",           "^Title$",    "Title",   ["Dummy", "Category"], false],
-            ["",           "^Category$", "Title",   ["Dummy", "Category"], false],
-            ["",           "^Naught$",   "Title",   ["Dummy", "Category"], true],
-            ["^Category$", "^Category$", "Title",   ["Dummy", "Category"], false],
-            ["",           "^A B C$",    "A  B\nC", ["X\n   Y  \t  \r Z"], false],
-            ["",           "^X Y Z$",    "A  B\nC", ["X\n   Y  \t  \r Z"], false],
+            ["",           "",           "",     "Title",   "",                    ["Dummy", "Category"], true],
+            ["^Title$",    "",           "",     "Title",   "",                    ["Dummy", "Category"], true],
+            ["^Category$", "",           "",     "Title",   "",                    ["Dummy", "Category"], true],
+            ["^Naught$",   "",           "",     "Title",   "",                    ["Dummy", "Category"], false],
+            ["",           "^Title$",    "",     "Title",   "",                    ["Dummy", "Category"], false],
+            ["",           "^Category$", "",     "Title",   "",                    ["Dummy", "Category"], false],
+            ["",           "^Naught$",   "",     "Title",   "",                    ["Dummy", "Category"], true],
+            ["^Category$", "^Category$", "",     "Title",   "",                    ["Dummy", "Category"], false],
+            ["",           "^A B C$",    "",     "A  B\nC", "",                    ["X\n   Y  \t  \r Z"], false],
+            ["",           "^X Y Z$",    "",     "A  B\nC", "",                    ["X\n   Y  \t  \r Z"], false],
+            ["sample",     "",           "",     "Title",   "http://example.com/", ["Dummy", "Category"], false],
+            ["example",    "",           "",     "Title",   "http://example.com/", ["Dummy", "Category"], true],
+            ["example",    "example",    "",     "Title",   "http://example.com/", ["Dummy", "Category"], false],
+            ["Jane",       "",           "John", "Title",   "",                    ["Dummy", "Category"], false],
+            ["John",       "",           "John", "Title",   "",                    ["Dummy", "Category"], true],
+            ["John",       "John",       "John", "Title",   "",                    ["Dummy", "Category"], false],
         ];
     }
 }

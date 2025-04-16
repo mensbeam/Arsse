@@ -18,7 +18,7 @@ trait MySQLPDO {
     protected static $dbResultClass = \JKingWeb\Arsse\Db\PDOResult::class;
     protected static $dbStatementClass = \JKingWeb\Arsse\Db\MySQL\PDOStatement::class;
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\MySQL\PDODriver::class;
-    protected static $stringOutput = true;
+    protected static $stringOutput = false;
 
     public static function dbInterface() {
         try {
@@ -35,7 +35,7 @@ trait MySQLPDO {
             $dsn = "mysql:".implode(";", $dsn);
             $d = new \PDO($dsn, Arsse::$conf->dbMySQLUser, Arsse::$conf->dbMySQLPass, [
                 \PDO::ATTR_ERRMODE                => \PDO::ERRMODE_EXCEPTION,
-                \PDO::ATTR_STRINGIFY_FETCHES      => true,
+                \PDO::ATTR_STRINGIFY_FETCHES      => false,
                 \PDO::MYSQL_ATTR_MULTI_STATEMENTS => false,
             ]);
             foreach (\JKingWeb\Arsse\Db\MySQL\PDODriver::makeSetupQueries() as $q) {

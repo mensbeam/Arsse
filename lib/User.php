@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse;
 
+use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\User\ExceptionConflict as Conflict;
 use PasswordGenerator\Generator as PassGen;
@@ -20,15 +21,7 @@ class User {
         'lang'             => V::T_STRING,
         'tz'               => V::T_STRING,
         'root_folder_name' => V::T_STRING,
-        'sort_asc'         => V::T_BOOL,
-        'theme'            => V::T_STRING,
-        'page_size'        => V::T_INT, // greater than zero
-        'shortcuts'        => V::T_BOOL,
-        'gestures'         => V::T_BOOL,
-        'reading_time'     => V::T_BOOL,
-        'stylesheet'       => V::T_STRING,
     ];
-    public const PROPERTIES_LARGE = ["stylesheet"];
 
     public $id = null;
 
@@ -85,10 +78,9 @@ class User {
     }
 
     public function add(string $user, ?string $password = null): string {
-        // ensure the user name does not contain any U+003A COLON or control characters, as
-        // this is incompatible with HTTP Basic authentication
-        if (preg_match("/[\x{00}-\x{1F}\x{7F}:]/", $user, $m)) {
-            $c = ord($m[0]);
+        // validate the username
+        if ($c = HTTP::userInvalid($user)) {
+            $c = ord($c);
             throw new User\ExceptionInput("invalidUsername", "U+".str_pad((string) $c, 4, "0", \STR_PAD_LEFT)." ".\IntlChar::charName($c, \IntlChar::EXTENDED_CHAR_NAME));
         }
         try {
@@ -174,15 +166,15 @@ class User {
         return (new PassGen)->length(Arsse::$conf->userTempPasswordLength)->get();
     }
 
-    public function propertiesGet(string $user, bool $includeLarge = true): array {
-        $extra = $this->u->userPropertiesGet($user, $includeLarge);
+    public function propertiesGet(string $user): array {
+        $extra = $this->u->userPropertiesGet($user);
         // synchronize the internal database
         if (!Arsse::$db->userExists($user)) {
             Arsse::$db->userAdd($user, null);
             Arsse::$db->userPropertiesSet($user, $extra);
         }
         // retrieve from the database to get at least the user number, and anything else the driver does not provide
-        $meta = Arsse::$db->userPropertiesGet($user, $includeLarge);
+        $meta = Arsse::$db->userPropertiesGet($user);
         // combine all the data
         $out = ['num' => $meta['num']];
         foreach (self::PROPERTIES as $k => $t) {
@@ -211,8 +203,6 @@ class User {
         }
         if (isset($in['tz']) && !@timezone_open($in['tz'])) {
             throw new User\ExceptionInput("invalidTimezone", ['field' => "tz", 'value' => $in['tz']]);
-        } elseif (isset($in['page_size']) && $in['page_size'] < 1) {
-            throw new User\ExceptionInput("invalidNonZeroInteger", ['field' => "page_size"]);
         }
         $out = $this->u->userPropertiesSet($user, $in);
         // synchronize the internal database

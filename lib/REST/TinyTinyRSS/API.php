@@ -20,6 +20,7 @@ use JKingWeb\Arsse\ExceptionType;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\ResultEmpty;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
+use JKingWeb\Arsse\Misc\URL;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -823,10 +824,11 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $out;
     }
 
-    protected function feedError(FeedException $e): array {
+    protected function feedError(AbstractException $e): array {
         // N.B.: we don't return code 4 (multiple feeds discovered); we simply pick the first feed discovered
         switch ($e->getCode()) {
             case 10502: // invalid URL
+            case 10230: // relative URL or bad username
                 return ['code' => 2, 'message' => $e->getMessage()];
             case 10521: // no feeds discovered
                 return ['code' => 3, 'message' => $e->getMessage()];
@@ -846,8 +848,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         $url = (string) $data['feed_url'];
         $folder = (int) $data['category_id'];
-        $fetchUser = (string) $data['login'];
-        $fetchPassword = (string) $data['password'];
+        $fetchUser = $data['login'];
+        $fetchPassword = $data['password'];
         // check to make sure the requested folder exists before doing anything else, if one is specified
         if ($folder) {
             try {
@@ -858,8 +860,15 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         try {
-            $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, $url, $fetchUser, $fetchPassword);
+            $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, $url, true, [
+                'username' => $fetchUser,
+                'password' => $fetchPassword,
+            ]);
         } catch (ExceptionInput $e) {
+            // if the exception is not about a constraint violation, handle it elsewhere
+            if ($e->getCode() !== 10236) {
+                return $this->feedError($e);
+            }
             // subscription already exists; retrieve the existing ID and return that with the correct code
             for ($triedDiscovery = 0; $triedDiscovery <= 1; $triedDiscovery++) {
                 $subs = Arsse::$db->subscriptionList(Arsse::$user->id);
@@ -875,7 +884,8 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 } elseif (!$triedDiscovery) {
                     // if we didn't find the ID we perform feed discovery for the next iteration; this is pretty messy: discovery ends up being done twice because it was already done in $db->subscriptionAdd()
                     try {
-                        $url = Feed::discover($url, $fetchUser, $fetchPassword);
+                        $url = URL::normalize($url, $fetchUser, $fetchPassword);
+                        $url = Feed::discover($url);
                     } catch (FeedException $e) {
                         // feed errors (handled above)
                         return $this->feedError($e);
@@ -947,7 +957,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
             throw new Exception("INCORRECT_USAGE");
         }
         try {
-            Arsse::$db->feedUpdate((int) Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, $data['feed_id'])['feed']);
+            Arsse::$db->subscriptionUpdate(Arsse::$user->id, $data['feed_id']);
         } catch (ExceptionInput $e) {
             throw new Exception("FEED_NOT_FOUND");
         }
@@ -1520,7 +1530,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // handle the search string, if any
         if (isset($data['search'])) {
-            $tz = Arsse::$user->propertiesGet(Arsse::$user->id, false)['tz'] ?? "UTC";
+            $tz = Arsse::$user->propertiesGet(Arsse::$user->id)['tz'] ?? "UTC";
             $c = Search::parse($data['search'], $tz, $c);
             if (!$c) {
                 // the search string inherently returns an empty result, either directly or interacting with other input

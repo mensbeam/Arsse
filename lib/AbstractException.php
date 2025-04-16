@@ -39,6 +39,7 @@ abstract class AbstractException extends \Exception {
         "Db/Exception.updateFileUnreadable"           => 10216,
         "Db/Exception.updateFileError"                => 10217,
         "Db/Exception.updateFileIncomplete"           => 10218,
+        "Db/Exception.updateSchemaDowngrade"          => 10219,
         "Db/Exception.paramTypeInvalid"               => 10221,
         "Db/Exception.paramTypeUnknown"               => 10222,
         "Db/Exception.paramTypeMissing"               => 10223,
@@ -147,5 +148,9 @@ abstract class AbstractException extends \Exception {
 
     public function getParams(): array {
         return $this->params;
+    }
+
+    public function getParam(string $key): mixed {
+        return $this->params[$key] ?? null;
     }
 }

@@ -67,11 +67,10 @@ interface Driver {
      * - admin: A boolean denoting whether the user has administrator privileges
      * - lang: A BCP 47 language tag e.g. "en", "hy-Latn-IT-arevela"
      * - tz: A zoneinfo timezone e.g. "Asia/Jakarta", "America/Argentina/La_Rioja"
-     * - sort_asc: A boolean denoting whether the user prefers articles to be sorted oldest-first
      *
      * Any other keys will be ignored.
      */
-    public function userPropertiesGet(string $user, bool $includeLarge = true): array;
+    public function userPropertiesGet(string $user): array;
 
     /** Sets metadata about a user
      *

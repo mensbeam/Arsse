@@ -7,8 +7,14 @@
   beStrictAboutTestsThatDoNotTestAnything="true"
   beStrictAboutOutputDuringTests="true"
   executionOrder="defects"
+  reverseDefectList="true"
   cacheDirectory=".phpunit.cache"
   requireCoverageMetadata="true"
+  displayDetailsOnTestsThatTriggerDeprecations="true"
+  displayDetailsOnPhpunitDeprecations="true"
+  displayDetailsOnTestsThatTriggerErrors="true"
+  displayDetailsOnTestsThatTriggerNotices="true"
+  displayDetailsOnTestsThatTriggerWarnings="true"
 >
   <php>
     <env name="ARSSE_TEST_PGSQL_HOST" value=""/>

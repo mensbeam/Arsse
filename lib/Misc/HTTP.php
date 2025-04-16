@@ -14,6 +14,7 @@ use JKingWeb\Arsse\Arsse;
 use MensBeam\Mime\MimeType;
 
 class HTTP {
+    /** Matches the Content-Type of a message against an array of allowed types */
     public static function matchType(MessageInterface $msg, array $types, bool $allowEmpty = true): bool {
         $header = MimeType::extract($msg->getHeaderLine("Content-Type"));
         if (!$header) {
@@ -24,9 +25,16 @@ class HTTP {
         return false;
     }
 
+    /** Inserts any universal HTTP authentication challenges suported by The Arsse into the provided response and returns the new response */
     public static function challenge(ResponseInterface $res): ResponseInterface {
         $realm = Arsse::$conf ? Arsse::$conf->httpRealm : "The Advanced RSS Environment";
         return $res->withAddedHeader("WWW-Authenticate", 'Basic realm="'.$realm.'", charset="UTF-8"');
+    }
+
+    /** Checks whether the provided username contains any U+003A COLON or control characters, as these are incompatible with HTTP Basic authentication. Returns the first offending character */
+    public static function userInvalid(string $username): string {
+        preg_match("/[\x{00}-\x{1F}\x{7F}:]/", $username, $m);
+        return $m[0] ?? "";
     }
 
     public static function respEmpty(int $status, ?array $headers = []): ResponseInterface {
