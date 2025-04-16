@@ -15,6 +15,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class OCS extends \JKingWeb\Arsse\REST\AbstractHandler {
+    use Common;
+
     protected const TYPES = [
         "application/json",
         "text/json",
@@ -107,7 +109,7 @@ class OCS extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'Vary'   => "Accept",
             ]));
         } elseif ($req->getMethod() !== "GET") {
-            return HTTP::respEmpty(405, [
+            return self::error(405, ["405", "GET"], [
                 'Allow'  => "GET,HEAD",
                 'Vary'   => "Accept",
             ]);
@@ -116,7 +118,7 @@ class OCS extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($req->getAttribute("authenticated", false)) {
             Arsse::$user->id = $req->getAttribute("authenticatedUser");
         } else {
-            return HTTP::respEmpty(401);
+            return self::error(401, "401");
         }
         // get the request path only; this is assumed to already be normalized
         //   and will contain the user ID

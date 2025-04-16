@@ -14,6 +14,8 @@ use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\ResponseInterface;
 
 class V1_3 extends V1_2 {
+    use Common;
+
     public function __construct() {
         // the 'items' input key has been renamed 'itemIds'
         $this->validInput['itemIds'] = $this->validInput['items'];
@@ -55,7 +57,7 @@ class V1_3 extends V1_2 {
             Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $set], $c);
         } catch (ExceptionInput $e) {
             // ID is not valid
-            return HTTP::respEmpty(404);
+            return self::error(404, $e);
         }
         return HTTP::respEmpty(204);
     }

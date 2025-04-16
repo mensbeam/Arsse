@@ -16,6 +16,7 @@ use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
+use JKingWeb\Arsse\REST\NextcloudNews\Common;
 use JKingWeb\Arsse\REST\NextcloudNews\V1_2;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -23,6 +24,8 @@ use Psr\Http\Message\ResponseInterface;
 
 #[CoversClass(\JKingWeb\Arsse\REST\NextcloudNews\V1_2::class)]
 class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
+    use Common;
+
     protected $h;
     protected $transaction;
     protected $userId;
@@ -347,13 +350,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testSendAuthenticationChallenge(): void {
-        $exp = HTTP::respEmpty(401);
+        $exp = self::error(401, "401");
         $this->assertMessage($exp, $this->req("GET", "/", "", [], false));
     }
 
     #[DataProvider("provideInvalidPaths")]
     public function testRespondToInvalidPaths($path, $method, $code, $allow = null): void {
-        $exp = HTTP::respEmpty($code, $allow ? ['Allow' => $allow] : []);
+        $exp = self::error($code, ["$code", $method], $allow ? ['Allow' => $allow] : []);
         $this->assertMessage($exp, $this->req($method, $path));
     }
 
@@ -385,9 +388,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRespondToInvalidInputTypes(): void {
-        $exp = HTTP::respEmpty(415, ['Accept' => "application/json"]);
+        $exp = self::error(415, ["415", "application/xml"], ['Accept' => "application/json"]);
         $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>', ['Content-Type' => "application/xml"]));
-        $exp = HTTP::respEmpty(400);
+        $exp = self::error(400, "ParseError");
         $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>'));
         $this->assertMessage($exp, $this->req("PUT", "/folders/1", '<data/>', ['Content-Type' => null]));
     }
@@ -447,10 +450,10 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             [['name' => "Software"], false, 1,                                         HTTP::respJson(['folders' => [['id' => 1, 'name' => "Software"]]])],
             [['name' => "Hardware"], true,  "2",                                       HTTP::respJson(['folders' => [['id' => 2, 'name' => "Hardware"]]])],
             [['name' => "Hardware"], false, "2",                                       HTTP::respJson(['folders' => [['id' => 2, 'name' => "Hardware"]]])],
-            [['name' => "Software"], true,  new ExceptionInput("constraintViolation"), HTTP::respEmpty(409)],
-            [['name' => ""],         true,  new ExceptionInput("whitespace"),          HTTP::respEmpty(422)],
-            [['name' => " "],        true,  new ExceptionInput("whitespace"),          HTTP::respEmpty(422)],
-            [['name' => null],       true,  new ExceptionInput("missing"),             HTTP::respEmpty(422)],
+            [['name' => "Software"], true,  new ExceptionInput("constraintViolation"), self::error(409, new ExceptionInput("constraintViolation"))],
+            [['name' => ""],         true,  new ExceptionInput("whitespace"),          self::error(422, new ExceptionInput("whitespace"))],
+            [['name' => " "],        true,  new ExceptionInput("whitespace"),          self::error(422, new ExceptionInput("whitespace"))],
+            [['name' => null],       true,  new ExceptionInput("missing"),             self::error(422, new ExceptionInput("missing"))],
         ];
     }
 
@@ -459,7 +462,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("DELETE", "/folders/1"));
         // fail on the second invocation because it no longer exists
-        $exp = HTTP::respEmpty(404);
+        $exp = self::error(404, new ExceptionInput("subjectMissing"));
         $this->assertMessage($exp, $this->req("DELETE", "/folders/1"));
         \Phake::verify(Arsse::$db, \Phake::times(2))->folderRemove($this->userId, 1);
     }
@@ -479,11 +482,11 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function provideFolderRenamings(): array {
         return [
             [['name' => "Software"], 1, true,                                      HTTP::respEmpty(204)],
-            [['name' => "Software"], 2, new ExceptionInput("constraintViolation"), HTTP::respEmpty(409)],
-            [['name' => "Software"], 3, new ExceptionInput("subjectMissing"),      HTTP::respEmpty(404)],
-            [['name' => ""],         2, new ExceptionInput("whitespace"),          HTTP::respEmpty(422)],
-            [['name' => " "],        2, new ExceptionInput("whitespace"),          HTTP::respEmpty(422)],
-            [['name' => null],       2, new ExceptionInput("missing"),             HTTP::respEmpty(422)],
+            [['name' => "Software"], 2, new ExceptionInput("constraintViolation"), self::error(409, new ExceptionInput("constraintViolation"))],
+            [['name' => "Software"], 3, new ExceptionInput("subjectMissing"),      self::error(404, new ExceptionInput("subjectMissing"))],
+            [['name' => ""],         2, new ExceptionInput("whitespace"),          self::error(422, new ExceptionInput("whitespace"))],
+            [['name' => " "],        2, new ExceptionInput("whitespace"),          self::error(422, new ExceptionInput("whitespace"))],
+            [['name' => null],       2, new ExceptionInput("missing"),             self::error(422, new ExceptionInput("missing"))],
         ];
     }
 
@@ -551,10 +554,10 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         return [
             [['url' => "http://example.com/news.atom", 'folderId' => 3],  2112,                                      0,       self::$feeds['db'][0], new ExceptionInput("idMissing"),     HTTP::respJson(['feeds' => [self::$feeds['rest'][0]]])],
             [['url' => "http://example.org/news.atom", 'folderId' => 8],  42,                                        4758915, self::$feeds['db'][1], true,                                HTTP::respJson(['feeds' => [self::$feeds['rest'][1]], 'newestItemId' => 4758915])],
-            [['url' => "http://example.com/news.atom", 'folderId' => 3],  new ExceptionInput("constraintViolation"), 0,       self::$feeds['db'][0], new ExceptionInput("idMissing"),     HTTP::respEmpty(409)],
-            [['url' => "http://example.org/news.atom", 'folderId' => 8],  new ExceptionInput("constraintViolation"), 4758915, self::$feeds['db'][1], true,                                HTTP::respEmpty(409)],
-            [['url' => "http://example.com/bad"],                         $feedException,                            0,       [],                    false,                               HTTP::respEmpty(422)],
-            [['url' => "relative"],                                       new ExceptionInput("invalidValue"),        0,       [],                    false,                               HTTP::respEmpty(422)],
+            [['url' => "http://example.com/news.atom", 'folderId' => 3],  new ExceptionInput("constraintViolation"), 0,       self::$feeds['db'][0], new ExceptionInput("idMissing"),     self::error(409, new ExceptionInput("constraintViolation"))],
+            [['url' => "http://example.org/news.atom", 'folderId' => 8],  new ExceptionInput("constraintViolation"), 4758915, self::$feeds['db'][1], true,                                self::error(409, new ExceptionInput("constraintViolation"))],
+            [['url' => "http://example.com/bad"],                         $feedException,                            0,       [],                    false,                               self::error(422, $feedException)],
+            [['url' => "relative"],                                       new ExceptionInput("invalidValue"),        0,       [],                    false,                               self::error(422, new ExceptionInput("invalidValue"))],
             [['url' => "http://example.net/news.atom", 'folderId' => -1], 47,                                        2112,    self::$feeds['db'][2], new ExceptionInput("typeViolation"), HTTP::respJson(['feeds' => [self::$feeds['rest'][2]], 'newestItemId' => 2112])],
         ];
     }
@@ -570,8 +573,8 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public static function provideNewSubscriptionsWithType(): iterable {
+        self::clearData();
         $success = HTTP::respJson(['feeds' => [self::$feeds['rest'][1]], 'newestItemId' => 4758915]);
-        $badType = HTTP::respEmpty(415, ['Accept' => "application/json"]);
         return [
             ['{"url":"http://example.org/news.atom","folderId":8}', "application/json",                  $success],
             ['{"url":"http://example.org/news.atom","folderId":8}', "text/json",                         $success],
@@ -581,13 +584,13 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ['{"url":"http://example.org/news.atom","folderId":8}', "application/octet-stream",          $success],
             ['url=http://example.org/news.atom&folderId=8',         "application/x-www-form-urlencoded", $success],
             ['url=http://example.org/news.atom&folderId=8',         "",                                  $success],
-            ['{"url":',                                             "application/json",                  HTTP::respEmpty(400)],
-            ['{"url":',                                             "text/json",                         HTTP::respEmpty(400)],
-            ['{"url":',                                             "",                                  HTTP::respEmpty(400)],
-            ['{"url":',                                             "application/x-www-form-urlencoded", HTTP::respEmpty(400)],
-            ['{"url":',                                             "application/octet-stream",          $badType],
-            ['null',                                                "application/json",                  HTTP::respEmpty(400)],
-            ['null',                                                "text/json",                         HTTP::respEmpty(400)],
+            ['{"url":',                                             "application/json",                  self::error(400, "ParseError")],
+            ['{"url":',                                             "text/json",                         self::error(400, "ParseError")],
+            ['{"url":',                                             "",                                  self::error(400, "ParseError")],
+            ['{"url":',                                             "application/x-www-form-urlencoded", self::error(400, "ParseError")],
+            ['{"url":',                                             "application/octet-stream",          self::error(415, ["415", "application/octet-stream"], ['Accept' => "application/json"])],
+            ['null',                                                "application/json",                  self::error(400, "ParseError")],
+            ['null',                                                "text/json",                         self::error(400, "ParseError")],
         ];
     }
 
@@ -596,67 +599,60 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("DELETE", "/feeds/1"));
         // fail on the second invocation because it no longer exists
-        $exp = HTTP::respEmpty(404);
+        $exp = self::error(404, new ExceptionInput("subjectMissing"));
         $this->assertMessage($exp, $this->req("DELETE", "/feeds/1"));
         \Phake::verify(Arsse::$db, \Phake::times(2))->subscriptionRemove($this->userId, 1);
     }
 
-    public function testMoveASubscription(): void {
-        $in = [
-            ['folderId' =>    0],
-            ['folderId' => 42],
-            ['folderId' => 2112],
-            ['folderId' => 42],
-            ['folderId' => -1],
-            [],
-        ];
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, ['folder' =>   42])->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, ['folder' => null])->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, ['folder' => 2112])->thenThrow(new ExceptionInput("idMissing")); // folder does not exist
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, ['folder' =>   -1])->thenThrow(new ExceptionInput("typeViolation")); // folder is invalid
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // subscription does not exist
-        $exp = HTTP::respEmpty(204);
-        $this->assertMessage($exp, $this->req("PUT", "/feeds/1/move", json_encode($in[0])));
-        $exp = HTTP::respEmpty(204);
-        $this->assertMessage($exp, $this->req("PUT", "/feeds/1/move", json_encode($in[1])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("PUT", "/feeds/1/move", json_encode($in[2])));
-        $exp = HTTP::respEmpty(404);
-        $this->assertMessage($exp, $this->req("PUT", "/feeds/42/move", json_encode($in[3])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("PUT", "/feeds/1/move", json_encode($in[4])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("PUT", "/feeds/1/move", json_encode($in[5])));
+    #[DataProvider("provideSubscriptionMoves")]
+    public function testMoveASubscription(string $url, array $data, $moveOut, ResponseInterface $exp): void {
+        $subject = (int) explode("/", $url)[2];
+        if ($moveOut instanceof \Exception) {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($moveOut);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($moveOut);
+        }
+        $this->assertMessage($exp, $this->req("PUT", $url, json_encode($data)));
+        if (isset($data['folderId'])) {
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($this->userId, $subject, $this->identicalTo(['folder' => $data['folderId']]));
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesSet(\Phake::anyParameters());
+        }
     }
 
-    public function testRenameASubscription(): void {
-        $in = [
-            ['feedTitle' => null],
-            ['feedTitle' => "Ook"],
-            ['feedTitle' => "   "],
-            ['feedTitle' => ""],
-            ['feedTitle' => false],
-            ['feedTitle' => "Feed does not exist"],
-            [],
+    public static function provideSubscriptionMoves(): iterable {
+        return [
+            ["/feeds/1/move",  ['folderId' => 0],    true,                                 HTTP::respEmpty(204)],
+            ["/feeds/1/move",  ['folderId' => 42],   true,                                 HTTP::respEmpty(204)],
+            ["/feeds/1/move",  ['folderId' => 2112], new ExceptionInput("idMissing"),      self::error(422, new ExceptionInput("idMissing"))],
+            ["/feeds/42/move", ['folderId' => 42],   new ExceptionInput("subjectMissing"), self::error(404, new ExceptionInput("subjectMissing"))],
+            ["/feeds/1/move",  ['folderId' => -1],   new ExceptionInput("typeViolation"),  self::error(422, new ExceptionInput("typeViolation"))],
+            ["/feeds/1/move",  [],                   true,                                 self::error(422, new ExceptionInput("typeViolation", ["action" => "subscriptionPropertiesSet", "field" => "folderId", 'type' => "int > 0"]))],
         ];
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, $this->identicalTo(['title' =>  null]))->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, $this->identicalTo(['title' => "Ook"]))->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, $this->identicalTo(['title' => "   "]))->thenThrow(new ExceptionInput("whitespace"));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, $this->identicalTo(['title' =>    ""]))->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, $this->identicalTo(['title' => false]))->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("PUT", "/feeds/1/rename", json_encode($in[0])));
-        $exp = HTTP::respEmpty(204);
-        $this->assertMessage($exp, $this->req("PUT", "/feeds/1/rename", json_encode($in[1])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("PUT", "/feeds/1/rename", json_encode($in[2])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("PUT", "/feeds/1/rename", json_encode($in[3])));
-        $exp = HTTP::respEmpty(404);
-        $this->assertMessage($exp, $this->req("PUT", "/feeds/42/rename", json_encode($in[4])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("PUT", "/feeds/1/rename", json_encode($in[6])));
+    }
+
+    #[DataProvider("provideSubscriptionRenamings")]
+    public function testRenameASubscription(string $url, array $data, $renameOut, ResponseInterface $exp): void {
+        $subject = (int) explode("/", $url)[2];
+        if ($renameOut instanceof \Exception) {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($renameOut);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($renameOut);
+        }
+        $this->assertMessage($exp, $this->req("PUT", $url, json_encode($data)));
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($this->userId, $subject, $this->identicalTo(['title' => (string) ($data['feedTitle'] ?? "")]));
+    }
+
+    public static function provideSubscriptionRenamings(): iterable {
+        return [
+            ["/feeds/1/rename",  ['feedTitle' => null],  new ExceptionInput("missing"),        self::error(422, new ExceptionInput("missing"))],
+            ["/feeds/1/rename",  ['feedTitle' => "Ook"], true,                                 HTTP::respEmpty(204)],
+            ["/feeds/1/rename",  ['feedTitle' => "   "], new ExceptionInput("whitespace"),     self::error(422, new ExceptionInput("whitespace"))],
+            ["/feeds/1/rename",  ['feedTitle' => ""],    new ExceptionInput("missing"),        self::error(422, new ExceptionInput("missing"))],
+            ["/feeds/1/rename",  ['feedTitle' => false], new ExceptionInput("missing"),        self::error(422, new ExceptionInput("missing"))],
+            ["/feeds/42/rename", ['feedTitle' => "!!!"], new ExceptionInput("subjectMissing"), self::error(404, new ExceptionInput("subjectMissing"))],
+            ["/feeds/1/rename",  [],                     new ExceptionInput("missing"),        self::error(422, new ExceptionInput("missing"))],
+        ];
     }
 
     public function testListStaleFeeds(): void {
@@ -677,35 +673,34 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testListStaleFeedsWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => false]);
-        $exp = HTTP::respEmpty(403);
+        $exp = self::error(403, "403");
         $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
         \Phake::verify(Arsse::$db, \Phake::never())->feedListStale(\Phake::anyParameters());
     }
 
     #[DataProvider("provideFeedUpdates")]
-    public function testUpdateAFeed(array $in, int $exp): void {
+    public function testUpdateAFeed(array $in, ResponseInterface $exp): void {
         \Phake::when(Arsse::$db)->subscriptionUpdate("ook", 42)->thenReturn(true);
         \Phake::when(Arsse::$db)->subscriptionUpdate("eek", 2112)->thenThrow(new ExceptionInput("subjectMissing"));
         \Phake::when(Arsse::$db)->subscriptionUpdate(null, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
         \Phake::when(Arsse::$db)->subscriptionUpdate($this->anything(), $this->lessThan(1))->thenThrow(new ExceptionInput("typeViolation"));
-        $exp = HTTP::respEmpty($exp);
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", json_encode($in)));
     }
 
     public static function provideFeedUpdates(): iterable {
         return [
-            'Valid input'  => [['userId' => "ook", 'feedId' => 42],    204],
-            'Missing feed' => [['userId' => "eek", 'feedId' => 2112],  404],
-            'String ID'    => [['userId' => "ook", 'feedId' => "ook"], 422],
-            'Negative ID'  => [['userId' => "ook", 'feedId' => -1],    422],
-            'Bad input 1'  => [['userId' => "ook", 'feed'   => 42],    422],
-            'Bad input 2'  => [['user'   => "ook", 'feedId' => 42],    404],
+            'Valid input'  => [['userId' => "ook", 'feedId' => 42],    HTTP::respEmpty(204)],
+            'Missing feed' => [['userId' => "eek", 'feedId' => 2112],  self::error(404, new ExceptionInput("subjectMissing"))],
+            'String ID'    => [['userId' => "ook", 'feedId' => "ook"], self::error(422, new ExceptionInput("typeViolation"))],
+            'Negative ID'  => [['userId' => "ook", 'feedId' => -1],    self::error(422, new ExceptionInput("typeViolation"))],
+            'Bad input 1'  => [['userId' => "ook", 'feed'   => 42],    self::error(422, new ExceptionInput("typeViolation"))],
+            'Bad input 2'  => [['user'   => "ook", 'feedId' => 42],    self::error(404, new ExceptionInput("subjectMissing"))],
         ];
     }
 
     public function testUpdateAFeedWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => false]);
-        $exp = HTTP::respEmpty(403);
+        $exp = self::error(403, "403");
         $this->assertMessage($exp, $this->req("GET", "/feeds/update", ['feedId' => 42]));
         \Phake::verify(Arsse::$db, \Phake::never())->subscriptionUpdate(\Phake::anyParameters());
     }
@@ -728,13 +723,12 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $t = Date::normalize(time());
         $out = new Result(self::v(self::$articles['db']));
         $r200 = HTTP::respJson(['items' => self::$articles['rest']]);
-        $r422 = HTTP::respEmpty(422);
         return [
             ["/items",         [],                                                         clone $c,                                     $out,                                $r200],
-            ["/items",         ['type' => 0, 'id' => 42],                                  (clone $c)->subscription(42),                 new ExceptionInput("idMissing"),     $r422],
-            ["/items",         ['type' => 1, 'id' => 2112],                                (clone $c)->folder(2112),                     new ExceptionInput("idMissing"),     $r422],
-            ["/items",         ['type' => 0, 'id' => -1],                                  (clone $c)->subscription(-1),                 new ExceptionInput("typeViolation"), $r422],
-            ["/items",         ['type' => 1, 'id' => -1],                                  (clone $c)->folder(-1),                       new ExceptionInput("typeViolation"), $r422],
+            ["/items",         ['type' => 0, 'id' => 42],                                  (clone $c)->subscription(42),                 new ExceptionInput("idMissing"),     self::error(422, new ExceptionInput("idMissing"))],
+            ["/items",         ['type' => 1, 'id' => 2112],                                (clone $c)->folder(2112),                     new ExceptionInput("idMissing"),     self::error(422, new ExceptionInput("idMissing"))],
+            ["/items",         ['type' => 0, 'id' => -1],                                  (clone $c)->subscription(-1),                 new ExceptionInput("typeViolation"), self::error(422, new ExceptionInput("typeViolation"))],
+            ["/items",         ['type' => 1, 'id' => -1],                                  (clone $c)->folder(-1),                       new ExceptionInput("typeViolation"), self::error(422, new ExceptionInput("typeViolation"))],
             ["/items",         ['type' => 2, 'id' => 0],                                   (clone $c)->starred(true),                    $out,                                $r200],
             ["/items",         ['type' => 3, 'id' => 0],                                   clone $c,                                     $out,                                $r200],
             ["/items",         ['getRead' => true],                                        clone $c,                                     $out,                                $r200],
@@ -744,10 +738,10 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
             ["/items",         ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 5], (clone $c)->editionRange(null, 4)->limit(5),  $out,                                $r200],
             ["/items",         ['oldestFirst' => false, 'batchSize' => 5,  'offset' => 0], (clone $c)->limit(5),                         $out,                                $r200],
             ["/items/updated", [],                                                         clone $c,                                     $out,                                $r200],
-            ["/items/updated", ['type' => 0, 'id' => 42],                                  (clone $c)->subscription(42),                 new ExceptionInput("idMissing"),     $r422],
-            ["/items/updated", ['type' => 1, 'id' => 2112],                                (clone $c)->folder(2112),                     new ExceptionInput("idMissing"),     $r422],
-            ["/items/updated", ['type' => 0, 'id' => -1],                                  (clone $c)->subscription(-1),                 new ExceptionInput("typeViolation"), $r422],
-            ["/items/updated", ['type' => 1, 'id' => -1],                                  (clone $c)->folder(-1),                       new ExceptionInput("typeViolation"), $r422],
+            ["/items/updated", ['type' => 0, 'id' => 42],                                  (clone $c)->subscription(42),                 new ExceptionInput("idMissing"),     self::error(422, new ExceptionInput("idMissing"))],
+            ["/items/updated", ['type' => 1, 'id' => 2112],                                (clone $c)->folder(2112),                     new ExceptionInput("idMissing"),     self::error(422, new ExceptionInput("idMissing"))],
+            ["/items/updated", ['type' => 0, 'id' => -1],                                  (clone $c)->subscription(-1),                 new ExceptionInput("typeViolation"), self::error(422, new ExceptionInput("typeViolation"))],
+            ["/items/updated", ['type' => 1, 'id' => -1],                                  (clone $c)->folder(-1),                       new ExceptionInput("typeViolation"), self::error(422, new ExceptionInput("typeViolation"))],
             ["/items/updated", ['type' => 2, 'id' => 0],                                   (clone $c)->starred(true),                    $out,                                $r200],
             ["/items/updated", ['type' => 3, 'id' => 0],                                   clone $c,                                     $out,                                $r200],
             ["/items/updated", ['getRead' => true],                                        clone $c,                                     $out,                                $r200],
@@ -767,10 +761,10 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read?newestItemId=2112"));
-        $exp = HTTP::respEmpty(422);
+        $exp = self::error(422, new ExceptionInput("typeViolation", ["action" => "articleMark", "field" => "newestItemId", 'type' => "int > 0"]));
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read"));
         $this->assertMessage($exp, $this->req("PUT", "/folders/1/read?newestItemId=ook"));
-        $exp = HTTP::respEmpty(404);
+        $exp = self::error(404, new ExceptionInput("idMissing"));
         $this->assertMessage($exp, $this->req("PUT", "/folders/42/read", $in));
     }
 
@@ -782,10 +776,10 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read?newestItemId=2112"));
-        $exp = HTTP::respEmpty(422);
+        $exp = self::error(422, new ExceptionInput("typeViolation", ["action" => "articleMark", "field" => "newestItemId", 'type' => "int > 0"]));
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read"));
         $this->assertMessage($exp, $this->req("PUT", "/feeds/1/read?newestItemId=ook"));
-        $exp = HTTP::respEmpty(404);
+        $exp = self::error(404, new ExceptionInput("idMissing"));
         $this->assertMessage($exp, $this->req("PUT", "/feeds/42/read", $in));
     }
 
@@ -796,7 +790,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("PUT", "/items/read", $in));
         $this->assertMessage($exp, $this->req("PUT", "/items/read?newestItemId=2112"));
-        $exp = HTTP::respEmpty(422);
+        $exp = self::error(422, new ExceptionInput("typeViolation", ["action" => "articleMark", "field" => "newestItemId", 'type' => "int > 0"]));
         $this->assertMessage($exp, $this->req("PUT", "/items/read"));
         $this->assertMessage($exp, $this->req("PUT", "/items/read?newestItemId=ook"));
     }
@@ -819,7 +813,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $this->req("PUT", "/items/2/unread"));
         $this->assertMessage($exp, $this->req("PUT", "/items/1/3/star"));
         $this->assertMessage($exp, $this->req("PUT", "/items/4400/4/unstar"));
-        $exp = HTTP::respEmpty(404);
+        $exp = self::error(404, new ExceptionInput("subjectMissing"));
         $this->assertMessage($exp, $this->req("PUT", "/items/42/read"));
         $this->assertMessage($exp, $this->req("PUT", "/items/47/unread"));
         $this->assertMessage($exp, $this->req("PUT", "/items/1/2112/star"));
@@ -911,7 +905,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testCleanUpBeforeUpdateWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => false]);
-        $exp = HTTP::respEmpty(403);
+        $exp = self::error(403, "403");
         $this->assertMessage($exp, $this->req("GET", "/cleanup/before-update"));
         \Phake::verify(Arsse::$db, \Phake::never())->subscriptionCleanup(\Phake::anyParameters());
     }
@@ -925,7 +919,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testCleanUpAfterUpdateWithoutAuthority(): void {
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => false]);
-        $exp = HTTP::respEmpty(403);
+        $exp = self::error(403, "403");
         $this->assertMessage($exp, $this->req("GET", "/cleanup/after-update"));
         \Phake::verify(Arsse::$db, \Phake::never())->subscriptionCleanup(\Phake::anyParameters());
     }

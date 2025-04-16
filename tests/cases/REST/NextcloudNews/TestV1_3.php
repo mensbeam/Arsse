@@ -14,6 +14,8 @@ use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\REST\NextcloudNews\V1_3;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Psr\Http\Message\ResponseInterface;
 
 #[CoversClass(V1_3::class)]
 class TestV1_3 extends TestV1_2 {
@@ -33,62 +35,32 @@ class TestV1_3 extends TestV1_2 {
         $this->assertMessage($exp, $this->req("GET", "/version"));
     }
 
-    public function testMoveASubscription(): void {
-        $in = [
-            ['folderId' =>    0],
-            ['folderId' => 42],
-            ['folderId' => 2112],
-            ['folderId' => 42],
-            ['folderId' => -1],
-            [],
-        ];
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, ['folder' =>   42])->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, ['folder' => null])->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, ['folder' => 2112])->thenThrow(new ExceptionInput("idMissing")); // folder does not exist
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, ['folder' =>   -1])->thenThrow(new ExceptionInput("typeViolation")); // folder is invalid
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing")); // subscription does not exist
-        $exp = HTTP::respEmpty(204);
-        $this->assertMessage($exp, $this->req("POST", "/feeds/1/move", json_encode($in[0])));
-        $exp = HTTP::respEmpty(204);
-        $this->assertMessage($exp, $this->req("POST", "/feeds/1/move", json_encode($in[1])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("POST", "/feeds/1/move", json_encode($in[2])));
-        $exp = HTTP::respEmpty(404);
-        $this->assertMessage($exp, $this->req("POST", "/feeds/42/move", json_encode($in[3])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("POST", "/feeds/1/move", json_encode($in[4])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("POST", "/feeds/1/move", json_encode($in[5])));
+    #[DataProvider("provideSubscriptionMoves")]
+    public function testMoveASubscription(string $url, array $data, $moveOut, ResponseInterface $exp): void {
+        $subject = (int) explode("/", $url)[2];
+        if ($moveOut instanceof \Exception) {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($moveOut);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($moveOut);
+        }
+        $this->assertMessage($exp, $this->req("POST", $url, json_encode($data)));
+        if (isset($data['folderId'])) {
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($this->userId, $subject, $this->identicalTo(['folder' => $data['folderId']]));
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesSet(\Phake::anyParameters());
+        }
     }
 
-    public function testRenameASubscription(): void {
-        $in = [
-            ['feedTitle' => null],
-            ['feedTitle' => "Ook"],
-            ['feedTitle' => "   "],
-            ['feedTitle' => ""],
-            ['feedTitle' => false],
-            ['feedTitle' => "Feed does not exist"],
-            [],
-        ];
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, $this->identicalTo(['title' =>  null]))->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, $this->identicalTo(['title' => "Ook"]))->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, $this->identicalTo(['title' => "   "]))->thenThrow(new ExceptionInput("whitespace"));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, $this->identicalTo(['title' =>    ""]))->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 1, $this->identicalTo(['title' => false]))->thenThrow(new ExceptionInput("missing"));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet($this->userId, 42, $this->anything())->thenThrow(new ExceptionInput("subjectMissing"));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("POST", "/feeds/1/rename", json_encode($in[0])));
-        $exp = HTTP::respEmpty(204);
-        $this->assertMessage($exp, $this->req("POST", "/feeds/1/rename", json_encode($in[1])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("POST", "/feeds/1/rename", json_encode($in[2])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("POST", "/feeds/1/rename", json_encode($in[3])));
-        $exp = HTTP::respEmpty(404);
-        $this->assertMessage($exp, $this->req("POST", "/feeds/42/rename", json_encode($in[4])));
-        $exp = HTTP::respEmpty(422);
-        $this->assertMessage($exp, $this->req("POST", "/feeds/1/rename", json_encode($in[6])));
+    #[DataProvider("provideSubscriptionRenamings")]
+    public function testRenameASubscription(string $url, array $data, $renameOut, ResponseInterface $exp): void {
+        $subject = (int) explode("/", $url)[2];
+        if ($renameOut instanceof \Exception) {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($renameOut);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($renameOut);
+        }
+        $this->assertMessage($exp, $this->req("POST", $url, json_encode($data)));
+        \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($this->userId, $subject, $this->identicalTo(['title' => (string) ($data['feedTitle'] ?? "")]));
     }
 
     public function testMarkAFolderRead(): void {
@@ -99,10 +71,10 @@ class TestV1_3 extends TestV1_2 {
         $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("POST", "/folders/1/read", $in));
         $this->assertMessage($exp, $this->req("POST", "/folders/1/read?newestItemId=2112"));
-        $exp = HTTP::respEmpty(422);
+        $exp = self::error(422, new ExceptionInput("typeViolation", ["action" => "articleMark", "field" => "newestItemId", 'type' => "int > 0"]));
         $this->assertMessage($exp, $this->req("POST", "/folders/1/read"));
         $this->assertMessage($exp, $this->req("POST", "/folders/1/read?newestItemId=ook"));
-        $exp = HTTP::respEmpty(404);
+        $exp = self::error(404, new ExceptionInput("idMissing"));
         $this->assertMessage($exp, $this->req("POST", "/folders/42/read", $in));
     }
 
@@ -114,10 +86,10 @@ class TestV1_3 extends TestV1_2 {
         $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("POST", "/feeds/1/read", $in));
         $this->assertMessage($exp, $this->req("POST", "/feeds/1/read?newestItemId=2112"));
-        $exp = HTTP::respEmpty(422);
+        $exp = self::error(422, new ExceptionInput("typeViolation", ["action" => "articleMark", "field" => "newestItemId", 'type' => "int > 0"]));
         $this->assertMessage($exp, $this->req("POST", "/feeds/1/read"));
         $this->assertMessage($exp, $this->req("POST", "/feeds/1/read?newestItemId=ook"));
-        $exp = HTTP::respEmpty(404);
+        $exp = self::error(404, new ExceptionInput("idMissing"));
         $this->assertMessage($exp, $this->req("POST", "/feeds/42/read", $in));
     }
 
@@ -128,7 +100,7 @@ class TestV1_3 extends TestV1_2 {
         $exp = HTTP::respEmpty(204);
         $this->assertMessage($exp, $this->req("POST", "/items/read", $in));
         $this->assertMessage($exp, $this->req("POST", "/items/read?newestItemId=2112"));
-        $exp = HTTP::respEmpty(422);
+        $exp = self::error(422, new ExceptionInput("typeViolation", ["action" => "articleMark", "field" => "newestItemId", 'type' => "int > 0"]));
         $this->assertMessage($exp, $this->req("POST", "/items/read"));
         $this->assertMessage($exp, $this->req("POST", "/items/read?newestItemId=ook"));
     }
@@ -151,7 +123,7 @@ class TestV1_3 extends TestV1_2 {
         $this->assertMessage($exp, $this->req("POST", "/items/2/unread"));
         $this->assertMessage($exp, $this->req("POST", "/items/3/star"));
         $this->assertMessage($exp, $this->req("POST", "/items/4/unstar"));
-        $exp = HTTP::respEmpty(404);
+        $exp = self::error(404, new ExceptionInput("subjectMissing"));
         $this->assertMessage($exp, $this->req("POST", "/items/42/read"));
         $this->assertMessage($exp, $this->req("POST", "/items/47/unread"));
         $this->assertMessage($exp, $this->req("POST", "/items/2112/star"));

@@ -38,6 +38,13 @@ return [
     'API.Miniflux.Error.InvalidImportLabel'                                => 'Payload contains an invalid label name',
     'API.Miniflux.Error.NoIntegrations'                                    => 'no third-party integration enabled',
 
+    'API.NCNv1.Error.401'                                                  => 'You must be authenticated before performing this action.',
+    'API.NCNv1.Error.403'                                                  => 'You are not authorized to perform this action.',
+    'API.NCNv1.Error.404'                                                  => 'The requested resource was not found.',
+    'API.NCNv1.Error.405'                                                  => 'The request method "{0}" is not allowed for this resource.',
+    'API.NCNv1.Error.415'                                                  => 'The request content-type "{0}" is not acceptable for this resource.',
+    'API.NCNv1.Error.ParseError'                                           => 'The provided entity body could not be successfully parsed as JSON.',
+
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',
     'API.TTRSS.Category.Labels'                                            => 'Labels',

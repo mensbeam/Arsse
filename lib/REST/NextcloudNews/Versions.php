@@ -12,13 +12,15 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class Versions implements \JKingWeb\Arsse\REST\Handler {
+    use Common;
+
     public function __construct() {
     }
 
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         if (!preg_match("<^/?$>D", $req->getRequestTarget())) {
             // if the request path is more than an empty string or a slash, the client is probably trying a version we don't support
-            return HTTP::respEmpty(404);
+            return self::error(404, "404");
         }
         switch ($req->getMethod()) {
             case "OPTIONS":
@@ -35,7 +37,7 @@ class Versions implements \JKingWeb\Arsse\REST\Handler {
                 return HTTP::respJson($out);
             default:
                 // if any other method was used, this is an error
-                return HTTP::respEmpty(405, ['Allow' => "HEAD,GET"]);
+                return self::error(405, ["405", $req->getMethod()], ['Allow' => "HEAD,GET"]);
         }
     }
 }

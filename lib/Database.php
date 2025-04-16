@@ -673,7 +673,7 @@ class Database {
         if (!V::id($id, true)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "folder", 'type' => "int >= 0"]);
         }
-        // if a null or zero ID is specified this is a no-op
+        // if a null or zero ID is specified this is always acceptable
         if (!$id) {
             return ['id' => null, 'name' => null, 'parent' => null];
         }

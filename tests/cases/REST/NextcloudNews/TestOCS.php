@@ -10,6 +10,7 @@ namespace JKingWeb\Arsse\TestCase\REST\NextcloudNews;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\User;
+use JKingWeb\Arsse\REST\NextcloudNews\Common;
 use JKingWeb\Arsse\REST\NextcloudNews\OCS;
 use JKingWeb\Arsse\User\ExceptionConflict;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -18,6 +19,8 @@ use Psr\Http\Message\ResponseInterface;
 
 #[CoversClass(\JKingWeb\Arsse\REST\NextcloudNews\OCS::class)]
 class TestOCS extends \JKingWeb\Arsse\Test\AbstractTest {
+    use Common;
+
     protected $h;
     protected $userId;
     protected $now;
@@ -57,7 +60,7 @@ class TestOCS extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testSendAuthenticationChallenge(): void {
-        $exp = HTTP::respEmpty(401);
+        $exp = self::error(401, "401");
         $this->assertMessage($exp, $this->req("GET", $this->userId, "", [], false));
     }
 
@@ -67,7 +70,7 @@ class TestOCS extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testSendBadRequest(): void {
-        $exp = HTTP::respEmpty(405, ['Allow' => "GET,HEAD", 'Vary' => "Accept"]);
+        $exp = self::error(405, ["405", "GET"], ['Allow' => "GET,HEAD", 'Vary' => "Accept"]);
         $this->assertMessage($exp, $this->req("PUT", $this->userId, "", [], false));
     }
 
