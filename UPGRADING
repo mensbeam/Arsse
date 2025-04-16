@@ -14,8 +14,8 @@ usually prudent:
 Upgrading from 0.11.0 to 0.12.0
 ===============================
 
-- The database schema has changed from rev6 to rev7; if upgrading the database
-  manually, apply the 6.sql file
+- The database schema has changed from rev7 to rev8; if upgrading the database
+  manually, apply the 7.sql file
 - This schema change is particularly invasive; performing a database backup
   prior to upgrading is highly recommended
 
