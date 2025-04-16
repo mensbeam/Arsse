@@ -11,6 +11,15 @@ usually prudent:
   `composer install -o --no-dev`
 
 
+Upgrading from 0.11.0 to 0.12.0
+===============================
+
+- The database schema has changed from rev6 to rev7; if upgrading the database
+  manually, apply the 6.sql file
+- This schema change is particularly invasive; performing a database backup
+  prior to upgrading is highly recommended
+
+
 Upgrading from 0.10.6 to 0.11.0
 ===============================
 
@@ -19,17 +28,7 @@ Upgrading from 0.10.6 to 0.11.0
   following URL paths are affected:
     - /ocs/v1.php/
   You may need to restart your Web server for changes to take effect
-    
 
-Upgrading from 0.10.6 to 0.11.0
-===============================
-
-- Web server configuration has changed to accommodate new Nextcloud
-  functionality which replaces deprecated Nextcloud News functionality; the
-  following URL paths are affected:
-    - /ocs/v1.php/
-  You may need to restart your Web server for changes to take effect
-    
 
 Upgrading from 0.10.4 to 0.10.5
 ===============================
@@ -66,13 +65,13 @@ Upgrading from 0.8.4 to 0.8.5
   affects the Fever protocol in particular (the parameter is required for 
   Fever to function at all), though it could potentially affect some
   Nextcloud News clients as well
-    
+
 
 Upgrading from 0.8.2 to 0.8.3
 =============================
 
 - PHP 7.1 is now required
-    
+
 
 Upgrading from 0.8.1 to 0.8.2
 =============================
