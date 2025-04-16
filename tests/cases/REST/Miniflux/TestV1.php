@@ -424,20 +424,35 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     #[DataProvider("provideUserAdditions")]
-    public function testAddAUser(array $body, ResponseInterface $exp): void {
-        $this->markTestIncomplete();
+    public function testAddAUser(array $body, $addOut, ResponseInterface $exp): void {
+        \Phake::when(Arsse::$user)->add->thenReturn($addOut ?? "");
+        \Phake::when(Arsse::$user)->propertiesGet->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com")->thenReturn(self::USERS[0]);
+        \Phake::when(Arsse::$user)->propertiesGet("ook")->thenReturn(array_merge(self::USERS[1], []));
+        \Phake::when(Arsse::$db)->userPropertiesGet("ook")->thenReturn(array_merge(self::USERS_META[1], []));
+        if (isset($body['timezone']) && !preg_match('/^(UTC|[A-Z][a-z]*\/[A-Z]([a-z]*|_[A-Z])*)$/', $body['timezone'])) {
+            \Phake::when(Arsse::$user)->propertiesSet->thenThrow(new UserExceptionInput("invalidTimezone"));
+        }
+        if ($addOut instanceof \Exception) {
+            \Phake::when(Arsse::$user)->add->thenThrow($addOut);
+        }
+        Arsse::$user->id = "john.doe@example.com";
+        $this->assertMessage($exp, $this->req("POST", "/users", $body));
+        if ($addOut) {
+            \Phake::verify(Arsse::$user)->add($body['username'], $body['password']);
+        } else {
+            \Phake::verify(Arsse::$user, \Phake::never())->add(\Phake::anyParameters());
+        }
     }
 
     public static function provideUserAdditions(): iterable {
-        $resp1 = array_merge(self::USERS[1], ['username' => "ook", 'password' => "eek"]);
         return [
-            [[],                                                                   V1::respError(["MissingInputValue", 'field' => "username"], 422)],
-            [['username' => "ook"],                                                V1::respError(["MissingInputValue", 'field' => "password"], 422)],
-            [['username' => "ook", 'password' => "eek"],                           V1::respError(["DuplicateUser", 'user' => "ook"], 409)],
-            [['username' => "j:k", 'password' => "eek"],                           V1::respError(["InvalidInputValue", 'field' => "username"], 422)],
-            [['username' => "ook", 'password' => "eek", 'timezone' => "ook"],      V1::respError(["InvalidInputValue", 'field' => "timezone"], 422)],
-            [['username' => "ook", 'password' => "eek", 'entries_per_page' => -1], V1::respError(["InvalidInputValue", 'field' => "entries_per_page"], 422)],
-            [['username' => "ook", 'password' => "eek", 'theme' => "default"],     HTTP::respJson($resp1, 201)],
+            [[],                                                                   null,                                      V1::respError(["MissingInputValue", 'field' => "username"], 422)],
+            [['username' => "ook"],                                                null,                                      V1::respError(["MissingInputValue", 'field' => "password"], 422)],
+            [['username' => "ook", 'password' => "eek"],                           new ExceptionConflict("alreadyExists"),    V1::respError(["DuplicateUser", 'user' => "ook"], 409)],
+            [['username' => "j:k", 'password' => "eek"],                           new UserExceptionInput("invalidUsername"), V1::respError(["InvalidInputValue", 'field' => "username"], 422)],
+            [['username' => "ook", 'password' => "eek", 'timezone' => "ook"],      "eek",                                     V1::respError(["InvalidInputValue", 'field' => "timezone"], 422)],
+            [['username' => "ook", 'password' => "eek", 'theme' => "dark_serif"],  "eek",                                     HTTP::respJson(array_merge(self::userssOut()[1], ['username' => 'ook', 'theme' => "dark_serif", 'password' => "eek"]), 201)],
         ];
     }
 
