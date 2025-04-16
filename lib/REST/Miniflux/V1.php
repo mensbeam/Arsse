@@ -800,7 +800,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     $out[$to] = V::normalize($prefs[$from] , $type);
                 }
             }
-            $out['entry_sorting_direction'] = ($out['entry_sorting_direction'] ?? false) ? "asc" : "desc";
+            if (isset($out['entry_sorting_direction'])) {
+                $out['entry_sorting_direction'] = ($out['entry_sorting_direction'] ?? false) ? "asc" : "desc";
+            }
         }
         // add general metadata under Miniflux keys
         foreach (self::USER_META_MAP as $to => $from) {
@@ -812,16 +814,18 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function editUserPrefs(string $user, array $data): array {
-        $tr = Arsse::$user->begin();
-        // start by getting the current user metadata and merging in the new data
-        unset($data['id']); // read-only
-        $data = array_merge($this->getPrefs($user), array_filter($data, function($v) {
+        $data = array_filter($data, function($v) {
             // we filter out nulls because every possible input key is
             //   populated by our input normalizer, so merging would simply
-            //   overwrite all the defaults, leaving a bunch of nulls
+            //   overwrite all the defaults (leaving a bunch of nulls), and
+            //   comparing keys would yield false positives
             return isset($v);
-        }));
-        // map Miniflux properties to internal metadata properties, and filter out anything which is set to its default
+        });
+        $tr = Arsse::$user->begin();
+        // start by getting the current user metadata and merging in the new data
+        unset($data['id']); // read-only; Miniflux ignores this altogether if you supply it
+        $newState = array_merge($this->getPrefs($user), $data);
+        // map Miniflux properties to internal metadata properties, and filter out anything else which is set to its default
         $meta = [];
         $prefs = [];
         foreach (self::USER_META_MAP as $from => $to) {
@@ -830,19 +834,19 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         foreach (self::USER_META_DEFAULTS as $key => $default) {
-            if (isset($data[$key]) && $data[$key] !== $default) {
-                $prefs[$key] = $data[$key];
+            if (isset($newState[$key]) && $newState[$key] !== $default) {
+                $prefs[$key] = $newState[$key];
             }
         }
         // make any requested changes
         if ($meta) {
             Arsse::$user->propertiesSet($user, $meta);
         }
-        if ($prefs) {
+        if ($prefs && array_intersect_key($prefs, $data)) {
             Arsse::$db->userPropertiesSet($user, ['miniflux_prefs' => json_encode($prefs, \JSON_UNESCAPED_SLASHES)]);
         }
         // read out the newly-modified user and commit the changes
-        $out = $this->transformUser($user, $data);
+        $out = $this->transformUser($user, $newState);
         $tr->commit();
         // add the input password if a password change was requested
         if (isset($data['password'])) {
@@ -909,15 +913,16 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function updateUserByNum(array $path, array $data): ResponseInterface {
+        $tr = Arsse::$user->begin();
         // this function is restricted to admins unless the affected user and calling user are the same
-        $user = Arsse::$user->propertiesGet(Arsse::$user->id);
-        if (((int) $path[1]) === $user['num']) {
-            if ($data['is_admin'] && !$user['admin']) {
+        $self = Arsse::$user->propertiesGet(Arsse::$user->id);
+        if (((int) $path[1]) === $self['num']) {
+            if ($data['is_admin'] && !$self['admin']) {
                 // non-admins should not be able to set themselves as admin
                 return self::respError("InvalidElevation", 403);
             }
             $user = Arsse::$user->id;
-        } elseif (!$user['admin']) {
+        } elseif (!$self['admin']) {
             return self::respError("403", 403);
         } else {
             try {
@@ -928,7 +933,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // make any requested changes
         try {
-            $tr = Arsse::$user->begin();
             if (isset($data['username'])) {
                 Arsse::$user->rename($user, $data['username']);
                 $user = $data['username'];
@@ -944,8 +948,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return self::respError(["DuplicateUser", 'user' => $data['username']], 409);
                 case 10441:
                     return self::respError(["InvalidInputValue", 'field' => "timezone"], 422);
-                case 10443:
-                    return self::respError(["InvalidInputValue", 'field' => "entries_per_page"], 422);
                 case 10444:
                     return self::respError(["InvalidInputValue", 'field' => "username"], 422);
             }

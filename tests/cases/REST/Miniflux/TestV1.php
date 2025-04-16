@@ -35,16 +35,19 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         ['num' => 1, 'admin' => true,  'lang' => "fr_CA", 'tz' => "Asia/Gaza", 'root_folder_name' => "Uncategorized"],
         ['num' => 2, 'admin' => false, 'lang' => null,    'tz' => null,        'root_folder_name' => null],
         ['num' => 3, 'admin' => true,  'lang' => "fr_CA", 'tz' => "Asia/Gaza", 'root_folder_name' => "Uncategorized"],
+        ['num' => 4, 'admin' => false, 'lang' => null,    'tz' => null,        'root_folder_name' => null],
     ];
     protected const USERS_META = [
-        ['theme' => "custom", 'sort_asc' => true, 'page_size' => 200,  'shortcuts' => false, 'reading_time' => false, 'gestures' => false, 'stylesheet' => "p {}"],
+        ['theme' => "system_serif", 'sort_asc' => false, 'page_size' => 200,  'shortcuts' => false, 'reading_time' => false, 'gestures' => false, 'stylesheet' => "p {}"],
         [],
-        ['miniflux_prefs' => '{"id":1,"username":"john.doe@example.com","last_login_at":"'.self::NOW.'","is_admin":true,"theme":"custom","language":"fr_CA","timezone":"Asia/Gaza","entry_sorting_direction":"asc","entries_per_page":200,"keyboard_shortcuts":false,"show_reading_time":false,"entry_swipe":false,"stylesheet":"p {}"}'],
+        ['miniflux_prefs' => '{"id":1,"username":"john.doe@example.com","theme":"system_serif","language":"fr_CA","timezone":"Asia/Gaza","entry_sorting_direction":"desc","entries_per_page":200,"keyboard_shortcuts":false,"show_reading_time":false,"entry_swipe":false,"stylesheet":"p {}"}'],
+        ['miniflux_prefs' => '{"gesture_nav":"none"}'],
     ];
     protected const USERS_OUT = [
-        ['id' => 1, 'username' => "john.doe@example.com", 'last_login_at' => self::NOW, 'is_admin' => true,  'theme' => "custom",      'language' => "fr_CA", 'timezone' => "Asia/Gaza", 'entry_sorting_direction' => "asc",  'entries_per_page' => 200, 'keyboard_shortcuts' => false, 'show_reading_time' => false, 'entry_swipe' => false, 'stylesheet' => "p {}"],
-        ['id' => 2, 'username' => "jane.doe@example.com", 'last_login_at' => self::NOW, 'is_admin' => false, 'theme' => "light_serif", 'language' => "en_US", 'timezone' => "UTC",       'entry_sorting_direction' => "desc", 'entries_per_page' => 100, 'keyboard_shortcuts' => true,  'show_reading_time' => true,  'entry_swipe' => true,  'stylesheet' => ""],
-        ['id' => 3, 'username' => "juan.doe@example.com", 'last_login_at' => self::NOW, 'is_admin' => true,  'theme' => "custom",      'language' => "fr_CA", 'timezone' => "Asia/Gaza", 'entry_sorting_direction' => "asc",  'entries_per_page' => 200, 'keyboard_shortcuts' => false, 'show_reading_time' => false, 'entry_swipe' => false, 'stylesheet' => "p {}"],
+        ['id' => 1, 'username' => "john.doe@example.com", 'last_login_at' => self::NOW, 'is_admin' => true,  'theme' => "system_serif", 'language' => "fr_CA", 'timezone' => "Asia/Gaza", 'entry_sorting_direction' => "desc", 'entries_per_page' => 200, 'keyboard_shortcuts' => false, 'show_reading_time' => false, 'entry_swipe' => false, 'stylesheet' => "p {}"],
+        ['id' => 2, 'username' => "jane.doe@example.com", 'last_login_at' => self::NOW, 'is_admin' => false, 'theme' => "light_serif",  'language' => "en_US", 'timezone' => "UTC",       'entry_sorting_direction' => "asc",  'entries_per_page' => 100, 'keyboard_shortcuts' => true,  'show_reading_time' => true,  'entry_swipe' => true,  'stylesheet' => ""],
+        ['id' => 3, 'username' => "juan.doe@example.com", 'last_login_at' => self::NOW, 'is_admin' => true,  'theme' => "system_serif", 'language' => "fr_CA", 'timezone' => "Asia/Gaza", 'entry_sorting_direction' => "desc", 'entries_per_page' => 200, 'keyboard_shortcuts' => false, 'show_reading_time' => false, 'entry_swipe' => false, 'stylesheet' => "p {}"],
+        ['id' => 4, 'username' => "baby.doe@example.com", 'last_login_at' => self::NOW, 'is_admin' => false, 'theme' => "light_serif",  'language' => "en_US", 'timezone' => "UTC",       'entry_sorting_direction' => "asc",  'entries_per_page' => 100, 'keyboard_shortcuts' => true,  'show_reading_time' => true,  'entry_swipe' => true,  'stylesheet' => "", 'gesture_nav' => "none"],
     ];
     protected const USER_OUT_STATIC = [
         'id'                                   => null,
@@ -305,19 +308,22 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testQueryUsers(bool $admin, string $route, ResponseInterface $exp): void {
         $user = $admin ? "john.doe@example.com" : "jane.doe@example.com";
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->list->thenReturn(["john.doe@example.com", "jane.doe@example.com", "juan.doe@example.com", "admin@example.com"]);
+        \Phake::when(Arsse::$user)->list->thenReturn(["john.doe@example.com", "jane.doe@example.com", "juan.doe@example.com", "baby.doe@example.com", "admin@example.com"]);
         \Phake::when(Arsse::$user)->propertiesGet->thenThrow(new ExceptionConflict("doesNotExist"));
         \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com")->thenReturn(self::USERS[0]);
         \Phake::when(Arsse::$user)->propertiesGet("jane.doe@example.com")->thenReturn(self::USERS[1]);
         \Phake::when(Arsse::$user)->propertiesGet("juan.doe@example.com")->thenReturn(self::USERS[2]);
+        \Phake::when(Arsse::$user)->propertiesGet("baby.doe@example.com")->thenReturn(self::USERS[3]);
         \Phake::when(Arsse::$db)->userPropertiesGet->thenThrow(new ExceptionConflict("doesNotExist"));
         \Phake::when(Arsse::$db)->userPropertiesGet("john.doe@example.com")->thenReturn(self::USERS_META[0]);
         \Phake::when(Arsse::$db)->userPropertiesGet("jane.doe@example.com")->thenReturn(self::USERS_META[1]);
         \Phake::when(Arsse::$db)->userPropertiesGet("juan.doe@example.com")->thenReturn(self::USERS_META[2]);
+        \Phake::when(Arsse::$db)->userPropertiesGet("baby.doe@example.com")->thenReturn(self::USERS_META[3]);
         \Phake::when(Arsse::$user)->lookup->thenThrow(new ExceptionConflict("doesNotExist"));
         \Phake::when(Arsse::$user)->lookup(1)->thenReturn("john.doe@example.com");
         \Phake::when(Arsse::$user)->lookup(2)->thenReturn("jane.doe@example.com");
         \Phake::when(Arsse::$user)->lookup(3)->thenReturn("juan.doe@example.com");
+        \Phake::when(Arsse::$user)->lookup(4)->thenReturn("baby.doe@example.com");
         $this->assertMessage($exp, $this->req("GET", $route, "", [], $user));
     }
 
@@ -348,32 +354,72 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     #[DataProvider("provideUserModifications")]
-    public function testModifyAUser(bool $admin, string $url, array $body, ResponseInterface $exp): void {
-        $this->markTestIncomplete();
+    public function testModifyAUser(bool $admin, string $url, array $body, $metaIn, $prefsIn, $passwordOut, $renameOut, ResponseInterface $exp): void {
+        $subject = self::USERS_OUT[array_reverse(explode("/", $url))[0] - 1]['username'] ?? "";
+        \Phake::when(Arsse::$user)->lookup->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->lookup(1)->thenReturn("john.doe@example.com");
+        \Phake::when(Arsse::$user)->lookup(2)->thenReturn("jane.doe@example.com");
+        \Phake::when(Arsse::$user)->lookup(3)->thenReturn("juan.doe@example.com");
+        \Phake::when(Arsse::$user)->lookup(4)->thenReturn("baby.doe@example.com");
+        \Phake::when(Arsse::$user)->propertiesGet->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com")->thenReturn(array_merge(self::USERS[0], ['admin' => $admin]));
+        \Phake::when(Arsse::$user)->propertiesGet("jane.doe@example.com")->thenReturn(self::USERS[1]);
+        \Phake::when(Arsse::$user)->propertiesGet("juan.doe@example.com")->thenReturn(self::USERS[2]);
+        \Phake::when(Arsse::$user)->propertiesGet("baby.doe@example.com")->thenReturn(self::USERS[3]);
+        \Phake::when(Arsse::$db)->userPropertiesGet("john.doe@example.com")->thenReturn(self::USERS_META[0]);
+        \Phake::when(Arsse::$db)->userPropertiesGet("jane.doe@example.com")->thenReturn(self::USERS_META[1]);
+        \Phake::when(Arsse::$db)->userPropertiesGet("juan.doe@example.com")->thenReturn(self::USERS_META[2]);
+        \Phake::when(Arsse::$db)->userPropertiesGet("baby.doe@example.com")->thenReturn(self::USERS_META[3]);
+        \Phake::when(Arsse::$user)->rename->thenReturn($renameOut ?? false);
+        \Phake::when(Arsse::$user)->passwordSet->thenReturn($passwordOut ?? "");
+        \Phake::when(Arsse::$user)->propertiesGet("ook")->thenReturn(array_merge(self::USERS[0], ['admin' => $admin]));
+        \Phake::when(Arsse::$db)->userPropertiesGet("ook")->thenReturn(array_merge(self::USERS_META[0], []));
+        if ($renameOut instanceof \Exception) {
+            \Phake::when(Arsse::$user)->rename->thenThrow($renameOut);
+        }
+        if (isset($body['timezone']) && !preg_match('/^(UTC|[A-Z][a-z]*\/[A-Z]([a-z]*|_[A-Z])*)$/', $body['timezone'])) {
+            \Phake::when(Arsse::$user)->propertiesSet->thenThrow(new UserExceptionInput("invalidTimezone"));
+        }
+        Arsse::$user->id = "john.doe@example.com";
+        $this->assertMessage($exp, $this->req("PUT", $url, $body));
+        if (isset($body['username'])) {
+            \Phake::verify(Arsse::$user)->rename($subject, $body['username']);
+        } else {
+            \Phake::verify(Arsse::$user, \Phake::never())->rename(\Phake::anyParameters());
+        }
+        if (isset($body['password'])) {
+            \Phake::verify(Arsse::$user)->passwordSet($body['username'] ?? $subject, $body['password']);
+        } else {
+            \Phake::verify(Arsse::$user, \Phake::never())->passwordSet(\Phake::anyParameters());
+        }
+        if (isset($metaIn)) {
+            \Phake::verify(Arsse::$user)->propertiesSet($body['username'] ?? $subject, $metaIn);
+        } else {
+            \Phake::verify(Arsse::$user, \Phake::never())->propertiesSet(\Phake::anyParameters());
+        }
+        if (isset($prefsIn)) {
+            \Phake::verify(Arsse::$db)->userPropertiesSet($body['username'] ?? $subject, $prefsIn);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->userPropertiesSet(\Phake::anyParameters());
+        }
     }
 
     public static function provideUserModifications(): iterable {
         self::clearData();
-        $out1 = ['num' => 2, 'admin' => false];
-        $out2 = ['num' => 1, 'admin' => false];
-        $resp1 = array_merge(self::USERS[1], ['username' => "john.doe@example.com"]);
-        $resp2 = array_merge(self::USERS[1], ['id' => 1, 'is_admin' => true]);
         return [
-            [false, "/users/1", ['is_admin' => 0],                          V1::respError(["InvalidInputType", 'field' => "is_admin", 'expected' => "boolean", 'actual' => "integer"], 422)],
-            [false, "/users/1", ['entry_sorting_direction' => "bad"],       V1::respError(["InvalidInputValue", 'field' => "entry_sorting_direction"], 422)],
-            [false, "/users/1", ['theme' => "stark"],                       V1::respError("403", 403)],
-            [false, "/users/2", ['is_admin' => true],                       V1::respError("InvalidElevation", 403)],
-            [false, "/users/2", ['language' => "fr_CA"],                    HTTP::respJson($resp1, 201)],
-            [false, "/users/2", ['entry_sorting_direction' => "asc"],       HTTP::respJson($resp1, 201)],
-            [false, "/users/2", ['entry_sorting_direction' => "desc"],      HTTP::respJson($resp1, 201)],
-            [false, "/users/2", ['entries_per_page' => -1],                 V1::respError(["InvalidInputValue", 'field' => "entries_per_page"], 422)],
-            [false, "/users/2", ['timezone' => "Ook"],                      V1::respError(["InvalidInputValue", 'field' => "timezone"], 422)],
-            [false, "/users/2", ['username' => "j:k"],                      V1::respError(["InvalidInputValue", 'field' => "username"], 422)],
-            [false, "/users/2", ['username' => "ook"],                      V1::respError(["DuplicateUser", 'user' => "ook"], 409)],
-            [false, "/users/2", ['password' => "ook"],                      HTTP::respJson(array_merge($resp1, ['password' => "ook"]), 201)],
-            [false, "/users/2", ['username' => "ook", 'password' => "ook"], HTTP::respJson(array_merge($resp1, ['username' => "ook", 'password' => "ook"]), 201)],
-            [true,  "/users/1", ['theme' => "stark"],                       HTTP::respJson($resp2, 201)],
-            [true,  "/users/3", ['theme' => "stark"],                       V1::respError("404", 404)],
+            [true,  "/users/9", ['theme' => "dark_sans_serif"],             null,                null,                                                                null,  null,                                      V1::respError("404", 404)],
+            [false, "/users/1", ['is_admin' => 0],                          null,                null,                                                                null,  null,                                      V1::respError(["InvalidInputType", 'field' => "is_admin", 'expected' => "boolean", 'actual' => "integer"], 422)],
+            [false, "/users/1", ['entry_sorting_direction' => "bad"],       null,                null,                                                                null,  null,                                      V1::respError(["InvalidInputValue", 'field' => "entry_sorting_direction"], 422)],
+            [false, "/users/1", ['username' => "j:k"],                      null,                null,                                                                null,  new UserExceptionInput("invalidUsername"), V1::respError(["InvalidInputValue", 'field' => "username"], 422)],
+            [false, "/users/1", ['username' => "juan.doe@example.com"],     null,                null,                                                                null,  new ExceptionConflict("alreadyExists"),    V1::respError(["DuplicateUser", 'user' => "juan.doe@example.com"], 409)],
+            [false, "/users/2", ['theme' => "dark_serif"],                  null,                null,                                                                null,  null,                                      V1::respError("403", 403)],
+            [false, "/users/1", ['is_admin' => true],                       null,                null,                                                                null,  null,                                      V1::respError("InvalidElevation", 403)],
+            [false, "/users/1", ['password' => "ook"],                      null,                null,                                                                "ook", null,                                      HTTP::respJson(array_merge(self::userssOut()[0], ['is_admin' => false, 'password' => "ook"]), 201)],
+            [false, "/users/1", ['username' => "ook", 'password' => "ook"], null,                null,                                                                "ook", true,                                      HTTP::respJson(array_merge(self::userssOut()[0], ['is_admin' => false, 'username' => "ook", 'password' => "ook"]), 201)],
+            [false, "/users/1", ['timezone' => "Ook"],                      ['tz' => "Ook"],     null,                                                                null,  null,                                      V1::respError(["InvalidInputValue", 'field' => "timezone"], 422)],
+            [true,  "/users/2", ['language' => "fr_CA"],                    ['lang' => "fr_CA"], null,                                                                null,  null,                                      HTTP::respJson(array_merge(self::userssOut()[1], ['language' => "fr_CA"]), 201)],
+            [true,  "/users/2", ['theme' => "dark_sans_serif"],             null,                ['miniflux_prefs' => '{"theme":"dark_sans_serif"}'],                 null,  null,                                      HTTP::respJson(array_merge(self::userssOut()[1], ['theme' => "dark_sans_serif"]), 201)],
+            [true,  "/users/4", ['theme' => "dark_serif"],                  null,                ['miniflux_prefs' => '{"theme":"dark_serif","gesture_nav":"none"}'], null,  null,                                      HTTP::respJson(array_merge(self::userssOut()[3], ['theme' => "dark_serif"]), 201)],
         ];
     }
 
