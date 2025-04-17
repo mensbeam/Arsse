@@ -349,7 +349,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             assert(isset(Arsse::$lang) && Arsse::$lang instanceof \JKingWeb\Arsse\Lang, new \Exception("Language database must be initialized before use"));
             $message = Arsse::$lang->msg("API.Miniflux.Error.".array_shift($message), $message);
         }
-        return HTTP::respJson(['message' => $message], $status, $headers);
+        return HTTP::respJson(['error_message' => $message], $status, $headers);
     }
 
     protected function authenticate(ServerRequestInterface $req): bool {
