@@ -341,12 +341,15 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function __construct() {
     }
 
-    public static function respError($data, int $status = 400, array $headers = []): ResponseInterface {
-        assert(isset(Arsse::$lang) && Arsse::$lang instanceof \JKingWeb\Arsse\Lang, new \Exception("Language database must be initialized before use"));
-        $data = (array) $data;
-        $msg = array_shift($data);
-        $data = ["error_message" => Arsse::$lang->msg("API.Miniflux.Error.".$msg, $data)];
-        return HTTP::respJson($data, $status, $headers);
+    public static function respError($message, int $status = 400, array $headers = []): ResponseInterface {
+        if ($message instanceof \Exception) {
+            $message = $message->getMessage();
+        } else {
+            $message = (array) $message;
+            assert(isset(Arsse::$lang) && Arsse::$lang instanceof \JKingWeb\Arsse\Lang, new \Exception("Language database must be initialized before use"));
+            $message = Arsse::$lang->msg("API.Miniflux.Error.".array_shift($message), $message);
+        }
+        return HTTP::respJson(['message' => $message], $status, $headers);
     }
 
     protected function authenticate(ServerRequestInterface $req): bool {
@@ -429,10 +432,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             // @codeCoverageIgnoreStart
         } catch (Exception $e) {
             // if there was a REST exception return 400
-            return HTTP::respEmpty(400);
+            return self::respError($e, 400);
         } catch (AbstractException $e) {
             // if there was any other Arsse exception return 500
-            return HTTP::respEmpty(500);
+            return self::respError($e, 500);
         }
         // @codeCoverageIgnoreEnd
     }
