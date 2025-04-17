@@ -73,7 +73,7 @@ class Feed {
         $this->etag = $client->getEtag();
         // parse the feed, if it has been modified
         if ($this->modified) {
-            $this->parse($client, $reader);
+            $this->parse($client, $reader, $userAgent, $cookie);
             // ascertain whether there are any articles not in the database
             $this->matchToDatabase($feedID);
             // if caching header fields are not sent by the server, try to ascertain a last-modified date from the feed contents
@@ -119,7 +119,7 @@ class Feed {
         }
     }
 
-    protected function parse(Client $client, Reader $reader): void {
+    protected function parse(Client $client, Reader $reader, ?string $userAgent, ?string $cookie): void {
         try {
             $feed = $reader->getParser(
                 $client->getUrl(),
@@ -133,8 +133,10 @@ class Feed {
         // Grab the favicon for the feed, or null if no valid icon is found
         // Some feeds might use a different domain (eg: feedburner), so the site url is
         // used instead of the feed's url.
-        $icon = new Favicon;
-        $this->iconUrl = $icon->find($feed->siteUrl, $feed->getIcon());
+        $icon = new Favicon(self::configure($userAgent, $cookie));
+        try {
+            $this->iconUrl = $icon->find($feed->siteUrl, $feed->getIcon());
+        } catch (GuzzleException $e) {}
         $this->iconData = $icon->getContent();
         if (strlen($this->iconData)) {
             $this->iconType = $icon->getType();
