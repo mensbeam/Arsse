@@ -1181,6 +1181,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return self::respError("MissingCategory", 422);
                 case 10236:
                     return self::respError("DuplicateFeed", 409);
+                default:
+                    throw $e;
             }
         }
         return HTTP::respJson(['feed_id' => $id], 201);
