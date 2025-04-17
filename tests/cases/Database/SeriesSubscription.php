@@ -241,7 +241,7 @@ trait SeriesSubscription {
             $this->assertSame($id, Arsse::$db->subscriptionAdd($this->user, $url, false, ['order_type' => 2]));
         } finally {
             \Phake::verify(Arsse::$db)->subscriptionUpdate($this->user, $id, true);
-            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($this->user, $id, ['order_type' => 2]);
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($this->user, $id, ['order_type' => 2], true);
             $state = $this->primeExpectations($this->data, ['arsse_subscriptions' => ["id", "owner", "url", "deleted", "modified"]]);
             $state['arsse_subscriptions']['rows'][] = [$id, $this->user, $url, 0, Date::transform("now", "sql")];
             $this->compareExpectations(static::$drv, $state);
@@ -259,7 +259,7 @@ trait SeriesSubscription {
             Arsse::$db->subscriptionAdd($this->user, $url, false, ['order_type' => 2]);
         } finally {
             \Phake::verify(Arsse::$db)->subscriptionUpdate($this->user, $id, true);
-            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($this->user, $id, ['order_type' => 2]);
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($this->user, $id, ['order_type' => 2], true);
             $state = $this->primeExpectations($this->data, ['arsse_subscriptions' => ["id", "owner", "url", "deleted", "modified"]]);
             $this->compareExpectations(static::$drv, $state);
         }

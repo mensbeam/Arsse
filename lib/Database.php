@@ -787,7 +787,7 @@ class Database {
         $id = $this->subscriptionReserve($user, $url, $discover, $properties);
         try {
             if ($properties) {
-                $this->subscriptionPropertiesSet($user, $id, $properties);
+                $this->subscriptionPropertiesSet($user, $id, $properties, true);
             }
             $this->subscriptionUpdate($user, $id, true);
             $this->subscriptionReveal($user, $id);
@@ -1046,11 +1046,12 @@ class Database {
      * @param string $user The user whose subscription is to be modified
      * @param integer $id the numeric identifier of the subscription to modfify
      * @param array $data An associative array of properties to modify; any keys not specified will be left unchanged
+     * @param boolean $deleted Whether to process the operation when the subscription is soft-deleted. This is required to be true when subscriptions are reserved but not yet fetched
      */
-    public function subscriptionPropertiesSet(string $user, $id, array $data): bool {
+    public function subscriptionPropertiesSet(string $user, $id, array $data, bool $acceptDeleted = false): bool {
         $tr = $this->db->begin();
         // validate the ID
-        $id = (int) $this->subscriptionValidateId($user, $id, true)['id'];
+        $id = (int) $this->subscriptionValidateId($user, $id, true, $acceptDeleted)['id'];
         if (array_key_exists("folder", $data)) {
             // ensure the target folder exists and belong to the user
             $data['folder'] = $this->folderValidateId($user, $data['folder'])['id'];
