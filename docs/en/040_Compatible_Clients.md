@@ -20,24 +20,6 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
   </tr>
   <tr>
-   <td><a href="https://github.com/yurikhan/miniflux-reader">Miniflux Reader</a></td>
-   <td></td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td>Functional, but has some display glitches.</td>
-  </tr>
-  <tr>
-   <td><a href="https://github.com/jgerstbe/nx-news-ion">NX News</a></td>
-   <td></td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td>Extremely basic client.</td>
-  </tr>
-  <tr>
    <td><a href="https://github.com/reminiflux/reminiflux">reminiflux</a></td>
    <td></td>
    <td class="Y">✔</td>
@@ -46,17 +28,6 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td>
     <p>Three-pane alternative front-end for Minflux. Does not include functionality for managing feeds. Requires token authentication.</p>
-   </td>
-  </tr>
-  <tr>
-   <td><a href="https://github.com/kucrut/ttrss-reader">Tiny Tiny RSS Reader</a></td>
-   <td></td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td>
-    <p></p>
    </td>
   </tr>
   <tr>
@@ -74,18 +45,6 @@ The Arsse does not at this time have any first party clients. However, because T
  <tbody>
   <tr>
    <th colspan="7">Desktop</th>
-  </tr>
-  <tr>
-   <td><a href="https://jangernert.github.io/FeedReader/">FeedReader</a></td>
-   <td>Linux</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td>
-    <p>Excellent reader; discontinued in favour of NewsFlash.</p>
-    <p>Not compatible with HTTP authentication when using TT-RSS.</p>
-   </td>
   </tr>
   <tr>
    <td><a href="https://lzone.de/liferea/">Liferea</a></td>
@@ -110,7 +69,7 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
-   <td><a href="https://gitlab.com/news-flash/news_flash_gtk">NewsFlash</a></td>
+   <td><a href="https://gitlab.com/news-flash/news_flash_gtk">Newsflash</a></td>
    <td>Linux</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
@@ -118,17 +77,6 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="Y">✔</td>
    <td>
     <p>Successor to FeedReader. One of the best on any platform</p>
-   </td>
-  </tr>
-  <tr>
-   <td><a href="https://reeder.app/">Reeder 3</a></td>
-   <td>macOS</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td>
-    <p>Also available for iOS. Reeder 5 no longer supports the Fever protocol.</p>
    </td>
   </tr>
   <tr>
@@ -160,7 +108,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <th colspan="7">Mobile</th>
   </tr>
   <tr>
-   <td><a href="https://peterandlinda.com/cloudnews/">CloudNews</a></td>
+   <td><a href="https://pbh.dev/cloudnews/">CloudNews</a></td>
    <td>iOS</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
@@ -176,7 +124,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
-   <td class="N">✘</td>
+   <td class="Y">✔</td>
    <td>
     <p>Not compatible with HTTP authentication.</p>
    </td>
@@ -190,7 +138,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="Y">✔</td>
    <td>
     <p>Rentalware - For the software to be usable (you can't even add feeds otherwise) a subscription fee must be paid.</p>
-    <p>Support HTTP authentication with Fever.</p>
+    <p>Supports HTTP authentication with Fever.</p>
     <p>Currently keeps showing items in the unread badge which have already been read.</p>
    </td>
   </tr>
@@ -206,24 +154,6 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
-   <td><a href="https://play.google.com/store/apps/details?id=com.constantin.microflux">Microflux for Miniflux</a></td>
-   <td>Android</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td></td>
-  </tr>
-  <tr>
-   <td><a href="https://play.google.com/store/apps/details?id=mobi.newsjet.rss">NewsJet RSS</a></td>
-   <td>Android</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td></td>
-  </tr>
-  <tr>
    <td><a href="https://github.com/SimonSchubert/NewsOut">Newsout</a></td>
    <td>Android, iOS</td>
    <td class="N">✘</td>
@@ -231,7 +161,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td>
-    <p>iOS version only as source code.</p>
+    <p>iOS version only as source code; discontinued</p>
    </td>
   </tr>
   <tr>
@@ -246,55 +176,13 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
-   <td><a href="https://github.com/schaal/ocreader/">OCReader</a></td>
-   <td>Android</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td></td>
-  </tr>
-  <tr>
-   <td><a href="https://play.google.com/store/apps/details?id=com.isaiasmatewos.readably">Readably</a></td>
-   <td>Android</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td>
-    <p>Fetches favicons independently.</p>
-   </td>
-  </tr>
-  <tr>
    <td><a href="https://github.com/readrops/Readrops">Readrops</a></td>
    <td>Android</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
-   <td class="N">✘</td>
+   <td class="Y">✔</td>
    <td></td>
-  </tr>
-  <tr>
-   <td><a href="https://github.com/ali322/reed">Reed</a></td>
-   <td>Android</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td>
-    <p>Binaries only available from GitHub.</p>
-   </td>
-  </tr>
-  <tr>
-   <td><a href="https://reeder.app/">Reeder</a></td>
-   <td>iOS</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td>
-    <p>Also available for macOS.</p>
-   </td>
   </tr>
   <tr>
    <td><a href="http://tt-rss.org/">Tiny Tiny RSS</a></td>
@@ -383,28 +271,6 @@ The Arsse does not at this time have any first party clients. However, because T
     <p></p>
    </td>
   </tr>
-  <!--
-  <tr>
-   <td><a href="https://github.com/fabienheureux/liseur">Liseur</a></td>
-   <td>Windows?</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td>
-    <p>Level of functionality unclear.</p>
-   </td>
-  </tr>
-  <tr>
-   <td><a href="https://github.com/jakobend/maxiflux">maxiflux</a></td>
-   <td>Web</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td>Level of functionality unclear.</td>
-  </tr>
-  -->
   <tr>
    <td><a href="https://github.com/DocMarty84/miniflutt">Miniflutt</a></td>
    <td>Android</td>
@@ -426,7 +292,7 @@ The Arsse does not at this time have any first party clients. However, because T
   </tr>
   <tr>
    <td><a href="https://readkitapp.com/">ReadKit</a></td>
-   <td>macOS</td>
+   <td>macOS, iOS</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
