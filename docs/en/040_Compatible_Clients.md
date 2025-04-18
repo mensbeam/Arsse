@@ -20,6 +20,16 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
   </tr>
   <tr>
+   <td><a href="https://github.com/electh/nextflux">Nextflux</a></td>
+   <td></td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>
+   </td>
+  </tr>
+  <tr>
    <td><a href="https://github.com/reminiflux/reminiflux">reminiflux</a></td>
    <td></td>
    <td class="Y">✔</td>
@@ -45,6 +55,16 @@ The Arsse does not at this time have any first party clients. However, because T
  <tbody>
   <tr>
    <th colspan="7">Desktop</th>
+  </tr>
+  <tr>
+   <td><a href="https://hyliu.me/fluent-reader/">Fluent Reader</a></td>
+   <td>Linux</td>
+   <td class="Y">✔</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td>
+   </td>
   </tr>
   <tr>
    <td><a href="https://lzone.de/liferea/">Liferea</a></td>
@@ -288,6 +308,27 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/JuanJakobo/Pocketbook-Miniflux-Reader">Pocketbook Miniflux Reader</a></td>
+   <td>Pocketbook</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/electh/ReactFlux">ReactFlux</a></td>
+   <td>Web</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>
+    <p>Does not seem to sync once logged in.</p>
    </td>
   </tr>
   <tr>
