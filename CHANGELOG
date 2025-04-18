@@ -12,6 +12,7 @@ Bug fixes:
 - Provide structured error responses in the Nextcloud News protocol
 - Always present enclosures as an array in the Miniflux protocol; this restores
   synchronization with the Newsflash client
+- Relax validation of numeric values in GET queries in the Miniflux protocol
 - Handle errors during article scraping gracefully
 - Use authentication while scraping where appropriate
 

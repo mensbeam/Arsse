@@ -143,7 +143,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'categories_sorting_order' => ["unread_count", "alphabetical"],
     ];
     /** The list of inputs which must be integers greater than zero */
-    protected const VALID_ONE_OR_MORE = ["category_id", "before_entry_id", "after_entry_id", "entries_per_page", "default_reading_speed", "cjk_reading_speed", "media_playback_rate"];
+    protected const VALID_ONE_OR_MORE = ["category_id", "entries_per_page", "default_reading_speed", "cjk_reading_speed", "media_playback_rate"];
     /** A map between Miniflux's input properties and our input properties when modifiying feeds
      *
      * Miniflux also allows changing the following properties:
@@ -537,9 +537,9 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return self::respError(["DuplicateInputValue", 'field' => $k], 400);
                 }
                 $seen[$k] = true;
-                if ($v === "" || ($t === V::T_DATE && $v === "0")) {
+                if ($v === "" || (in_array($t, [V::T_INT, V::T_DATE]) && $v < 1)) {
                     // if the value is empty we can discard the value, but subsequent values for the same non-array key are still considered duplicates
-                    // for date fields a value of zero is also considered empty
+                    // for numeric fields (which includes UNIX timestamps) any value less than one is also considered empty
                     continue;
                 } elseif ($a) {
                     $out[$k][] = V::normalize($v, $t + V::M_STRICT, "unix");
@@ -550,11 +550,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return self::respError(["InvalidInputValue", 'field' => $k], 400);
             }
             // perform additional validation
-            if (
-                (isset(self::VALID_ENUM[$k]) && !in_array($v, self::VALID_ENUM[$k]))
-                || (in_array($k, self::VALID_ONE_OR_MORE) && $v < 1)
-                || (in_array($k, ["limit", "offset"]) && $v < 0)
-            ) {
+            if (isset(self::VALID_ENUM[$k]) && !in_array($v, self::VALID_ENUM[$k])) {
                 return self::respError(["InvalidInputValue", 'field' => $k], 400);
             }
         }
