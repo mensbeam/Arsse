@@ -194,6 +194,15 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
+   <td><a href="https://github.com/DocMarty84/miniflutt">Miniflutt</a></td>
+   <td>Android</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>Requires token authentication.</td>
+  </tr>
+  <tr>
    <td><a href="https://github.com/SimonSchubert/NewsOut">Newsout</a></td>
    <td>Android, iOS</td>
    <td class="N">✘</td>
@@ -310,15 +319,6 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>
     <p></p>
    </td>
-  </tr>
-  <tr>
-   <td><a href="https://github.com/DocMarty84/miniflutt">Miniflutt</a></td>
-   <td>Android</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td>Does not display articles (<a href="https://github.com/DocMarty84/miniflutt/issues/3">see bug</a>)</td>
   </tr>
   <tr>
    <td><a href="https://open-store.io/app/newsie.martinferretti">Newsie</a></td>
