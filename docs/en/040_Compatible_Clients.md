@@ -173,6 +173,16 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
+   <td><a href="https://hyliu.me/fluent-reader-lite/">Fluent Reader Lite</a></td>
+   <td>Android, iOS</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td>
+   </td>
+  </tr>
+  <tr>
    <td><a href="https://github.com/fbarthelery/geekttrss">Geekttrss</a></td>
    <td>Android</td>
    <td class="N">✘</td>
