@@ -41,7 +41,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const ACCEPTED_TYPES_OPML = ["application/xml", "text/xml", "text/x-opml"];
     protected const ACCEPTED_TYPES_JSON = ["application/json"];
     protected const DEFAULT_ENTRY_LIMIT = 100;
-    protected const DEFAULT_ORDER_COL = "modified_date";
+    protected const DEFAULT_ORDER_COL = "added_date";
     protected const DATE_FORMAT_SEC = "Y-m-d\TH:i:sP";
     protected const DATE_FORMAT_MICRO = "Y-m-d\TH:i:s.uP";
     /** The list of valid URL query keys and the types they are converted to */
@@ -131,7 +131,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
      * This list includes both URL query keys and JSON body keys.
      */
     protected const VALID_ENUM = [
-        'order'                    => ["id", "status", "published_at", "category_title", "category_id", "title", "author"],
+        'order'                    => ["id", "status", "changed_at", "published_at", "created_at", "category_title", "category_id", "title", "author"],
         'direction'                => ["asc", "desc"],
         'status'                   => ["read", "unread", "removed"],
         'theme'                    => ["dark_sans_serif", "dark_serif", "light_sans_serif", "light_serif", "system_sans_serif", "system_serif"],
@@ -1296,6 +1296,10 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return ["hidden desc", "unread"];
             }
         } elseif ($query['order'] === "published_at") {
+            return ["published_date".$desc];
+        } elseif ($query['order'] === "created_at") {
+            return ["added_date".$desc];
+        } elseif ($query['order'] === "changed_at") {
             return ["modified_date".$desc];
         } elseif ($query['order'] === "category_title") {
             return ["top_folder_name".$desc];
