@@ -1,16 +1,20 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\ValueInfo as I;
 use JKingWeb\Arsse\Test\Misc\StrClass;
 use JKingWeb\Arsse\Test\Result;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\Misc\ValueInfo */
+#[CoversClass(\JKingWeb\Arsse\Misc\ValueInfo::class)]
 class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testGetIntegerInfo(): void {
         $tests = [
@@ -69,7 +73,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],            0],
             ["some string", 0],
             ["           ", 0],
-            [new \StdClass, 0],
+            [new \StdClass(), 0],
             [new StrClass(""),    I::NULL],
             [new StrClass("1"),   I::VALID],
             [new StrClass("0"),   I::VALID | I::ZERO],
@@ -144,7 +148,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],            0],
             ["some string", I::VALID],
             ["           ", I::VALID | I::WHITE],
-            [new \StdClass, 0],
+            [new \StdClass(), 0],
             [new StrClass(""),    I::VALID | I::EMPTY],
             [new StrClass("1"),   I::VALID],
             [new StrClass("0"),   I::VALID],
@@ -215,7 +219,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],            false, false],
             ["some string", false, false],
             ["           ", false, false],
-            [new \StdClass, false, false],
+            [new \StdClass(), false, false],
             [new StrClass(""),    false, true],
             [new StrClass("1"),   true,  true],
             [new StrClass("0"),   false, true],
@@ -287,7 +291,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],            null],
             ["some string", null],
             ["           ", null],
-            [new \StdClass, null],
+            [new \StdClass(), null],
             [new StrClass(""),    false],
             [new StrClass("1"),   true],
             [new StrClass("0"),   false],
@@ -305,7 +309,8 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider provideSimpleNormalizationValues */
+
+    #[DataProvider('provideSimpleNormalizationValues')]
     public function testNormalizeSimpleValues($input, string $typeName, $exp, bool $pass, bool $strict, bool $drop): void {
         $assert = function($exp, $act, string $msg) {
             if (is_null($exp)) {
@@ -314,6 +319,9 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
                 $this->assertNan($act, $msg);
             } elseif (is_scalar($exp)) {
                 $this->assertSame($exp, $act, $msg);
+            } elseif ($exp instanceof \DateInterval && $act instanceof \DateInterval) {
+                $format = "\Py\Ym\Md\D\Th\HiMs\S";
+                $this->assertSame($exp->format($format), $act->format($format), $msg);
             } else {
                 $this->assertEquals($exp, $act, $msg);
             }
@@ -349,7 +357,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             // if we're performing a strict comparison and the value is supposed to fail, we should be getting an exception
             $this->assertException("strictFailure", "", "ExceptionType");
             I::normalize($input, $typeConst | $modeConst);
-            $this->assertTrue(false, "$typename $modeName test expected exception");
+            $this->assertTrue(false, "$typeName $modeName test expected exception");
         } elseif ($drop && !$pass) {
             // if we're performing a drop comparison and the value is supposed to fail, change the expectation to null
             $exp = null;
@@ -361,7 +369,8 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider provideDateNormalizationValues */
+
+    #[DataProvider('provideDateNormalizationValues')]
     public function testNormalizeDateValues($input, $format, $exp, bool $strict, bool $drop): void {
         if ($strict && $drop) {
             $modeName = "strict drop";
@@ -421,7 +430,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideSimpleNormalizationValues(): iterable {
+    public static function provideSimpleNormalizationValues(): iterable {
         $types = [
             "Mixed",
             "Null",
@@ -451,88 +460,88 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
                For each of these types, there is an expected output value, as well as a boolean indicating whether
                the value should pass or fail a strict normalization. Conversion to DateTime is covered below by a different data set
             */
-            /* Input value                          null         bool           int                      float                        string                          array                                            interval                   */
-            [null,                                  [null,true], [false,false], [0,              false], [0.0,                false], ["",                    false], [[],                                     false], [null, false]],
-            ["",                                    [null,true], [false,true],  [0,              false], [0.0,                false], ["",                    true],  [[""],                                   false], [null, false]],
-            [1,                                     [null,true], [true, true],  [1,              true],  [1.0,                true],  ["1",                   true],  [[1],                                    false], [$this->i("PT1S"), false]],
-            [PHP_INT_MAX,                           [null,true], [true, false], [PHP_INT_MAX,    true],  [(float) PHP_INT_MAX,true],  [(string) PHP_INT_MAX,  true],  [[PHP_INT_MAX],                          false], [$this->i("P292471208677Y195DT15H30M7S"), false]],
-            [1.0,                                   [null,true], [true, true],  [1,              true],  [1.0,                true],  ["1",                   true],  [[1.0],                                  false], [$this->i("PT1S"), false]],
-            ["1.0",                                 [null,true], [true, true],  [1,              true],  [1.0,                true],  ["1.0",                 true],  [["1.0"],                                false], [null, false]],
-            ["001.0",                               [null,true], [true, true],  [1,              true],  [1.0,                true],  ["001.0",               true],  [["001.0"],                              false], [null, false]],
-            ["1.0e2",                               [null,true], [true, false], [100,            true],  [100.0,              true],  ["1.0e2",               true],  [["1.0e2"],                              false], [null, false]],
-            ["1",                                   [null,true], [true, true],  [1,              true],  [1.0,                true],  ["1",                   true],  [["1"],                                  false], [null, false]],
-            ["001",                                 [null,true], [true, true],  [1,              true],  [1.0,                true],  ["001",                 true],  [["001"],                                false], [null, false]],
-            ["1e2",                                 [null,true], [true, false], [100,            true],  [100.0,              true],  ["1e2",                 true],  [["1e2"],                                false], [null, false]],
-            ["+1.0",                                [null,true], [true, true],  [1,              true],  [1.0,                true],  ["+1.0",                true],  [["+1.0"],                               false], [null, false]],
-            ["+001.0",                              [null,true], [true, true],  [1,              true],  [1.0,                true],  ["+001.0",              true],  [["+001.0"],                             false], [null, false]],
-            ["+1.0e2",                              [null,true], [true, false], [100,            true],  [100.0,              true],  ["+1.0e2",              true],  [["+1.0e2"],                             false], [null, false]],
-            ["+1",                                  [null,true], [true, true],  [1,              true],  [1.0,                true],  ["+1",                  true],  [["+1"],                                 false], [null, false]],
-            ["+001",                                [null,true], [true, true],  [1,              true],  [1.0,                true],  ["+001",                true],  [["+001"],                               false], [null, false]],
-            ["+1e2",                                [null,true], [true, false], [100,            true],  [100.0,              true],  ["+1e2",                true],  [["+1e2"],                               false], [null, false]],
-            [0,                                     [null,true], [false,true],  [0,              true],  [0.0,                true],  ["0",                   true],  [[0],                                    false], [$this->i("PT0S"), false]],
-            ["0",                                   [null,true], [false,true],  [0,              true],  [0.0,                true],  ["0",                   true],  [["0"],                                  false], [null, false]],
-            ["000",                                 [null,true], [false,true],  [0,              true],  [0.0,                true],  ["000",                 true],  [["000"],                                false], [null, false]],
-            [0.0,                                   [null,true], [false,true],  [0,              true],  [0.0,                true],  ["0",                   true],  [[0.0],                                  false], [$this->i("PT0S"), false]],
-            ["0.0",                                 [null,true], [false,true],  [0,              true],  [0.0,                true],  ["0.0",                 true],  [["0.0"],                                false], [null, false]],
-            ["000.000",                             [null,true], [false,true],  [0,              true],  [0.0,                true],  ["000.000",             true],  [["000.000"],                            false], [null, false]],
-            ["+0",                                  [null,true], [false,true],  [0,              true],  [0.0,                true],  ["+0",                  true],  [["+0"],                                 false], [null, false]],
-            ["+000",                                [null,true], [false,true],  [0,              true],  [0.0,                true],  ["+000",                true],  [["+000"],                               false], [null, false]],
-            ["+0.0",                                [null,true], [false,true],  [0,              true],  [0.0,                true],  ["+0.0",                true],  [["+0.0"],                               false], [null, false]],
-            ["+000.000",                            [null,true], [false,true],  [0,              true],  [0.0,                true],  ["+000.000",            true],  [["+000.000"],                           false], [null, false]],
-            [-1,                                    [null,true], [true, false], [-1,             true],  [-1.0,               true],  ["-1",                  true],  [[-1],                                   false], [$this->i("PT1S"), false]],
-            [-1.0,                                  [null,true], [true, false], [-1,             true],  [-1.0,               true],  ["-1",                  true],  [[-1.0],                                 false], [$this->i("PT1S"), false]],
-            ["-1.0",                                [null,true], [true, false], [-1,             true],  [-1.0,               true],  ["-1.0",                true],  [["-1.0"],                               false], [null, false]],
-            ["-001.0",                              [null,true], [true, false], [-1,             true],  [-1.0,               true],  ["-001.0",              true],  [["-001.0"],                             false], [null, false]],
-            ["-1.0e2",                              [null,true], [true, false], [-100,           true],  [-100.0,             true],  ["-1.0e2",              true],  [["-1.0e2"],                             false], [null, false]],
-            ["-1",                                  [null,true], [true, false], [-1,             true],  [-1.0,               true],  ["-1",                  true],  [["-1"],                                 false], [null, false]],
-            ["-001",                                [null,true], [true, false], [-1,             true],  [-1.0,               true],  ["-001",                true],  [["-001"],                               false], [null, false]],
-            ["-1e2",                                [null,true], [true, false], [-100,           true],  [-100.0,             true],  ["-1e2",                true],  [["-1e2"],                               false], [null, false]],
-            [-0,                                    [null,true], [false,true],  [0,              true],  [0.0,                true],  ["0",                   true],  [[-0],                                   false], [$this->i("PT0S"), false]],
-            ["-0",                                  [null,true], [false,true],  [0,              true],  [-0.0,               true],  ["-0",                  true],  [["-0"],                                 false], [null, false]],
-            ["-000",                                [null,true], [false,true],  [0,              true],  [-0.0,               true],  ["-000",                true],  [["-000"],                               false], [null, false]],
-            [-0.0,                                  [null,true], [false,true],  [0,              true],  [-0.0,               true],  ["-0",                  true],  [[-0.0],                                 false], [$this->i("PT0S"), false]],
-            ["-0.0",                                [null,true], [false,true],  [0,              true],  [-0.0,               true],  ["-0.0",                true],  [["-0.0"],                               false], [null, false]],
-            ["-000.000",                            [null,true], [false,true],  [0,              true],  [-0.0,               true],  ["-000.000",            true],  [["-000.000"],                           false], [null, false]],
-            [false,                                 [null,true], [false,true],  [0,              false], [0.0,                false], ["",                    false], [[false],                                false], [null, false]],
-            [true,                                  [null,true], [true, true],  [1,              false], [1.0,                false], ["1",                   false], [[true],                                 false], [null, false]],
-            ["on",                                  [null,true], [true, true],  [0,              false], [0.0,                false], ["on",                  true],  [["on"],                                 false], [null, false]],
-            ["off",                                 [null,true], [false,true],  [0,              false], [0.0,                false], ["off",                 true],  [["off"],                                false], [null, false]],
-            ["yes",                                 [null,true], [true, true],  [0,              false], [0.0,                false], ["yes",                 true],  [["yes"],                                false], [null, false]],
-            ["no",                                  [null,true], [false,true],  [0,              false], [0.0,                false], ["no",                  true],  [["no"],                                 false], [null, false]],
-            ["true",                                [null,true], [true, true],  [0,              false], [0.0,                false], ["true",                true],  [["true"],                               false], [null, false]],
-            ["false",                               [null,true], [false,true],  [0,              false], [0.0,                false], ["false",               true],  [["false"],                              false], [null, false]],
-            [INF,                                   [null,true], [true, false], [0,              false], [INF,                true],  ["INF",                 false], [[INF],                                  false], [null, false]],
-            [-INF,                                  [null,true], [true, false], [0,              false], [-INF,               true],  ["-INF",                false], [[-INF],                                 false], [null, false]],
-            [NAN,                                   [null,true], [false,false], [0,              false], [NAN,                true],  ["NAN",                 false], [[],                                     false], [null, false]],
-            [[],                                    [null,true], [false,false], [0,              false], [0.0,                false], ["",                    false], [[],                                     true],  [null, false]],
-            ["some string",                         [null,true], [true, false], [0,              false], [0.0,                false], ["some string",         true],  [["some string"],                        false], [null, false]],
-            ["           ",                         [null,true], [true, false], [0,              false], [0.0,                false], ["           ",         true],  [["           "],                        false], [null, false]],
-            [new \StdClass,                         [null,true], [true, false], [0,              false], [0.0,                false], ["",                    false], [[new \StdClass],                        false], [null, false]],
-            [new StrClass(""),                      [null,true], [false,true],  [0,              false], [0.0,                false], ["",                    true],  [[new StrClass("")],                     false], [null, false]],
-            [new StrClass("1"),                     [null,true], [true, true],  [1,              true],  [1.0,                true],  ["1",                   true],  [[new StrClass("1")],                    false], [null, false]],
-            [new StrClass("0"),                     [null,true], [false,true],  [0,              true],  [0.0,                true],  ["0",                   true],  [[new StrClass("0")],                    false], [null, false]],
-            [new StrClass("-1"),                    [null,true], [true, false], [-1,             true],  [-1.0,               true],  ["-1",                  true],  [[new StrClass("-1")],                   false], [null, false]],
-            [new StrClass("Msg"),                   [null,true], [true, false], [0,              false], [0.0,                false], ["Msg",                 true],  [[new StrClass("Msg")],                  false], [null, false]],
-            [new StrClass("   "),                   [null,true], [true, false], [0,              false], [0.0,                false], ["   ",                 true],  [[new StrClass("   ")],                  false], [null, false]],
-            [2.5,                                   [null,true], [true, false], [2,              false], [2.5,                true],  ["2.5",                 true],  [[2.5],                                  false], [$this->i("PT2S", 0.5), false]],
-            [0.5,                                   [null,true], [true, false], [0,              false], [0.5,                true],  ["0.5",                 true],  [[0.5],                                  false], [$this->i("PT0S", 0.5), false]],
-            ["2.5",                                 [null,true], [true, false], [2,              false], [2.5,                true],  ["2.5",                 true],  [["2.5"],                                false], [null, false]],
-            ["0.5",                                 [null,true], [true, false], [0,              false], [0.5,                true],  ["0.5",                 true],  [["0.5"],                                false], [null, false]],
-            [$this->d("2010-01-01T00:00:00", 0, 0), [null,true], [true, false], [1262304000,     false], [1262304000.0,       false], ["2010-01-01T00:00:00Z",true],  [[$this->d("2010-01-01T00:00:00", 0, 0)],false], [null, false]],
-            [$this->d("2010-01-01T00:00:00", 0, 1), [null,true], [true, false], [1262304000,     false], [1262304000.0,       false], ["2010-01-01T00:00:00Z",true],  [[$this->d("2010-01-01T00:00:00", 0, 1)],false], [null, false]],
-            [$this->d("2010-01-01T00:00:00", 1, 0), [null,true], [true, false], [1262322000,     false], [1262322000.0,       false], ["2010-01-01T05:00:00Z",true],  [[$this->d("2010-01-01T00:00:00", 1, 0)],false], [null, false]],
-            [$this->d("2010-01-01T00:00:00", 1, 1), [null,true], [true, false], [1262322000,     false], [1262322000.0,       false], ["2010-01-01T05:00:00Z",true],  [[$this->d("2010-01-01T00:00:00", 1, 1)],false], [null, false]],
-            [1e14,                                  [null,true], [true, false], [10 ** 14,       true],  [1e14,               true],  ["100000000000000",     true],  [[1e14],                                 false], [$this->i("P1157407407DT9H46M40S"), false]],
-            [1e-6,                                  [null,true], [true, false], [0,              false], [1e-6,               true],  ["0.000001",            true],  [[1e-6],                                 false], [$this->i("PT0S", 1e-6), false]],
-            [[1,2,3],                               [null,true], [true, false], [0,              false], [0.0,                false], ["",                    false], [[1,2,3],                                true],  [null, false]],
-            [['a' => 1,'b' => 2],                       [null,true], [true, false], [0,              false], [0.0,                false], ["",                    false], [['a' => 1,'b' => 2],                        true],  [null, false]],
-            [new Result([['a' => 1,'b' => 2]]),         [null,true], [true, false], [0,              false], [0.0,                false], ["",                    false], [[['a' => 1,'b' => 2]],                      true],  [null, false]],
-            [$this->i("PT1H"),                      [null,true], [true, false], [60 * 60,          false], [60.0 * 60.0,          false], ["PT1H",                true],  [[$this->i("PT1H")],                     false], [$this->i("PT1H"), true]],
-            [$this->i("P2DT1H"),                    [null,true], [true, false], [(48 + 1) * 60 * 60,   false], [1.0 * (48 + 1) * 60 * 60,   false], ["P2DT1H",              true],  [[$this->i("P2DT1H")],                   false], [$this->i("P2DT1H"), true]],
-            [$this->i("PT0H"),                      [null,true], [true, false], [0,              false], [0.0,                false], ["PT0S",                true],  [[$this->i("PT0H")],                     false], [$this->i("PT0H"), true]],
-            [$dateDiff,                             [null,true], [true, false], [366 * 24 * 60 * 60,   false], [1.0 * 366 * 24 * 60 * 60,   false], ["P366D",               true],  [[$dateDiff],                            false], [$dateNorm, true]],
-            ["1 year, 2 days",                      [null,true], [true, false], [0,              false], [0.0,                false], ["1 year, 2 days",      true],  [["1 year, 2 days"],                     false], [$this->i("P1Y2D"), false]],
-            ["P1Y2D",                               [null,true], [true, false], [0,              false], [0.0,                false], ["P1Y2D",               true],  [["P1Y2D"],                              false], [$this->i("P1Y2D"), true]],
+            /* Input value                          null         bool           int                          float                              string                          array                                            interval                   */
+            [null,                                  [null,true], [false,false], [0,                  false], [0.0,                      false], ["",                    false], [[],                                     false], [null, false]],
+            ["",                                    [null,true], [false,true],  [0,                  false], [0.0,                      false], ["",                    true],  [[""],                                   false], [null, false]],
+            [1,                                     [null,true], [true, true],  [1,                  true],  [1.0,                      true],  ["1",                   true],  [[1],                                    false], [self::i("PT1S"), false]],
+            [PHP_INT_MAX,                           [null,true], [true, false], [PHP_INT_MAX,        true],  [(float) PHP_INT_MAX,      true],  [(string) PHP_INT_MAX,  true],  [[PHP_INT_MAX],                          false], [self::i("P292471208677Y195DT15H30M7S"), false]],
+            [1.0,                                   [null,true], [true, true],  [1,                  true],  [1.0,                      true],  ["1",                   true],  [[1.0],                                  false], [self::i("PT1S"), false]],
+            ["1.0",                                 [null,true], [true, true],  [1,                  true],  [1.0,                      true],  ["1.0",                 true],  [["1.0"],                                false], [null, false]],
+            ["001.0",                               [null,true], [true, true],  [1,                  true],  [1.0,                      true],  ["001.0",               true],  [["001.0"],                              false], [null, false]],
+            ["1.0e2",                               [null,true], [true, false], [100,                true],  [100.0,                    true],  ["1.0e2",               true],  [["1.0e2"],                              false], [null, false]],
+            ["1",                                   [null,true], [true, true],  [1,                  true],  [1.0,                      true],  ["1",                   true],  [["1"],                                  false], [null, false]],
+            ["001",                                 [null,true], [true, true],  [1,                  true],  [1.0,                      true],  ["001",                 true],  [["001"],                                false], [null, false]],
+            ["1e2",                                 [null,true], [true, false], [100,                true],  [100.0,                    true],  ["1e2",                 true],  [["1e2"],                                false], [null, false]],
+            ["+1.0",                                [null,true], [true, true],  [1,                  true],  [1.0,                      true],  ["+1.0",                true],  [["+1.0"],                               false], [null, false]],
+            ["+001.0",                              [null,true], [true, true],  [1,                  true],  [1.0,                      true],  ["+001.0",              true],  [["+001.0"],                             false], [null, false]],
+            ["+1.0e2",                              [null,true], [true, false], [100,                true],  [100.0,                    true],  ["+1.0e2",              true],  [["+1.0e2"],                             false], [null, false]],
+            ["+1",                                  [null,true], [true, true],  [1,                  true],  [1.0,                      true],  ["+1",                  true],  [["+1"],                                 false], [null, false]],
+            ["+001",                                [null,true], [true, true],  [1,                  true],  [1.0,                      true],  ["+001",                true],  [["+001"],                               false], [null, false]],
+            ["+1e2",                                [null,true], [true, false], [100,                true],  [100.0,                    true],  ["+1e2",                true],  [["+1e2"],                               false], [null, false]],
+            [0,                                     [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["0",                   true],  [[0],                                    false], [self::i("PT0S"), false]],
+            ["0",                                   [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["0",                   true],  [["0"],                                  false], [null, false]],
+            ["000",                                 [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["000",                 true],  [["000"],                                false], [null, false]],
+            [0.0,                                   [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["0",                   true],  [[0.0],                                  false], [self::i("PT0S"), false]],
+            ["0.0",                                 [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["0.0",                 true],  [["0.0"],                                false], [null, false]],
+            ["000.000",                             [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["000.000",             true],  [["000.000"],                            false], [null, false]],
+            ["+0",                                  [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["+0",                  true],  [["+0"],                                 false], [null, false]],
+            ["+000",                                [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["+000",                true],  [["+000"],                               false], [null, false]],
+            ["+0.0",                                [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["+0.0",                true],  [["+0.0"],                               false], [null, false]],
+            ["+000.000",                            [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["+000.000",            true],  [["+000.000"],                           false], [null, false]],
+            [-1,                                    [null,true], [true, false], [-1,                 true],  [-1.0,                     true],  ["-1",                  true],  [[-1],                                   false], [self::i("PT1S"), false]],
+            [-1.0,                                  [null,true], [true, false], [-1,                 true],  [-1.0,                     true],  ["-1",                  true],  [[-1.0],                                 false], [self::i("PT1S"), false]],
+            ["-1.0",                                [null,true], [true, false], [-1,                 true],  [-1.0,                     true],  ["-1.0",                true],  [["-1.0"],                               false], [null, false]],
+            ["-001.0",                              [null,true], [true, false], [-1,                 true],  [-1.0,                     true],  ["-001.0",              true],  [["-001.0"],                             false], [null, false]],
+            ["-1.0e2",                              [null,true], [true, false], [-100,               true],  [-100.0,                   true],  ["-1.0e2",              true],  [["-1.0e2"],                             false], [null, false]],
+            ["-1",                                  [null,true], [true, false], [-1,                 true],  [-1.0,                     true],  ["-1",                  true],  [["-1"],                                 false], [null, false]],
+            ["-001",                                [null,true], [true, false], [-1,                 true],  [-1.0,                     true],  ["-001",                true],  [["-001"],                               false], [null, false]],
+            ["-1e2",                                [null,true], [true, false], [-100,               true],  [-100.0,                   true],  ["-1e2",                true],  [["-1e2"],                               false], [null, false]],
+            [-0,                                    [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["0",                   true],  [[-0],                                   false], [self::i("PT0S"), false]],
+            ["-0",                                  [null,true], [false,true],  [0,                  true],  [-0.0,                     true],  ["-0",                  true],  [["-0"],                                 false], [null, false]],
+            ["-000",                                [null,true], [false,true],  [0,                  true],  [-0.0,                     true],  ["-000",                true],  [["-000"],                               false], [null, false]],
+            [-0.0,                                  [null,true], [false,true],  [0,                  true],  [-0.0,                     true],  ["-0",                  true],  [[-0.0],                                 false], [self::i("PT0S"), false]],
+            ["-0.0",                                [null,true], [false,true],  [0,                  true],  [-0.0,                     true],  ["-0.0",                true],  [["-0.0"],                               false], [null, false]],
+            ["-000.000",                            [null,true], [false,true],  [0,                  true],  [-0.0,                     true],  ["-000.000",            true],  [["-000.000"],                           false], [null, false]],
+            [false,                                 [null,true], [false,true],  [0,                  false], [0.0,                      false], ["",                    false], [[false],                                false], [null, false]],
+            [true,                                  [null,true], [true, true],  [1,                  false], [1.0,                      false], ["1",                   false], [[true],                                 false], [null, false]],
+            ["on",                                  [null,true], [true, true],  [0,                  false], [0.0,                      false], ["on",                  true],  [["on"],                                 false], [null, false]],
+            ["off",                                 [null,true], [false,true],  [0,                  false], [0.0,                      false], ["off",                 true],  [["off"],                                false], [null, false]],
+            ["yes",                                 [null,true], [true, true],  [0,                  false], [0.0,                      false], ["yes",                 true],  [["yes"],                                false], [null, false]],
+            ["no",                                  [null,true], [false,true],  [0,                  false], [0.0,                      false], ["no",                  true],  [["no"],                                 false], [null, false]],
+            ["true",                                [null,true], [true, true],  [0,                  false], [0.0,                      false], ["true",                true],  [["true"],                               false], [null, false]],
+            ["false",                               [null,true], [false,true],  [0,                  false], [0.0,                      false], ["false",               true],  [["false"],                              false], [null, false]],
+            [INF,                                   [null,true], [true, false], [0,                  false], [INF,                      true],  ["INF",                 false], [[INF],                                  false], [null, false]],
+            [-INF,                                  [null,true], [true, false], [0,                  false], [-INF,                     true],  ["-INF",                false], [[-INF],                                 false], [null, false]],
+            [NAN,                                   [null,true], [false,false], [0,                  false], [NAN,                      true],  ["NAN",                 false], [[],                                     false], [null, false]],
+            [[],                                    [null,true], [false,false], [0,                  false], [0.0,                      false], ["",                    false], [[],                                     true],  [null, false]],
+            ["some string",                         [null,true], [true, false], [0,                  false], [0.0,                      false], ["some string",         true],  [["some string"],                        false], [null, false]],
+            ["           ",                         [null,true], [true, false], [0,                  false], [0.0,                      false], ["           ",         true],  [["           "],                        false], [null, false]],
+            [new \StdClass(),                         [null,true], [true, false], [0,                  false], [0.0,                      false], ["",                    false], [[new \StdClass()],                        false], [null, false]],
+            [new StrClass(""),                      [null,true], [false,true],  [0,                  false], [0.0,                      false], ["",                    true],  [[new StrClass("")],                     false], [null, false]],
+            [new StrClass("1"),                     [null,true], [true, true],  [1,                  true],  [1.0,                      true],  ["1",                   true],  [[new StrClass("1")],                    false], [null, false]],
+            [new StrClass("0"),                     [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["0",                   true],  [[new StrClass("0")],                    false], [null, false]],
+            [new StrClass("-1"),                    [null,true], [true, false], [-1,                 true],  [-1.0,                     true],  ["-1",                  true],  [[new StrClass("-1")],                   false], [null, false]],
+            [new StrClass("Msg"),                   [null,true], [true, false], [0,                  false], [0.0,                      false], ["Msg",                 true],  [[new StrClass("Msg")],                  false], [null, false]],
+            [new StrClass("   "),                   [null,true], [true, false], [0,                  false], [0.0,                      false], ["   ",                 true],  [[new StrClass("   ")],                  false], [null, false]],
+            [2.5,                                   [null,true], [true, false], [2,                  false], [2.5,                      true],  ["2.5",                 true],  [[2.5],                                  false], [self::i("PT2S", 0.5), false]],
+            [0.5,                                   [null,true], [true, false], [0,                  false], [0.5,                      true],  ["0.5",                 true],  [[0.5],                                  false], [self::i("PT0S", 0.5), false]],
+            ["2.5",                                 [null,true], [true, false], [2,                  false], [2.5,                      true],  ["2.5",                 true],  [["2.5"],                                false], [null, false]],
+            ["0.5",                                 [null,true], [true, false], [0,                  false], [0.5,                      true],  ["0.5",                 true],  [["0.5"],                                false], [null, false]],
+            [self::d("2010-01-01T00:00:00", 0, 0), [null,true], [true, false], [1262304000,         false], [1262304000.0,             false], ["2010-01-01T00:00:00Z",true],  [[self::d("2010-01-01T00:00:00", 0, 0)],false], [null, false]],
+            [self::d("2010-01-01T00:00:00", 0, 1), [null,true], [true, false], [1262304000,         false], [1262304000.0,             false], ["2010-01-01T00:00:00Z",true],  [[self::d("2010-01-01T00:00:00", 0, 1)],false], [null, false]],
+            [self::d("2010-01-01T00:00:00", 1, 0), [null,true], [true, false], [1262322000,         false], [1262322000.0,             false], ["2010-01-01T05:00:00Z",true],  [[self::d("2010-01-01T00:00:00", 1, 0)],false], [null, false]],
+            [self::d("2010-01-01T00:00:00", 1, 1), [null,true], [true, false], [1262322000,         false], [1262322000.0,             false], ["2010-01-01T05:00:00Z",true],  [[self::d("2010-01-01T00:00:00", 1, 1)],false], [null, false]],
+            [1e14,                                  [null,true], [true, false], [10 ** 14,           true],  [1e14,                     true],  ["100000000000000",     true],  [[1e14],                                 false], [self::i("P1157407407DT9H46M40S"), false]],
+            [1e-6,                                  [null,true], [true, false], [0,                  false], [1e-6,                     true],  ["0.000001",            true],  [[1e-6],                                 false], [self::i("PT0S", 1e-6), false]],
+            [[1,2,3],                               [null,true], [true, false], [0,                  false], [0.0,                      false], ["",                    false], [[1,2,3],                                true],  [null, false]],
+            [['a' => 1,'b' => 2],                   [null,true], [true, false], [0,                  false], [0.0,                      false], ["",                    false], [['a' => 1,'b' => 2],                    true],  [null, false]],
+            [new Result([['a' => 1,'b' => 2]]),     [null,true], [true, false], [0,                  false], [0.0,                      false], ["",                    false], [[['a' => 1,'b' => 2]],                  true],  [null, false]],
+            [self::i("PT1H"),                      [null,true], [true, false], [60 * 60,            false], [60.0 * 60.0,              false], ["PT1H",                true],  [[self::i("PT1H")],                     false], [self::i("PT1H"), true]],
+            [self::i("P2DT1H"),                    [null,true], [true, false], [(48 + 1) * 60 * 60, false], [1.0 * (48 + 1) * 60 * 60, false], ["P2DT1H",              true],  [[self::i("P2DT1H")],                   false], [self::i("P2DT1H"), true]],
+            [self::i("PT0H"),                      [null,true], [true, false], [0,                  false], [0.0,                      false], ["PT0S",                true],  [[self::i("PT0H")],                     false], [self::i("PT0H"), true]],
+            [$dateDiff,                             [null,true], [true, false], [366 * 24 * 60 * 60, false], [1.0 * 366 * 24 * 60 * 60, false], ["P366D",               true],  [[$dateDiff],                            false], [$dateNorm, true]],
+            ["1 year, 2 days",                      [null,true], [true, false], [0,                  false], [0.0,                      false], ["1 year, 2 days",      true],  [["1 year, 2 days"],                     false], [self::i("P1Y2D"), false]],
+            ["P1Y2D",                               [null,true], [true, false], [0,                  false], [0.0,                      false], ["P1Y2D",               true],  [["P1Y2D"],                              false], [self::i("P1Y2D"), true]],
         ] as $set) {
             // shift the input value off the set
             $input = array_shift($set);
@@ -553,7 +562,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideDateNormalizationValues(): iterable {
+    public static function provideDateNormalizationValues(): iterable {
         $formats = [
             "microtime",
             "iso8601",
@@ -568,39 +577,39 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             null,
         ];
         foreach ([
-            /* Input value                          microtime                    iso8601                      iso8601m                     http                         sql                          date                         time                         unix                         float                        '!M j, Y (D)'                *strtotime* (null)                  */
+            /* Input value                          microtime                    iso8601                      iso8601m                     http                         sql                          date                         time                         unix                         float                        '!M j, Y (D)'                *strtotime* (null) */
             [null,                                  null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
             [INF,                                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
             [NAN,                                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
-            [$this->d("2010-01-01T00:00:00", 0, 0), $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000)],
-            [$this->d("2010-01-01T00:00:00", 0, 1), $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000)],
-            [$this->d("2010-01-01T00:00:00", 1, 0), $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000)],
-            [$this->d("2010-01-01T00:00:00", 1, 1), $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000),        $this->t(1262322000)],
-            [1262304000,                            $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000),        $this->t(1262304000)],
-            [1262304000.123456,                     $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456), $this->t(1262304000.123456)],
-            [1262304000.42,                         $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42),     $this->t(1262304000.42)],
-            ["0.12345600 1262304000",               $this->t(1262304000.123456), null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
+            [self::d("2010-01-01T00:00:00", 0, 0),  self::t(1262304000),         self::t(1262304000),         self::t(1262304000),         self::t(1262304000),         self::t(1262304000),        self::t(1262304000),          self::t(1262304000),         self::t(1262304000),         self::t(1262304000),         self::t(1262304000),         self::t(1262304000)],
+            [self::d("2010-01-01T00:00:00", 0, 1),  self::t(1262304000),         self::t(1262304000),         self::t(1262304000),         self::t(1262304000),         self::t(1262304000),        self::t(1262304000),          self::t(1262304000),         self::t(1262304000),         self::t(1262304000),         self::t(1262304000),         self::t(1262304000)],
+            [self::d("2010-01-01T00:00:00", 1, 0),  self::t(1262322000),         self::t(1262322000),         self::t(1262322000),         self::t(1262322000),         self::t(1262322000),        self::t(1262322000),          self::t(1262322000),         self::t(1262322000),         self::t(1262322000),         self::t(1262322000),         self::t(1262322000)],
+            [self::d("2010-01-01T00:00:00", 1, 1),  self::t(1262322000),         self::t(1262322000),         self::t(1262322000),         self::t(1262322000),         self::t(1262322000),        self::t(1262322000),          self::t(1262322000),         self::t(1262322000),         self::t(1262322000),         self::t(1262322000),         self::t(1262322000)],
+            [1262304000,                            self::t(1262304000),         self::t(1262304000),         self::t(1262304000),         self::t(1262304000),         self::t(1262304000),        self::t(1262304000),          self::t(1262304000),         self::t(1262304000),         self::t(1262304000),         self::t(1262304000),         self::t(1262304000)],
+            [1262304000.123456,                     self::t(1262304000.123456),  self::t(1262304000.123456),  self::t(1262304000.123456),  self::t(1262304000.123456),  self::t(1262304000.123456), self::t(1262304000.123456),   self::t(1262304000.123456),  self::t(1262304000.123456),  self::t(1262304000.123456),  self::t(1262304000.123456),  self::t(1262304000.123456)],
+            [1262304000.42,                         self::t(1262304000.42),      self::t(1262304000.42),      self::t(1262304000.42),      self::t(1262304000.42),      self::t(1262304000.42),     self::t(1262304000.42),       self::t(1262304000.42),      self::t(1262304000.42),      self::t(1262304000.42),      self::t(1262304000.42),      self::t(1262304000.42)],
+            ["0.12345600 1262304000",               self::t(1262304000.123456),  null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
             ["0.42 1262304000",                     null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
-            ["2010-01-01T00:00:00",                 null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
-            ["2010-01-01T00:00:00Z",                null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
-            ["2010-01-01T00:00:00+0000",            null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
-            ["2010-01-01T00:00:00-0000",            null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
-            ["2010-01-01T00:00:00+00:00",           null,                        $this->t(1262304000),        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
-            ["2010-01-01T00:00:00-05:00",           null,                        $this->t(1262322000),        $this->t(1262322000),        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262322000)],
-            ["2010-01-01T00:00:00.123456Z",         null,                        null,                        $this->t(1262304000.123456), null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000.123456)],
-            ["Fri, 01 Jan 2010 00:00:00 GMT",       null,                        null,                        null,                        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
-            ["2010-01-01 00:00:00",                 null,                        null,                        null,                        null,                        $this->t(1262304000),        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
-            ["2010-01-01",                          null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),        null,                        null,                        null,                        null,                        $this->t(1262304000)],
-            ["12:34:56",                            null,                        null,                        null,                        null,                        null,                        null,                        $this->t(45296),             null,                        null,                        null,                        $this->t(date_create("today", new \DateTimezone("UTC"))->getTimestamp() + 45296)],
-            ["1262304000",                          null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),        null,                        null,                        null],
-            ["1262304000.123456",                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000.123456), null,                        null],
-            ["1262304000.42",                       null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000.42),     null,                        null],
-            ["Jan 1, 2010 (Fri)",                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000),        null],
-            ["First day of Jan 2010 12AM",          null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        $this->t(1262304000)],
+            ["2010-01-01T00:00:00",                 null,                        self::t(1262304000),         self::t(1262304000),         null,                        null,                        null,                        null,                        null,                        null,                        null,                        self::t(1262304000)],
+            ["2010-01-01T00:00:00Z",                null,                        self::t(1262304000),         self::t(1262304000),         null,                        null,                        null,                        null,                        null,                        null,                        null,                        self::t(1262304000)],
+            ["2010-01-01T00:00:00+0000",            null,                        self::t(1262304000),         self::t(1262304000),         null,                        null,                        null,                        null,                        null,                        null,                        null,                        self::t(1262304000)],
+            ["2010-01-01T00:00:00-0000",            null,                        self::t(1262304000),         self::t(1262304000),         null,                        null,                        null,                        null,                        null,                        null,                        null,                        self::t(1262304000)],
+            ["2010-01-01T00:00:00+00:00",           null,                        self::t(1262304000),         self::t(1262304000),         null,                        null,                        null,                        null,                        null,                        null,                        null,                        self::t(1262304000)],
+            ["2010-01-01T00:00:00-05:00",           null,                        self::t(1262322000),         self::t(1262322000),         null,                        null,                        null,                        null,                        null,                        null,                        null,                        self::t(1262322000)],
+            ["2010-01-01T00:00:00.123456Z",         null,                        null,                        self::t(1262304000.123456),  null,                        null,                        null,                        null,                        null,                        null,                        null,                        self::t(1262304000.123456)],
+            ["Fri, 01 Jan 2010 00:00:00 GMT",       null,                        null,                        null,                        self::t(1262304000),         null,                        null,                        null,                        null,                        null,                        null,                        self::t(1262304000)],
+            ["2010-01-01 00:00:00",                 null,                        null,                        null,                        null,                        self::t(1262304000),         null,                        null,                        null,                        null,                        null,                        self::t(1262304000)],
+            ["2010-01-01",                          null,                        null,                        null,                        null,                        null,                        self::t(1262304000),         null,                        null,                        null,                        null,                        self::t(1262304000)],
+            ["12:34:56",                            null,                        null,                        null,                        null,                        null,                        null,                        self::t(45296),              null,                        null,                        null,                        self::t(date_create("today", new \DateTimezone("UTC"))->getTimestamp() + 45296)],
+            ["1262304000",                          null,                        null,                        null,                        null,                        null,                        null,                        null,                        self::t(1262304000),         null,                        null,                        null],
+            ["1262304000.123456",                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        self::t(1262304000.123456),  null,                        null],
+            ["1262304000.42",                       null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        self::t(1262304000.42),      null,                        null],
+            ["Jan 1, 2010 (Fri)",                   null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        self::t(1262304000),         null],
+            ["First day of Jan 2010 12AM",          null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        self::t(1262304000)],
             [[],                                    null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
-            [$this->i("P1Y2D"),                     null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
+            [self::i("P1Y2D"),                      null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
             ["P1Y2D",                               null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null,                        null],
-        ] as $set) {
+        ] as $k => $set) {
             // shift the input value off the set
             $input = array_shift($set);
             // generate a set of tests for each target date formats
@@ -612,13 +621,13 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
                     [false, true],
                     [true,  true],
                 ] as [$strict, $drop]) {
-                    yield [$input, $formats[$format], $exp, $strict, $drop];
+                    yield "Index #$k format \"$format\" strict:$strict drop:$drop" => [$input, $formats[$format], $exp, $strict, $drop];
                 }
             }
         }
     }
 
-    protected function d($spec, $local, $immutable): \DateTimeInterface {
+    protected static function d($spec, $local, $immutable): \DateTimeInterface {
         $tz = $local ? new \DateTimeZone("America/Toronto") : new \DateTimeZone("UTC");
         if ($immutable) {
             return \DateTimeImmutable::createFromFormat("!Y-m-d\TH:i:s", $spec, $tz);
@@ -627,11 +636,11 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    protected function t(float $spec): \DateTimeImmutable {
+    protected static function t(float $spec): \DateTimeImmutable {
         return \DateTimeImmutable::createFromFormat("U.u", sprintf("%F", $spec), new \DateTimeZone("UTC"));
     }
 
-    protected function i(string $spec, float $msec = 0.0): \DateInterval {
+    protected static function i(string $spec, float $msec = 0.0): \DateInterval {
         $out = new \DateInterval($spec);
         $out->f = $msec;
         return $out;

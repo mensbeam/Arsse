@@ -1,10 +1,16 @@
 <?php
+/** @license MIT
+ * Copyright 2017 J. King, Dustin Wilson et al.
+ * See LICENSE and AUTHORS files for details */
+
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Db;
 
 use JKingWeb\Arsse\Db\ResultEmpty;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \JKingWeb\Arsse\Db\ResultEmpty<extended> */
+#[CoversClass(\JKingWeb\Arsse\Db\ResultEmpty::class)]
 class TestResultEmpty extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testGetChangeCountAndLastInsertId(): void {
         $r = new ResultEmpty;

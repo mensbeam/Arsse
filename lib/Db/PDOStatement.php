@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\Db;
 
 abstract class PDOStatement extends AbstractStatement {
@@ -15,7 +16,7 @@ abstract class PDOStatement extends AbstractStatement {
         self::T_DATETIME => \PDO::PARAM_STR,
         self::T_BINARY   => \PDO::PARAM_LOB,
         self::T_STRING   => \PDO::PARAM_STR,
-        self::T_BOOLEAN  => \PDO::PARAM_INT, // FIXME: using \PDO::PARAM_BOOL leads to incompatibilities with versions of SQLite bundled prior to PHP 7.3
+        self::T_BOOLEAN  => \PDO::PARAM_INT, // NOTE: Integers are used rather than booleans so that they may be manipulated arithmetically
     ];
 
     protected $st;

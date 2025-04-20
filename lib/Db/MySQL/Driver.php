@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\Db\MySQL;
 
 use JKingWeb\Arsse\Arsse;
@@ -12,7 +13,7 @@ use JKingWeb\Arsse\Db\Exception;
 class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
     use ExceptionBuilder;
 
-    protected const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,STRICT_ALL_TABLES";
+    protected const SQL_MODE = "ANSI_QUOTES,HIGH_NOT_PRECEDENCE,NO_BACKSLASH_ESCAPES,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,STRICT_ALL_TABLES,NO_UNSIGNED_SUBTRACTION";
     protected const TRANSACTIONAL_LOCKS = false;
 
     /** @var \mysqli */
@@ -81,10 +82,10 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         switch (strtolower($token)) {
             case "nocase":
                 return '"utf8mb4_unicode_ci"';
-            case "integer":
-                return "signed integer";
             case "asc":
                 return "";
+            case "integer":
+                return "signed integer";
             default:
                 return $token;
         }
@@ -100,7 +101,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         }
     }
 
-    public function savepointRelease(int $index = null): bool {
+    public function savepointRelease(?int $index = null): bool {
         $index = $index ?? $this->transDepth;
         $out = parent::savepointRelease($index);
         if ($index == $this->transStart) {
@@ -110,7 +111,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         return $out;
     }
 
-    public function savepointUndo(int $index = null): bool {
+    public function savepointUndo(?int $index = null): bool {
         $index = $index ?? $this->transDepth;
         $out = parent::savepointUndo($index);
         if ($index == $this->transStart) {
@@ -167,7 +168,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $drv->report_mode = \MYSQLI_REPORT_OFF;
         $this->db = mysqli_init();
         $this->db->options(\MYSQLI_SET_CHARSET_NAME, "utf8mb4");
-        $this->db->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, false);
+        $this->db->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
         $this->db->options(\MYSQLI_OPT_CONNECT_TIMEOUT, ceil(Arsse::$conf->dbTimeoutConnect));
         @$this->db->real_connect($host, $user, $password, $db, $port, $socket);
         if ($this->db->connect_errno) {
@@ -224,7 +225,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
 
     public function maintenance(): bool {
         // with MySQL each table must be analyzed separately, so we first have to get a list of tables
-        foreach ($this->query("SHOW TABLES like 'arsse\\_%'") as $table) {
+        foreach ($this->query("SHOW TABLES like 'arsse%'") as $table) {
             $table = array_pop($table);
             if (!preg_match("/^arsse_[a-z_]+$/D", $table)) {
                 // table is not one of ours

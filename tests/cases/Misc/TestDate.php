@@ -1,14 +1,17 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\Date;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \JKingWeb\Arsse\Misc\Date */
+#[CoversClass(\JKingWeb\Arsse\Misc\Date::class)]
 class TestDate extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testNormalizeADate(): void {
         $exp = new \DateTimeImmutable("2018-01-01T00:00:00Z");

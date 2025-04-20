@@ -4,11 +4,12 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Db\SQLite3;
 
-/**
- * @covers \JKingWeb\Arsse\Db\SQLite3\Result<extended>
- */
+use PHPUnit\Framework\Attributes\CoversClass;
+
+#[CoversClass(\JKingWeb\Arsse\Db\SQLite3\Result::class)]
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3;
 

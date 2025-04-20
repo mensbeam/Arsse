@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse;
 
 const BASE = __DIR__.DIRECTORY_SEPARATOR;
@@ -13,7 +14,7 @@ require_once BASE."vendor".DIRECTORY_SEPARATOR."autoload.php";
 ignore_user_abort(true);
 ini_set("memory_limit", "-1");
 ini_set("max_execution_time", "0");
-// FIXME: This is required because various dependencies have yet to adjust to PHP 8.1
+// NOTE: While running in the wild we don't want to spew deprecation warnings if users are ahead of us in PHP versions
 error_reporting(\E_ALL & ~\E_DEPRECATED);
 
 if (\PHP_SAPI === "cli") {

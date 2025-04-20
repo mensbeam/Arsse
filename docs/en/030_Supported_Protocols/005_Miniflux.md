@@ -15,39 +15,44 @@
 
 The Miniflux protocol is a fairly well-designed protocol supporting a wide variety of operations on newsfeeds, folders (termed "categories"), and articles; it also allows for user administration, and native OPML importing and exporting. Architecturally it is similar to the Nextcloud News protocol, but has more capabilities.
 
-Miniflux version 2.0.28 is emulated, though not all features are implemented
+Miniflux version 2.2.7 is emulated, though not all features are implemented
 
 # Missing features
 
 - JSON Feed format is not suported
 - Various feed-related features are not supported; attempting to use them has no effect
     - Rewrite rules and scraper rules
-    - Custom User-Agent strings
-    - The `disabled`, `ignore_http_cache`, and `fetch_via_proxy` flags
-    - Changing the URL, username, or password of a feed
+    - [Global filtering rules](https://miniflux.app/docs/rules.html#global-filtering-rules) (feed filtering rules are supported)
+    - The `disabled`, `hide_globally`, `no_media_player`, `disable_http2`, `allow_self_signed_certificates`, `ignore_http_cache`, and `fetch_via_proxy` flags
+    - Modifying the `description` or `site_url` fields
     - Manually refreshing feeds
+    - Changing the title or content of an entry
+- Third-party integrations features are not supported; attempting to use them has no effect
+  - Saving entries to third-party services
+  - Integrations status (this will always return `false`)
 - Titles and types are not available during feed discovery and are filled with generic data
 - Reading time is not calculated and will always be zero
 - Only the first enclosure of an article is retained
 - Comment URLs of articles are not exposed
+- The "Flush history" feature does nothing because the API does not seem to expose the history
 
 # Differences
 
 - Various error codes and messages differ due to significant implementation differences
 - The "All" category is treated specially (see below for details)
 - Feed and category titles consisting only of whitespace are rejected along with the empty string
-- Filtering rules may not function identically (see below for details)
+- Feeds created without a category are placed in the "All" category rather than the most recently modified category
+- Feed filtering rules may not function identically (see below for details)
 - The `checked_at` field of feeds indicates when the feed was last updated rather than when it was last checked
-- Creating a feed with the `scrape` property set to `true` might not return scraped content for the initial synchronization
-- Querying articles for both read/unread and removed statuses will not return all removed articles
 - Search strings will match partial words
 - OPML import either succeeds or fails atomically: if one feed fails, no feeds are imported
+- The Arsse does not track sessions for Miniflux, so the `last_login_at` time of users will always be the current time
 
-# Behaviour of filtering (block and keep) rules
+# Behaviour of feed filtering (block and keep) rules
 
-The Miniflux documentation gives only a brief example of a pattern for its filtering rules; the allowed syntax is described in full [in Google's documentation for RE2](https://github.com/google/re2/wiki/Syntax). Being a PHP application, The Arsse instead accepts [PCRE syntax](http://www.pcre.org/original/doc/html/pcresyntax.html) (or since PHP 7.3 [PCRE2 syntax](https://www.pcre.org/current/doc/html/pcre2syntax.html)), specifically in UTF-8 mode. Delimiters should not be included, and slashes should not be escaped; anchors may be used if desired. For example `^(?i)RE/MAX$` is a valid pattern.
+Miniflux accepts [Google's RE2 regular expression syntax](https://github.com/google/re2/wiki/Syntax) for feed filter rules. Being a PHP application, The Arsse instead accepts [PCRE2 syntax](https://www.pcre.org/current/doc/html/pcre2syntax.html)), specifically in UTF-8 mode. Delimiters should not be included, and slashes should not be escaped; anchors may be used if desired. For example `^(?i)RE/MAX$` is a valid pattern.
 
-For convenience the patterns are tested after collapsing whitespace. Unlike Miniflux, The Arsse tests the patterns against an article's author-supplied categories if they do not match its title. Also unlike Miniflux, when filter rules are modified they are re-evaluated against all applicable articles immediately.
+For convenience the patterns are tested after collapsing whitespace. Unlike Miniflux, when filter rules are modified they are re-evaluated against all applicable articles immediately.
 
 # Special handling of the "All" category
 

@@ -5,14 +5,17 @@
 
 /** Conf class */
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse;
 
+use AllowDynamicProperties;
 use JKingWeb\Arsse\Misc\ValueInfo as Value;
 
 /** Class for loading, saving, and querying configuration
  *
  * The Conf class serves both as a means of importing and querying configuration information, as well as a source for default parameters when a configuration file does not specify a value.
  * All public properties are configuration parameters that may be set by the server administrator. */
+#[AllowDynamicProperties]
 class Conf {
     /** @var string Default language to use for logging and errors */
     public $lang = "en";
@@ -92,10 +95,10 @@ class Conf {
     /** @var string|null User-Agent string to use when fetching feeds from foreign servers */
     public $fetchUserAgentString = null;
 
-    /** @var \DateInterval|null When to delete a feed from the database after all its subscriptions have been deleted, as an ISO 8601 duration (default: 24 hours; null for never)
+    /** @var \DateInterval|null When to delete a subscription from the database after it has been soft-deleted, as an ISO 8601 duration (default: 24 hours; null for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $purgeFeeds = "PT24H";
-    /** @var \DateInterval|null When to delete an unstarred article in the database after it has been marked read by all users, as an ISO 8601 duration (default: 7 days; null for never)
+    /** @var \DateInterval|null When to delete an unstarred article in the database after it has been marked read, as an ISO 8601 duration (default: 7 days; null for never)
      * @see https://en.wikipedia.org/wiki/ISO_8601#Durations */
     public $purgeArticlesRead = "P7D";
     /** @var \DateInterval|null When to delete an unstarred article in the database regardless of its read state, as an ISO 8601 duration (default: 21 days; null for never)

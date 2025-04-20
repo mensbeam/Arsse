@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\Misc\Date;
@@ -21,13 +22,13 @@ class Service {
 
     public function __construct() {
         $driver = Arsse::$conf->serviceDriver;
-        $this->drv = new $driver();
+        $this->drv = new $driver;
     }
 
     public function watch(bool $loop = true): \DateTimeInterface {
         $this->loop = $loop;
         $this->signalInit();
-        $t = new \DateTime();
+        $t = new \DateTime;
         do {
             $this->checkIn();
             static::cleanupPre();
@@ -66,6 +67,7 @@ class Service {
     }
 
     public function checkIn(): bool {
+        Arsse::$db->checkSchemaVersion();
         return Arsse::$db->metaSet("service_last_checkin", time(), "datetime");
     }
 
@@ -80,7 +82,7 @@ class Service {
         // get the checking interval
         $int = Arsse::$conf->serviceFrequency;
         // subtract twice the checking interval from the current time to yield the earliest acceptable check-in time
-        $limit = new \DateTime();
+        $limit = new \DateTime;
         $limit->sub($int);
         $limit->sub($int);
         // return whether the check-in time is within the acceptable limit
@@ -88,8 +90,8 @@ class Service {
     }
 
     public static function cleanupPre(): bool {
-        // mark unsubscribed feeds as orphaned and delete orphaned feeds that are beyond their retention period
-        Arsse::$db->feedCleanup();
+        // delete soft-deleted subscriptions that are beyond their retention period
+        Arsse::$db->subscriptionCleanup();
         // do the same for icons
         Arsse::$db->iconCleanup();
         // delete expired log-in sessions

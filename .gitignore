@@ -6,14 +6,12 @@
 /dist/arch/arsse/
 /dist/arch/src/
 /dist/arch/pkg/
-/dist/man/
 /arsse.db*
 /config.php
 /.php_cs.cache
+/.php-cs-fixer.cache
 /tests/.phpunit.result.cache
-/release/*
-
-!/release/settings.default.php
+/tests/.phpunit.cache
 
 # Dependencies
 

@@ -34,13 +34,13 @@ Also necessary to the functioning of the application is the `/vendor/` directory
 
 The `/locale/` and `/sql/` directories contain human-language files and database schemata, both of which are occasionally used by the application in the course of execution. The `/www/` directory serves as a document root for a few static files to be made available to users by a Web server.
 
-The `/dist/` directory, on the other hand, contains general and system-specific build files, and samples of configuration for Web servers and other system integration. These are not used by The Arsse itself, but are used during the process of preparing new releases for supported operating systems.
+The `/dist/` directory, on the other hand, contains general and system-specific build files, manual pages, and samples of configuration for Web servers and other system integration. These are not used by The Arsse itself, but are used during the process of preparing new releases for supported operating systems.
 
 ## Documentation
 
 The source text for The Arsse's manual can be found in `/docs/`, with pages written in [Markdown](https://spec.commonmark.org/current/) and converted to HTML [with Daux](#building-the-manual). If a static manual is generated its files will appear under `/manual/`.
 
-The Arsse also has a UNIX manual page, also written in Markdown, which can be found under `/manpages/`. [Pandoc](https://pandoc.org/) is needed to convert it to the appropriate format, with the results stored under `/dist/man/`.
+The Arsse also has a UNIX manual page written in [mdoc](https://man.archlinux.org/man/extra/mandoc/mandoc_mdoc.7.en) format, which can be found under `/dist/man/`.
 
 In addition to the manuals the files `/README.md` (this file), `/CHANGELOG`, `/UPGRADING`, `/LICENSE`, and `/AUTHORS` also document various things about the software, rather than the software itself.
 
@@ -64,17 +64,17 @@ PHPUnit's configuration can be customized by copying its configuration file to `
 
 The `/vendor-bin/` directory houses the files needed for the tools used in The Arsse's programming environment. These are managed by the Composer ["bin" plugin](https://github.com/bamarni/composer-bin-plugin) and are not used by The Arsse itself. The following files are also related to various programming tools:
 
-| Path              | Description                                              |
-|-------------------|----------------------------------------------------------|
-| `/.gitattributes` | Git settings for handling files                          |
-| `/.gitignore`     | Git file exclusion patterns                              |
-| `/.php_cs.dist`   | Configuration for [php-cs-fixer](https://cs.symfony.com) |
-| `/.php_cs.cache`  | Cache for php-cs-fixer                                   |
-| `/composer.json`  | Configuration for Composer                               |
-| `/composer.lock`  | Version synchronization data for Composer                |
-| `/RoboFile.php`   | Task definitions for [Robo](https://robo.li/)            |
-| `/robo`           | Simple wrapper for executing Robo on POSIX systems       |
-| `/robo.bat`       | Simple wrapper for executing Robo on Windows             |
+| Path                      | Description                                              |
+|---------------------------|----------------------------------------------------------|
+| `/.gitattributes`         | Git settings for handling files                          |
+| `/.gitignore`             | Git file exclusion patterns                              |
+| `/.php-cs-fixer.dist.php` | Configuration for [php-cs-fixer](https://cs.symfony.com) |
+| `/.php-cs-fixer.cache`    | Cache for php-cs-fixer                                   |
+| `/composer.json`          | Configuration for Composer                               |
+| `/composer.lock`          | Version synchronization data for Composer                |
+| `/RoboFile.php`           | Task definitions for [Robo](https://robo.li/)            |
+| `/robo`                   | Simple wrapper for executing Robo on POSIX systems       |
+| `/robo.bat`               | Simple wrapper for executing Robo on Windows             |
 
 In addition the files `/package.json` and `/postcss.config.js` as well as the `/node_modules/` directory are used by [Yarn](https://yarnpkg.com/) and [PostCSS](https://postcss.org/) when modifying the stylesheet for The Arsse's manual.
 
@@ -90,11 +90,11 @@ There is also a `test:quick` Robo task which excludes slower tests, and a `test:
 
 ### Test coverage
 
-Computing the coverage of tests can be done by running `./robo coverage`, after which an HTML-format coverage report will be written to `/tests/coverage/`. Either [PCOV](https://github.com/krakjoe/pcov), [Xdebug](https://xdebug.org), or [phpdbg](https://php.net/manual/en/book.phpdbg.php) is required for this. PCOV is generally recommended as it is faster than Xdebug; phpdbg is faster still, but less accurate. If using either PCOV or Xdebug, the extension need not be enabled globally; PHPUnit will enable it when needed.
+Computing the coverage of tests can be done by running `./robo coverage`, after which an HTML-format coverage report will be written to `/tests/coverage/`. Either [PCOV](https://github.com/krakjoe/pcov) or [Xdebug](https://xdebug.org) is required for this. PCOV is generally recommended as it is faster than Xdebug. Neither extension need be enabled globally; Robo will enable it when needed.
 
 ## Enforcing coding style
 
-The [php-cs-fixer](https://cs.symfony.com) tool, executed via `./robo clean`, can be used to rewrite code to adhere to The Arsse's coding style. The style largely follows [PSR-2](https://www.php-fig.org/psr/psr-2/) with some exceptions:
+The [php-cs-fixer](https://cs.symfony.com) tool, executed via `./robo clean`, can be used to rewrite code to adhere to The Arsse's coding style. The style largely follows [PSR-12](https://www.php-fig.org/psr/psr-12/) with some exceptions:
 
 - Classes, methods, and functions should have their opening brace on the same line as the signature
 - Anonymous functions should have no space before the parameter list
@@ -107,20 +107,13 @@ The Arsse's user manual, made using [Daux](https://daux.io/), can be compiled by
 
 The manual employs a custom theme derived from the standard Daux theme. If the standard Daux theme receives improvements, the custom theme can be rebuilt by running `./robo manual:theme`. This requires that [NodeJS](https://nodejs.org) and [Yarn](https://yarnpkg.com/) be installed, but JavaScript tools are not required to modify The Arsse itself, nor the content of the manual.
 
-## Building the man page
-
-The Arsse's UNIX manual page is authored in Markdown, and must be converted to the native roff format using [Pandoc](https://pandoc.org/). This can be done by running `./robo manpage`, which will output appropriate files to `/dist/man/`. The conversion should not be done manually as there is post-processing required for optimal output.
-
 ## Packaging a release
 
 Producing release packages is done by running `./robo package`. This performs the following operations:
 
 - Duplicates a [Git](https://git-scm.com/) working tree with the commit (usually a release tag) to package
-- Generates UNIX manual pages with [Pandoc](https://pandoc.org/)
 - Generates the HTML manual
 - Installs runtime Composer dependencies with an optimized autoloader
 - Deletes numerous unneeded files
 - Exports the default configuration of The Arsse to a file
 - Compresses the remaining files into a tarball
-- Produces a binary package for Arch Linux, if possible
-- Produces source and binary packages for Debian using [pbuilder](https://pbuilder-team.pages.debian.net/pbuilder/), if possible

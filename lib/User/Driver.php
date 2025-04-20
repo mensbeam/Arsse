@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\User;
 
 interface Driver {
@@ -23,7 +24,7 @@ interface Driver {
      * @param string $user The username to create
      * @param string|null $password The cleartext password to assign to the user, or null to generate a random password
      */
-    public function userAdd(string $user, string $password = null): ?string;
+    public function userAdd(string $user, ?string $password = null): ?string;
 
     /** Renames a user
      *
@@ -49,14 +50,14 @@ interface Driver {
      * @param string|null $password The cleartext password to assign to the user, or null to generate a random password
      * @param string|null $oldPassword The user's previous password, if known
      */
-    public function userPasswordSet(string $user, ?string $newPassword, string $oldPassword = null): ?string;
+    public function userPasswordSet(string $user, ?string $newPassword, ?string $oldPassword = null): ?string;
 
     /** Removes a user's password; this makes authentication fail unconditionally
      *
      * @param string $user The user for whom to change the password
      * @param string|null $oldPassword The user's previous password, if known
      */
-    public function userPasswordUnset(string $user, string $oldPassword = null): bool;
+    public function userPasswordUnset(string $user, ?string $oldPassword = null): bool;
 
     /** Retrieves metadata about a user
      *
@@ -66,11 +67,10 @@ interface Driver {
      * - admin: A boolean denoting whether the user has administrator privileges
      * - lang: A BCP 47 language tag e.g. "en", "hy-Latn-IT-arevela"
      * - tz: A zoneinfo timezone e.g. "Asia/Jakarta", "America/Argentina/La_Rioja"
-     * - sort_asc: A boolean denoting whether the user prefers articles to be sorted oldest-first
      *
      * Any other keys will be ignored.
      */
-    public function userPropertiesGet(string $user, bool $includeLarge = true): array;
+    public function userPropertiesGet(string $user): array;
 
     /** Sets metadata about a user
      *

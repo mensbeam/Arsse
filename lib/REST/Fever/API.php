@@ -4,19 +4,17 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\REST\Fever;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Misc\HTTP;
+use JKingWeb\Arsse\Db\ExceptionInput;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\Response\JsonResponse;
-use Laminas\Diactoros\Response\XmlResponse;
-use Laminas\Diactoros\Response\EmptyResponse;
 
 class API extends \JKingWeb\Arsse\REST\AbstractHandler {
     public const LEVEL = 3;
@@ -62,14 +60,14 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $P = $this->normalizeInputPost($req->getParsedBody() ?? []);
         if (!isset($G['api'])) {
             // the original would have shown the Fever UI in the absence of the "api" parameter, but we'll return 404
-            return new EmptyResponse(404);
+            return HTTP::respEmpty(404);
         }
         switch ($req->getMethod()) {
             case "OPTIONS":
-                return new EmptyResponse(204, [
+                return HTTP::challenge(HTTP::respEmpty(204, [
                     'Allow'  => "POST",
                     'Accept' => implode(", ", self::ACCEPTED_TYPES),
-                ]);
+                ]));
             case "GET": // HTTP violation required for client "Unread" on iOS
             case "POST":
                 $out = [
@@ -82,7 +80,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                     $out['auth'] = 1;
                 } elseif (Arsse::$conf->userHTTPAuthRequired || Arsse::$conf->userPreAuth || $req->getAttribute("authenticationFailed", false)) {
                     // otherwise if HTTP authentication failed or is required, deny access at the HTTP level
-                    return new EmptyResponse(401);
+                    return HTTP::respEmpty(401);
                 }
                 // produce a full response if authenticated or a basic response otherwise
                 if ($this->logIn(strtolower($P['api_key'] ?? ""))) {
@@ -93,7 +91,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // return the result, possibly formatted as XML
                 return $this->formatResponse($out, ($G['api'] === "xml"));
             default:
-                return new EmptyResponse(405, ['Allow' => "OPTIONS,POST"]);
+                return HTTP::respEmpty(405, ['Allow' => "OPTIONS,POST"]);
         }
     }
 
@@ -182,9 +180,9 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($xml) {
             $d = new \DOMDocument("1.0", "utf-8");
             $d->appendChild($this->makeXMLAssoc($data, $d->createElement("response")));
-            return new XmlResponse($d->saveXML());
+            return HTTP::respXml($d->saveXML($d->documentElement, \LIBXML_NOEMPTYTAG));
         } else {
-            return new JsonResponse($data, 200, [], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+            return HTTP::respJson($data, 200, [], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         }
     }
 
@@ -244,7 +242,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $c = new Context;
         $id = $P['id'];
         if ($P['before']) {
-            $c->notMarkedSince($P['before']);
+            $c->markedRange(null, $P['before']);
         }
         switch ($P['mark']) {
             case "item":
@@ -310,7 +308,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         $c = (new Context)->hidden(false);
         $lastUnread = Date::normalize($lastUnread, "sql");
         $since = Date::sub("PT15S", $lastUnread);
-        $c->unread(false)->markedSince($since);
+        $c->unread(false)->markedRange($since, null);
         Arsse::$db->articleMark(Arsse::$user->id, ['read' => false], $c);
     }
 
@@ -388,10 +386,10 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($G['with_ids']) {
             $c->articles(explode(",", $G['with_ids']))->hidden(null);
         } elseif ($G['max_id']) {
-            $c->latestArticle($G['max_id'] - 1);
+            $c->articleRange(null, $G['max_id'] - 1);
             $reverse = true;
         } elseif ($G['since_id']) {
-            $c->oldestArticle($G['since_id'] + 1);
+            $c->articleRange($G['since_id'] + 1, null);
         }
         // handle the undocumented options
         if ($G['group_ids']) {

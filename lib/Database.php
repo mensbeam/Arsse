@@ -4,13 +4,18 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse;
 
 use JKingWeb\DrUUID\UUID;
 use JKingWeb\Arsse\Db\Statement;
 use JKingWeb\Arsse\Misc\Query;
 use JKingWeb\Arsse\Context\Context;
+use JKingWeb\Arsse\Context\UnionContext;
+use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\HTTP;
+use JKingWeb\Arsse\Misc\QueryFilter;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\URL;
 use JKingWeb\Arsse\Rule\Rule;
@@ -22,11 +27,10 @@ use JKingWeb\Arsse\Rule\Exception as RuleException;
  *
  * - Users
  * - Subscriptions to feeds, which belong to users
- * - Folders, which belong to users and contain subscriptions
+ * - Folders, which belong to users and contain subscriptions or other folders
  * - Tags, which belong to users and can be assigned to multiple subscriptions
- * - Feeds to which users are subscribed
- * - Icons, which are associated with feeds
- * - Articles, which belong to feeds and for which users can only affect metadata
+ * - Icons, which are associated with subscriptions
+ * - Articles, which belong to subscriptions
  * - Editions, identifying authorial modifications to articles
  * - Labels, which belong to users and can be assigned to multiple articles
  * - Sessions, used by some protocols to identify users across periods of time
@@ -41,11 +45,12 @@ use JKingWeb\Arsse\Rule\Exception as RuleException;
  * concerns, will typically follow different conventions.
  *
  * Note that operations on users should be performed with the User class rather
- * than the Database class directly. This is to allow for alternate user sources.
+ * than the Database class directly. This is to allow for alternate user
+ * databases e.g. LDAP, although not such support for alternatives exists yet.
  */
 class Database {
     /** The version number of the latest schema the interface is aware of */
-    public const SCHEMA_VERSION = 7;
+    public const SCHEMA_VERSION = 8;
     /** Makes tag/label association change operations remove members */
     public const ASSOC_REMOVE = 0;
     /** Makes tag/label association change operations add members */
@@ -73,19 +78,33 @@ class Database {
     public function __construct($initialize = true) {
         $driver = Arsse::$conf->dbDriver;
         $this->db = $driver::create();
+        $this->checkSchemaVersion($initialize);
+    }
+
+    public function checkSchemaVersion(bool $initialize = false): void {
         $ver = $this->db->schemaVersion();
-        if ($initialize && $ver < self::SCHEMA_VERSION) {
-            $this->db->schemaUpdate(self::SCHEMA_VERSION);
+        if ($initialize) {
+            if ($ver < self::SCHEMA_VERSION) {
+                $this->db->schemaUpdate(self::SCHEMA_VERSION);
+            } elseif ($ver != self::SCHEMA_VERSION) {// @codeCoverageIgnore
+                // This will only occur if an old version of the software is used with a newer database schema
+                throw new Db\Exception("updateSchemaDowngrade"); // @codeCoverageIgnore
+            }
         }
     }
 
     /** Returns the bare name of the calling context's calling method, when __FUNCTION__ is not appropriate */
     protected function caller(): string {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
-        if ($trace[2]['function'] === "articleQuery") {
-            return $trace[3]['function'];
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
+        $out = "";
+        foreach ($trace as $step) {
+            if (($step['class'] ?? "")  === __CLASS__) {
+                $out = $step['function'];
+            } else {
+                break;
+            }
         }
-        return $trace[2]['function'];
+        return $out;
     }
 
     /** Returns the current (actual) schema version of the database; compared against self::SCHEMA_VERSION to know when an upgrade is required */
@@ -189,7 +208,7 @@ class Database {
      * The clause is structured such that all terms must be present across any of the columns
      *
      * @param string[] $terms The terms to search for
-     * @param string[] $cols The columns to match against; these are -not- sanitized, so much -not- come directly from user input
+     * @param string[] $cols The columns to match against; these are -not- sanitized, so must -not- come directly from user input
      * @param boolean $matchAny Whether the search is successful when it matches any (true) or all (false) terms
      */
     protected function generateSearch(array $terms, array $cols, bool $matchAny = false): array {
@@ -275,6 +294,10 @@ class Database {
         return true;
     }
 
+    /** Renames a user
+     *
+     * This does not have an effect on their numeric ID, but has a cascading effect on many tables
+     */
     public function userRename(string $user, string $name): bool {
         if ($user === $name) {
             return false;
@@ -328,15 +351,16 @@ class Database {
         return true;
     }
 
-    public function userPropertiesGet(string $user, bool $includeLarge = true): array {
+    /** Retrieves any metadata associated with a user
+     *
+     * @param string $user The user whose metadata is to be retrieved
+     */
+    public function userPropertiesGet(string $user): array {
         $basic = $this->db->prepare("SELECT num, admin from arsse_users where id = ?", "str")->run($user)->getRow();
         if (!$basic) {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
         $exclude = ["num", "admin"];
-        if (!$includeLarge) {
-            $exclude = array_merge($exclude, User::PROPERTIES_LARGE);
-        }
         [$inClause, $inTypes, $inValues] = $this->generateIn($exclude, "str");
         $meta = $this->db->prepare("SELECT \"key\", value from arsse_user_meta where owner = ? and \"key\" not in ($inClause) order by \"key\"", "str", $inTypes)->run($user, $inValues)->getAll();
         $meta = array_merge($basic, array_combine(array_column($meta, "key"), array_column($meta, "value")));
@@ -345,6 +369,11 @@ class Database {
         return $meta;
     }
 
+    /** Set one or more metadata properties for a user
+     *
+     * @param string $user The user whose metadata is to be set
+     * @param array $data An associative array of property names and values
+     */
     public function userPropertiesSet(string $user, array $data): bool {
         if (!$this->userExists($user)) {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
@@ -389,7 +418,7 @@ class Database {
      * @param string $user The user who owns the session to be destroyed
      * @param string|null $id The identifier of the session to destroy
      */
-    public function sessionDestroy(string $user, string $id = null): bool {
+    public function sessionDestroy(string $user, ?string $id = null): bool {
         if (is_null($id)) {
             // delete all sessions and report success unconditionally if no identifier was specified
             $this->db->prepare("DELETE FROM arsse_sessions where \"user\" = ?", "str")->run($user);
@@ -443,7 +472,7 @@ class Database {
      * @param \DateTimeInterface|null $expires An optional expiry date and time for the token
      * @param string $data Application-specific data associated with a token
      */
-    public function tokenCreate(string $user, string $class, string $id = null, ?\DateTimeInterface $expires = null, string $data = null): string {
+    public function tokenCreate(string $user, string $class, ?string $id = null, ?\DateTimeInterface $expires = null, ?string $data = null): string {
         if (!$this->userExists($user)) {
             throw new User\ExceptionConflict("doesNotExist", ["action" => __FUNCTION__, "user" => $user]);
         }
@@ -529,22 +558,27 @@ class Database {
         // check to make sure the parent exists, if one is specified
         $parent = $this->folderValidateId($user, $parent)['id'];
         $q = new Query(
-            "SELECT
+            "WITH RECURSIVE
+            folders as (
+                select id from arsse_folders where owner = ? and coalesce(parent,0) = ? union all select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id
+            )
+            select
                 id,
                 name,
                 arsse_folders.parent as parent,
                 coalesce(children,0) as children, 
                 coalesce(feeds,0) as feeds
-            FROM arsse_folders
-            left join (SELECT parent,count(id) as children from arsse_folders group by parent) as child_stats on child_stats.parent = arsse_folders.id
-            left join (SELECT folder,count(id) as feeds from arsse_subscriptions group by folder) as sub_stats on sub_stats.folder = arsse_folders.id"
+            from arsse_folders
+            left join (select parent,count(id) as children from arsse_folders group by parent) as child_stats on child_stats.parent = arsse_folders.id
+            left join (select folder,count(id) as feeds from arsse_subscriptions where deleted = 0 group by folder) as sub_stats on sub_stats.folder = arsse_folders.id",
+            ["str", "strict int"],
+            [$user, $parent]
         );
         if (!$recursive) {
             $q->setWhere("owner = ?", "str", $user);
             $q->setWhere("coalesce(arsse_folders.parent,0) = ?", "strict int", $parent);
         } else {
-            $q->setCTE("folders", "SELECT id from arsse_folders where owner = ? and coalesce(parent,0) = ? union all select arsse_folders.id from arsse_folders join folders on arsse_folders.parent=folders.id", ["str", "strict int"], [$user, $parent]);
-            $q->setWhere("id in (SELECT id from folders)");
+            $q->setWhere("id in (select id from folders)");
         }
         $q->setOrder("name");
         return $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
@@ -639,7 +673,7 @@ class Database {
         if (!V::id($id, true)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "folder", 'type' => "int >= 0"]);
         }
-        // if a null or zero ID is specified this is a no-op
+        // if a null or zero ID is specified this is always acceptable
         if (!$id) {
             return ['id' => null, 'name' => null, 'parent' => null];
         }
@@ -652,7 +686,7 @@ class Database {
     }
 
     /** Ensures an operation to rename and/or move a folder does not result in a conflict or circular dependence, and raises an exception otherwise */
-    protected function folderValidateMove(string $user, $id = null, $parent = null, string $name = null): ?int {
+    protected function folderValidateMove(string $user, $id = null, $parent = null, ?string $name = null): ?int {
         $errData = ["action" => $this->caller(), "field" => "parent", 'id' => $parent];
         if (!$id) {
             // the root cannot be moved
@@ -679,14 +713,14 @@ class Database {
         $p = $this->db->prepareArray(
             "WITH RECURSIVE
             target as (
-                SELECT ? as userid, ? as source, ? as dest, ? as new_name
+                select ? as userid, ? as source, ? as dest, ? as new_name
             ),
             folders as (
-                SELECT id from arsse_folders join target on owner = userid and coalesce(parent,0) = source 
+                select id from arsse_folders join target on owner = userid and coalesce(parent,0) = source 
                 union all 
                 select arsse_folders.id as id from arsse_folders join folders on arsse_folders.parent=folders.id
             )
-            SELECT
+            select
                 case when 
                     ((select dest from target) is null or exists(select id from arsse_folders join target on owner = userid and coalesce(id,0) = coalesce(dest,0))) 
                 then 1 else 0 end as extant,
@@ -739,19 +773,85 @@ class Database {
     }
 
     /** Adds a subscription to a newsfeed, and returns the numeric identifier of the added subscription
+     * 
+     * This is an all-in-one operation which reserves an ID, sets the subscription's 
+     * properties, and based on whether the feed is fetched successfully, either makes
+     * the subscription available to the user, or deletes the reservation.
      *
-     * @param string $user The user which will own the subscription
+     * @param string $user The user who will own the subscription
      * @param string $url The URL of the newsfeed or discovery source
-     * @param string $fetchUser The user name required to access the newsfeed, if applicable
-     * @param string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
      * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
-     * @param boolean $scrape Whether the initial synchronization should scrape full-article content
+     * @param array $properties An associative array of properties accepted by the `subscriptionPropertiesSet` function
      */
-    public function subscriptionAdd(string $user, string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true, bool $scrape = false): int {
-        // get the ID of the underlying feed, or add it if it's not yet in the database
-        $feedID = $this->feedAdd($url, $fetchUser, $fetchPassword, $discover, $scrape);
-        // Add the feed to the user's subscriptions and return the new subscription's ID.
-        return $this->db->prepare('INSERT INTO arsse_subscriptions(owner,feed) values(?,?)', 'str', 'int')->run($user, $feedID)->lastId();
+    public function subscriptionAdd(string $user, string $url, bool $discover = true, array $properties = []): int {
+        $id = $this->subscriptionReserve($user, $url, $discover, $properties);
+        try {
+            if ($properties) {
+                $this->subscriptionPropertiesSet($user, $id, $properties, true);
+            }
+            $this->subscriptionUpdate($user, $id, true);
+            $this->subscriptionReveal($user, $id);
+        } catch (\Throwable $e) {
+            // if the process failed, the subscription should be deleted immediately rather than cluttering up the database
+            $this->db->prepare("DELETE from arsse_subscriptions where id = ?", "int")->run($id);
+            throw $e;
+        }
+        return $id;
+    }
+
+    /** Adds a subscription to the database without exposing it to the user, returning its ID
+     *
+     * If the subscription already exists in the database an exception is thrown, unless the 
+     * subscription was soft-deleted; in this case the the existing ID is returned without 
+     * clearing the delete flag
+     * 
+     * This function can used  with `subscriptionUpdate` and `subscriptionReveal` to simulate
+     * atomic addition (or rollback) of multiple newsfeeds, something which is not normally
+     * practical due to network retrieval and processing times
+     *
+     * @param string $user The user who will own the subscription
+     * @param string $url The URL of the newsfeed or discovery source
+     * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
+     * @param array $properties An associative array of properties accepted by the `subscriptionPropertiesSet` function
+     */
+    public function subscriptionReserve(string $user, string $url, bool $discover = true, array $properties = []): int {
+        // validate the feed username
+        if (HTTP::userInvalid($properties['username'] ?? "")) {
+            throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "fetchUser"]);
+        }
+        // normalize the input URL
+        $url = URL::normalize($url, $properties['username'] ?? null, $properties['password'] ?? null);
+        // if discovery is enabled, check to see if the feed already exists; this will save us some network latency if it does
+        if ($discover) {
+            $id = $this->db->prepare("SELECT id from arsse_subscriptions where owner = ? and url = ?", "str", "str")->run($user, $url)->getValue();
+            if (!$id) {
+                // if it doesn't exist, perform discovery
+                $url = Feed::discover($url, $properties['user_agent'] ?? null, $properties['cookie'] ?? null);
+            }
+        }
+        try {
+            return (int) $this->db->prepare('INSERT INTO arsse_subscriptions(owner, url, deleted) values(?,?,?)', 'str', 'str', 'bool')->run($user, $url, 1)->lastId();
+        } catch (Db\ExceptionInput $e) {
+            // if the insertion fails, throw if the delete flag is not set, otherwise return the existing ID
+            $id = $this->db->prepare("SELECT id from arsse_subscriptions where owner = ? and url = ? and deleted = 1", "str", "str")->run($user, $url)->getValue();
+            if (!$id) {
+                throw $e;
+            } else {
+                // set the modification timestamp to the current time so it doesn't get cleaned up too soon
+                $this->db->prepare("UPDATE arsse_subscriptions set modified = CURRENT_TIMESTAMP where id = ?", "int")->run($id);
+            }
+            return (int) $id;
+        }
+    }
+
+    /** Clears the soft-delete flag from one or more subscriptions, making them visible to the user
+     * 
+     * @param string $user The user whose subscriptions to reveal
+     * @param int $id The numerical identifier(s) of the subscription(s) to reveal
+     */
+    public function subscriptionReveal(string $user, int ...$id): void {
+        [$inClause, $inTypes, $inValues] = $this->generateIn($id, "int");
+        $this->db->prepare("UPDATE arsse_subscriptions set deleted = 0,  modified = CURRENT_TIMESTAMP where deleted = 1 and owner = ? and id in ($inClause)", "str", $inTypes)->run($user, $inValues);
     }
 
     /** Lists a user's subscriptions, returning various data
@@ -759,8 +859,8 @@ class Database {
      * Each record has the following keys:
      *
      * - "id": The numeric identifier of the subscription
-     * - "feed": The numeric identifier of the underlying newsfeed
-     * - "url": The URL of the newsfeed, after discovery and HTTP redirects
+     * - "feed": The numeric identifier of the subscription (historical)
+     * - "url": The URL of the newsfeed, after discovery and HTTP redirects, with username and password embedded where applicable
      * - "title": The title of the newsfeed
      * - "source": The URL of the source of the newsfeed i.e. its parent Web site
      * - "icon_id": The numeric identifier of an icon representing the newsfeed or its source
@@ -773,6 +873,8 @@ class Database {
      * - "order_type": Whether articles should be sorted in reverse cronological order (2), chronological order (1), or the default (0)
      * - "keep_rule": The subscription's "keep" filter rule; articles which do not match this are hidden
      * - "block_rule": The subscription's "block" filter rule; articles which match this are hidden
+     * - "user_agent": An HTTP User-Agent value to use when fetching the feed rather than the default
+     * - "cookie": The cookie value, if any, which is sent when fetching feeds
      * - "added": The date and time at which the subscription was added
      * - "updated": The date and time at which the newsfeed was last updated in the database
      * - "edited": The date and time at which the newsfeed was last modified by its authors
@@ -780,6 +882,7 @@ class Database {
      * - "next_fetch": The date and time and which the feed will next be fetched
      * - "etag": The ETag header-field in the last fetch response
      * - "scrape": Whether the user wants scrape full-article content
+     * - "read": The number of read articles associated with the subscription
      * - "unread": The number of unread articles associated with the subscription
      *
      * @param string $user The user whose subscriptions are to be listed
@@ -787,59 +890,77 @@ class Database {
      * @param boolean $recursive Whether to list subscriptions of descendent folders as well as the selected folder
      * @param integer|null $id The numeric identifier of a particular subscription; used internally by subscriptionPropertiesGet
      */
-    public function subscriptionList(string $user, $folder = null, bool $recursive = true, int $id = null): Db\Result {
+    public function subscriptionList(string $user, $folder = null, bool $recursive = true, ?int $id = null): Db\Result {
         // validate inputs
         $folder = $this->folderValidateId($user, $folder)['id'];
-        // create a complex query
-        $integer = $this->db->sqlToken("integer");
+        // compile the query
+        $integerType = $this->db->sqlToken("integer");
         $q = new Query(
-            "SELECT
+            "WITH RECURSIVE
+            topmost(f_id, top) as (
+                select id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id
+            ),
+            folders(folder) as (
+                select ? union all select id from arsse_folders join folders on parent = folder
+            )
+            select
                 s.id as id,
-                s.feed as feed,
-                f.url,source,pinned,err_count,err_msg,order_type,added,keep_rule,block_rule,f.etag,s.scrape,
-                f.updated as updated,
-                f.modified as edited,
+                s.id as feed,
+                s.url,
+                s.source,
+                s.pinned,
+                s.err_count,
+                s.err_msg,
+                s.order_type,
+                s.added,
+                s.keep_rule,
+                s.block_rule,
+                s.user_agent,
+                s.cookie,
+                s.etag,
+                s.updated as updated,
+                s.modified as edited,
                 s.modified as modified,
-                f.next_fetch,
+                s.next_fetch,
+                s.scrape,
                 case when i.data is not null then i.id end as icon_id,
                 i.url as icon_url,
                 folder, t.top as top_folder, d.name as folder_name, dt.name as top_folder_name,
-                coalesce(s.title, f.title) as title,
-                coalesce((articles - hidden - marked), coalesce(articles,0)) as unread
-            FROM arsse_subscriptions as s
-                join arsse_feeds as f on f.id = s.feed
+                coalesce(s.title, s.feed_title) as title,
+                cast(coalesce((articles - hidden - marked), coalesce(articles,0)) as $integerType) as unread, -- this cast is required for MySQL for unclear reasons
+                cast(coalesce(marked,0) as $integerType) as \"read\" -- this cast is required for MySQL for unclear reasons
+            from arsse_subscriptions as s
                 left join topmost as t on t.f_id = s.folder
                 left join arsse_folders as d on s.folder = d.id
                 left join arsse_folders as dt on t.top = dt.id
-                left join arsse_icons as i on i.id = f.icon
+                left join arsse_icons as i on i.id = s.icon
                 left join (
                     select 
-                        feed, 
-                        count(*) as articles 
-                    from arsse_articles 
-                    group by feed
-                ) as article_stats on article_stats.feed = s.feed
+                        subscription,
+                        count(*) as articles
+                    from arsse_articles
+                    group by subscription
+                ) as article_stats on article_stats.subscription = s.id
                 left join (
-                    select 
-                        subscription, 
+                    select
+                        subscription,
                         sum(hidden) as hidden,
-                        sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
-                    from arsse_marks group by subscription
-                ) as mark_stats on mark_stats.subscription = s.id"
+                        sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
+                    from arsse_articles group by subscription
+                ) as mark_stats on mark_stats.subscription = s.id",
+            ["str", "int"],
+            [$user, $folder]
         );
         $q->setWhere("s.owner = ?", ["str"], [$user]);
+        $q->setWhere("s.deleted = 0");
         $nocase = $this->db->sqlToken("nocase");
-        $q->setOrder("pinned desc, coalesce(s.title, f.title) collate $nocase");
-        // topmost folders belonging to the user
-        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
+        $q->setOrder("pinned desc, coalesce(s.title, s.feed_title) collate $nocase");
         if ($id) {
             // if an ID is specified, add a suitable WHERE condition and bindings
             // this condition facilitates the implementation of subscriptionPropertiesGet, which would otherwise have to duplicate the complex query; it takes precedence over a specified folder
             $q->setWhere("s.id = ?", "int", $id);
         } elseif ($folder && $recursive) {
-            // if a folder is specified and we're listing recursively, add a common table expression to list it and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on parent = folder", "int", $folder);
-            // add a suitable WHERE condition
+            // if a folder is specified and we're listing recursively, add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
         } elseif (!$recursive) {
             // if we're not listing recursively, match against only the specified folder (even if it is null)
@@ -857,12 +978,19 @@ class Database {
         // validate inputs
         $folder = $this->folderValidateId($user, $folder)['id'];
         // create a complex query
-        $q = new Query("SELECT count(*) from arsse_subscriptions");
+        $q = new Query(
+            "WITH RECURSIVE
+            folders(folder) as (
+                select ? union all select id from arsse_folders join folders on parent = folder
+            )
+            select count(*) from arsse_subscriptions",
+            ["int"],
+            [$folder]
+        );
         $q->setWhere("owner = ?", "str", $user);
+        $q->setWhere("deleted = 0");
         if ($folder) {
-            // if the specified folder exists, add a common table expression to list it and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on parent = folder", "int", $folder);
-            // add a suitable WHERE condition
+            // if the specified folder exists, add a suitable WHERE condition
             $q->setWhere("folder in (select folder from folders)");
         }
         return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
@@ -879,7 +1007,7 @@ class Database {
         if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'type' => "int > 0"]);
         }
-        $changes = $this->db->prepare("DELETE from arsse_subscriptions where owner = ? and id = ?", "str", "int")->run($user, $id)->changes();
+        $changes = $this->db->prepare("UPDATE arsse_subscriptions set deleted = 1, modified = CURRENT_TIMESTAMP where owner = ? and id = ? and deleted = 0", "str", "int")->run($user, $id)->changes();
         if (!$changes) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $id]);
         }
@@ -900,8 +1028,9 @@ class Database {
 
     /** Modifies the properties of a subscription
      *
-     * The $data array must contain one or more of the following keys:
+     * The $data array may contain one or more of the following keys:
      *
+     * - "url": The URL of the subscription's newsfeed
      * - "title": The title of the subscription
      * - "folder": The numeric identifier (or null) of the subscription's folder
      * - "pinned": Whether the subscription is pinned
@@ -909,15 +1038,20 @@ class Database {
      * - "order_type": Whether articles should be sorted in reverse cronological order (2), chronological order (1), or the default (0)
      * - "keep_rule": The subscription's "keep" filter rule; articles which do not match this are hidden
      * - "block_rule": The subscription's "block" filter rule; articles which match this are hidden
+     * - "user_agent": An HTTP User-Agent value to use when fetching the feed rather than the default
+     * - "cookie": An HTTP cookie to send when fetching feeds
+     * - "username": The username to present to the foreign server when fetching the feed; this is intergrated into the URL
+     * - "password": The password to present to the foreign server when fetching the feed; this is intergrated into the URL
      *
      * @param string $user The user whose subscription is to be modified
      * @param integer $id the numeric identifier of the subscription to modfify
      * @param array $data An associative array of properties to modify; any keys not specified will be left unchanged
+     * @param boolean $deleted Whether to process the operation when the subscription is soft-deleted. This is required to be true when subscriptions are reserved but not yet fetched
      */
-    public function subscriptionPropertiesSet(string $user, $id, array $data): bool {
+    public function subscriptionPropertiesSet(string $user, $id, array $data, bool $acceptDeleted = false): bool {
         $tr = $this->db->begin();
         // validate the ID
-        $id = (int) $this->subscriptionValidateId($user, $id, true)['id'];
+        $id = (int) $this->subscriptionValidateId($user, $id, true, $acceptDeleted)['id'];
         if (array_key_exists("folder", $data)) {
             // ensure the target folder exists and belong to the user
             $data['folder'] = $this->folderValidateId($user, $data['folder'])['id'];
@@ -948,6 +1082,43 @@ class Database {
                 throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "block_rule"]);
             }
         }
+        // construct the new feed URL from components, if applicable; we have
+        //   to do this because we store any username and password within the
+        //   URL itself, an arrangement which simplifies indexing in MySQL
+        //   among other considerations
+        if (isset($data['url']) || isset($data['username']) || isset($data['password'])) {
+            // if we're setting the URL we must check it and extract credentials from it
+            if (isset($data['url'])) {
+                // we can't practically check if the URL actually points to a
+                //   feed (we risk a database deadlock if we take too long with
+                //   the transaction), but we can at least check if it is
+                //   syntactically an absolute URI
+                if (!URL::absolute($data['url'])) {
+                    throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "url"]);
+                }
+                $u = parse_url($data['url'], \PHP_URL_USER);
+                $p = parse_url($data['url'], \PHP_URL_PASS);
+                // if there is a username in the URL, use these credentials
+                //   unless they are explicitly supplied; this prevents
+                //   existing credentials in the current URL from taking
+                //   precedence when they shouldn't
+                if (strlen($u ?? "")) {
+                    $data['username'] = $data['username'] ?? $u;
+                    $data['password'] = $data['password'] ?? $p ?? "";
+                }
+            }
+            // validate the username
+            if (isset($data['username']) && HTTP::userInvalid($data['username'])) {
+                throw new Db\ExceptionInput("invalidValue", ["action" => __FUNCTION__, "field" => "username"]);
+            }
+            // retrieve the current values for the URL, username, and password
+            // the URL from the database can be assumed to be a string because the subscription ID is already validated above
+            $url = $this->db->prepare("SELECT url from arsse_subscriptions where id = ? and owner = ?", "int", "str")->run($id, $user)->getValue();
+            $u = parse_url($url, \PHP_URL_USER);
+            $p = parse_url($url, \PHP_URL_PASS);
+            // construct the new URL
+            $data['url'] = URL::normalize($data['url'] ?? $url, $data['username'] ?? $u, $data['password'] ?? $p);
+        }
         // perform the update
         $valid = [
             'title'      => "str",
@@ -956,7 +1127,12 @@ class Database {
             'pinned'     => "strict bool",
             'keep_rule'  => "str",
             'block_rule' => "str",
-            'scrape'     => "bool",
+            'scrape'     => "strict bool",
+            'user_agent' => "str",
+            'url'        => "strict str",
+            'cookie'     => "str",
+            // "username" doesn't apply because it is part of the URL
+            // "password" doesn't apply because it is part of the URL
         ];
         [$setClause, $setTypes, $setValues] = $this->generateSet($data, $valid);
         if (!$setClause) {
@@ -1002,8 +1178,9 @@ class Database {
      */
     public function subscriptionIcon(?string $user, int $id, bool $includeData = true): ?array {
         $data = $includeData ? "i.data" : "null as data";
-        $q = new Query("SELECT i.id, i.url, i.type, $data from arsse_subscriptions as s join arsse_feeds as f on s.feed = f.id left join arsse_icons as i on f.icon = i.id");
+        $q = new Query("SELECT i.id, i.url, i.type, $data from arsse_subscriptions as s left join arsse_icons as i on s.icon = i.id");
         $q->setWhere("s.id = ?", "int", $id);
+        $q->setWhere("s.deleted = 0");
         if (isset($user)) {
             $q->setWhere("s.owner = ?", "str", $user);
         }
@@ -1017,11 +1194,12 @@ class Database {
     }
 
     /** Returns the time at which any of a user's subscriptions (or a specific subscription) was last refreshed, as a DateTimeImmutable object */
-    public function subscriptionRefreshed(string $user, int $id = null): ?\DateTimeImmutable {
-        $q = new Query("SELECT max(arsse_feeds.updated) from arsse_feeds join arsse_subscriptions on arsse_subscriptions.feed = arsse_feeds.id");
-        $q->setWhere("arsse_subscriptions.owner = ?", "str", $user);
+    public function subscriptionRefreshed(string $user, ?int $id = null): ?\DateTimeImmutable {
+        $q = new Query("SELECT max(updated) from arsse_subscriptions");
+        $q->setWhere("owner = ?", "str", $user);
+        $q->setWhere("deleted = 0");
         if ($id) {
-            $q->setWhere("arsse_subscriptions.id = ?", "int", $id);
+            $q->setWhere("id = ?", "int", $id);
         }
         $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
         if (!$out && $id) {
@@ -1030,7 +1208,7 @@ class Database {
         return V::normalize($out, V::T_DATE | V::M_NULL, "sql");
     }
 
-    /** Evalutes the filter rules specified for a subscription against every article associated with the subscription's feed
+    /** Evalutes the filter rules specified for a subscription against every article associated with the subscription
      *
      * @param string $user The user who owns the subscription
      * @param integer $id The identifier of the subscription whose rules are to be evaluated
@@ -1038,24 +1216,23 @@ class Database {
     protected function subscriptionRulesApply(string $user, int $id): void {
         // start a transaction for read isolation
         $tr = $this->begin();
-        $sub = $this->db->prepare("SELECT feed, coalesce(keep_rule, '') as keep, coalesce(block_rule, '') as block from arsse_subscriptions where owner = ? and id = ?", "str", "int")->run($user, $id)->getRow();
+        $sub = $this->db->prepare("SELECT id, coalesce(keep_rule, '') as keep, coalesce(block_rule, '') as block from arsse_subscriptions where owner = ? and id = ?", "str", "int")->run($user, $id)->getRow();
         try {
             $keep = Rule::prep($sub['keep']);
             $block = Rule::prep($sub['block']);
-            $feed = $sub['feed'];
         } catch (RuleException $e) { // @codeCoverageIgnore
             // invalid rules should not normally appear in the database, but it's possible
             // in this case we should halt evaluation and just leave things as they are
             return; // @codeCoverageIgnore
         }
-        $articles = $this->db->prepare("SELECT id, title, coalesce(categories, 0) as categories from arsse_articles as a left join (select article, count(*) as categories from arsse_categories group by article) as c on a.id = c.article where a.feed = ?", "int")->run($feed)->getAll();
+        $articles = $this->db->prepare("SELECT id, url, title, coalesce(categories, 0) as categories from arsse_articles as a left join (select article, count(*) as categories from arsse_categories group by article) as c on a.id = c.article where a.subscription = ?", "int")->run($id)->getAll();
         $hide = [];
         $unhide = [];
         foreach ($articles as $r) {
             // retrieve the list of categories if the article has any
             $categories = $r['categories'] ? $this->articleCategoriesGet($user, (int) $r['id']) : [];
             // evaluate the rule for the article
-            if (Rule::apply($keep, $block, $r['title'], $categories)) {
+            if (Rule::apply($keep, $block, $r['url'] ?? "", $r['title'] ?? "", $r['author'] ?? "", $categories)) {
                 $unhide[] = $r['id'];
             } else {
                 $hide[] = $r['id'];
@@ -1079,103 +1256,68 @@ class Database {
      * @param string $user The user who owns the subscription to be validated
      * @param integer $id The identifier of the subscription to validate
      * @param boolean $subject Whether the subscription is the subject (true) rather than the object (false) of the operation being performed; this only affects the semantics of the error message if validation fails
+     * @param boolean $acceptDeleted Whether to consider a soft-deleted subscription as valid
      */
-    protected function subscriptionValidateId(string $user, $id, bool $subject = false): array {
+    protected function subscriptionValidateId(string $user, $id, bool $subject = false, bool $acceptDeleted = false): array {
         if (!V::id($id)) {
             throw new Db\ExceptionInput("typeViolation", ["action" => $this->caller(), "field" => "feed", 'type' => "int > 0"]);
         }
-        $out = $this->db->prepare("SELECT id,feed from arsse_subscriptions where id = ? and owner = ?", "int", "str")->run($id, $user)->getRow();
+        $deleted = $acceptDeleted ? "deleted" : "0";
+        $out = $this->db->prepare("SELECT id, id from arsse_subscriptions where id = ? and owner = ? and deleted = $deleted", "int", "str")->run($id, $user)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput($subject ? "subjectMissing" : "idMissing", ["action" => $this->caller(), "field" => "subscription", 'id' => $id]);
         }
         return $out;
     }
 
-    /** Adds a newsfeed to the database without adding any subscriptions, and returns the numeric identifier of the added feed
-     *
-     * If the feed already exists in the database, the existing ID is returned
-     *
-     * @param string $url The URL of the newsfeed or discovery source
-     * @param string $fetchUser The user name required to access the newsfeed, if applicable
-     * @param string $fetchPassword The password required to fetch the newsfeed, if applicable; this will be stored in cleartext
-     * @param boolean $discover Whether to perform newsfeed discovery if $url points to an HTML document
-     * @param boolean $scrape Whether the initial synchronization should scrape full-article content
-     */
-    public function feedAdd(string $url, string $fetchUser = "", string $fetchPassword = "", bool $discover = true, bool $scrape = false): int {
-        // normalize the input URL
-        $url = URL::normalize($url);
-        // check to see if the feed already exists
-        $check = $this->db->prepare("SELECT id from arsse_feeds where url = ? and username = ? and password = ?", "str", "str", "str");
-        $feedID = $check->run($url, $fetchUser, $fetchPassword)->getValue();
-        if ($discover && is_null($feedID)) {
-            // if the feed doesn't exist, first perform discovery if requested and check for the existence of that URL
-            $url = Feed::discover($url, $fetchUser, $fetchPassword);
-            $feedID = $check->run($url, $fetchUser, $fetchPassword)->getValue();
-        }
-        if (is_null($feedID)) {
-            // if the feed still doesn't exist in the database, add it to the database; we do this unconditionally so as to lock SQLite databases for as little time as possible
-            $feedID = $this->db->prepare('INSERT INTO arsse_feeds(url,username,password) values(?,?,?)', 'str', 'str', 'str')->run($url, $fetchUser, $fetchPassword)->lastId();
-            try {
-                // perform an initial update on the newly added feed
-                $this->feedUpdate($feedID, true, $scrape);
-            } catch (\Throwable $e) {
-                // if the update fails, delete the feed we just added
-                $this->db->prepare('DELETE from arsse_feeds where id = ?', 'int')->run($feedID);
-                throw $e;
-            }
-        }
-        return (int) $feedID;
-    }
-
     /** Returns an indexed array of numeric identifiers for newsfeeds which should be refreshed */
     public function feedListStale(): array {
-        $feeds = $this->db->query("SELECT id from arsse_feeds where next_fetch <= CURRENT_TIMESTAMP")->getAll();
+        $feeds = $this->db->query("SELECT id from arsse_subscriptions where next_fetch <= CURRENT_TIMESTAMP")->getAll();
         return array_column($feeds, 'id');
     }
 
-    /** Attempts to refresh a newsfeed, returning an indication of success
+    /** Attempts to refresh a subscribed newsfeed, returning an indication of success
      *
-     * @param integer $feedID The numerical identifier of the newsfeed to refresh
+     * @param string|null $user The user whose subscribed newsfeed is to be updated; this may be null to facilitate refreshing feeds from the CLI
+     * @param integer $subID The numerical identifier of the subscription to refresh
      * @param boolean $throwError Whether to throw an exception on failure in addition to storing error information in the database
-     * @param boolean|null $scrapeOverride If not null, overrides information in the database signaling whether or not to scrape full-article content. This is intended for when there are no subscriptions for the feed in the database yet
      */
-    public function feedUpdate($feedID, bool $throwError = false, ?bool $scrapeOverride = null): bool {
+    public function subscriptionUpdate(?string $user, $subID, bool $throwError = false): bool {
         // check to make sure the feed exists
-        if (!V::id($feedID)) {
-            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID, 'type' => "int > 0"]);
+        if (!V::id($subID)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "feed", 'id' => $subID, 'type' => "int > 0"]);
         }
         $f = $this->db->prepareArray(
             "SELECT 
-                url, username, password, modified, etag, err_count, scrapers 
-            FROM arsse_feeds as f
-            left join (select feed, count(*) as scrapers from arsse_subscriptions where scrape = 1 group by feed) as s on f.id = s.feed
-            where id = ?",
-            ["int"]
-        )->run($feedID)->getRow();
+                url, last_mod as modified, etag, err_count, scrape, keep_rule, block_rule, user_agent, cookie
+            FROM arsse_subscriptions
+            where id = ? and owner = coalesce(?, owner)",
+            ["int", "str"]
+        )->run($subID, $user)->getRow();
         if (!$f) {
-            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $feedID]);
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "feed", 'id' => $subID]);
         }
         // determine whether the feed's items should be scraped for full content from the source Web site
-        $scrape = (Arsse::$conf->fetchEnableScraping && ($scrapeOverride ?? $f['scrapers']));
+        $scrape = (Arsse::$conf->fetchEnableScraping && $f['scrape']);
         // the Feed object throws an exception when there are problems, but that isn't ideal
         // here. When an exception is thrown it should update the database with the
         // error instead of failing; if other exceptions are thrown, we should simply roll back
         try {
-            $feed = new Feed((int) $feedID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['username'], $f['password'], $scrape);
+            $feed = new Feed((int) $subID, $f['url'], (string) Date::transform($f['modified'], "http", "sql"), $f['etag'], $f['user_agent'], $f['cookie'], $scrape);
             if (!$feed->modified) {
                 // if the feed hasn't changed, just compute the next fetch time and record it
-                $this->db->prepare("UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id = ?", 'datetime', 'int')->run($feed->nextFetch, $feedID);
+                $this->db->prepare("UPDATE arsse_subscriptions SET updated = CURRENT_TIMESTAMP, next_fetch = ? WHERE id = ?", 'datetime', 'int')->run($feed->nextFetch, $subID);
                 return false;
             }
         } catch (Feed\Exception $e) {
             // update the database with the resultant error and the next fetch time, incrementing the error count
             $this->db->prepareArray(
-                "UPDATE arsse_feeds SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id = ?",
+                "UPDATE arsse_subscriptions SET updated = CURRENT_TIMESTAMP, next_fetch = ?, err_count = err_count + 1, err_msg = ? WHERE id = ?",
                 ['datetime', 'str', 'int']
-            )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(), $feedID);
+            )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(), $subID);
             if ($throwError) {
                 throw $e;
-            }
+            }   
             return false;
         }
         //prepare the necessary statements to perform the update
@@ -1186,18 +1328,34 @@ class Database {
         }
         if (sizeof($feed->newItems)) {
             $qInsertArticle = $this->db->prepareArray(
-                "INSERT INTO arsse_articles(url,title,author,published,edited,guid,content,url_title_hash,url_content_hash,title_content_hash,feed,content_scraped) values(?,?,?,?,?,?,?,?,?,?,?,?)",
-                ["str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "str", "int", "str"]
+                "INSERT INTO arsse_articles(url,title,author,published,edited,guid,url_title_hash,url_content_hash,title_content_hash,subscription,hidden) values(?,?,?,?,?,?,?,?,?,?,?)",
+                ["str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "int", "bool"]
             );
+            $qInsertContent = $this->db->prepareArray("INSERT INTO arsse_article_contents(id, content) values(?,?)", ["int", "str"]);
         }
         if (sizeof($feed->changedItems)) {
             $qDeleteEnclosures = $this->db->prepare("DELETE FROM arsse_enclosures WHERE article = ?", 'int');
             $qDeleteCategories = $this->db->prepare("DELETE FROM arsse_categories WHERE article = ?", 'int');
-            $qClearReadMarks = $this->db->prepare("UPDATE arsse_marks SET \"read\" = 0, modified = CURRENT_TIMESTAMP WHERE article = ? and \"read\" = 1", 'int');
             $qUpdateArticle = $this->db->prepareArray(
-                "UPDATE arsse_articles SET url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, content = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ?, content_scraped = ? WHERE id = ?",
-                ["str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "str", "str", "int"]
+                "UPDATE arsse_articles SET \"read\" = 0, hidden = ?, url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id = ?",
+                ["bool", "str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "int"]
             );
+            $qUpdateContent = $this->db->prepareArray("UPDATE arsse_article_contents set content = ? where id = ?", ["str", "int"]); 
+        }
+        // prepare the keep and block rules
+        try {
+            $keep = Rule::prep($f['keep_rule'] ?? "");
+        } catch (RuleException $e) { // @codeCoverageIgnore
+            // invalid rules should not normally appear in the database, but it's possible
+            // in this case we act as if the rule were not defined
+            $keep = ""; // @codeCoverageIgnore
+        }
+        try {
+            $block = Rule::prep($f['block_rule'] ?? "");
+        } catch (RuleException $e) { // @codeCoverageIgnore
+            // invalid rules should not normally appear in the database, but it's possible
+            // in this case we act as if the rule were not defined
+            $block = ""; // @codeCoverageIgnore
         }
         // determine if the feed icon needs to be updated, and update it if appropriate
         $tr = $this->db->begin();
@@ -1225,13 +1383,13 @@ class Database {
                 $article->publishedDate,
                 $article->updatedDate,
                 $article->id,
-                $article->content,
                 $article->urlTitleHash,
                 $article->urlContentHash,
                 $article->titleContentHash,
-                $feedID,
-                $article->scrapedContent ?? null
+                $subID,
+                !Rule::apply($keep, $block, $article->url ?? "", $article->title ?? "", $article->author ?? "", $article->categories)
             )->lastId();
+            $qInsertContent->run($articleID, $article->scrapedContent ?? $article->content);
             // note the new ID for later use
             $articleMap[$k] = $articleID;
             // insert any enclosures
@@ -1248,19 +1406,19 @@ class Database {
         // next update existing artricles which have been edited
         foreach ($feed->changedItems as $articleID => $article) {
             $qUpdateArticle->run(
+                !Rule::apply($keep, $block, $article->url ?? "", $article->title ?? "", $article->author ?? "", $article->categories),
                 $article->url,
                 $article->title,
                 $article->author,
                 $article->publishedDate,
                 $article->updatedDate,
                 $article->id,
-                $article->content,
                 $article->urlTitleHash,
                 $article->urlContentHash,
                 $article->titleContentHash,
-                $article->scrapedContent ?? null,
                 $articleID
             );
+            $qUpdateContent->run($article->scrapedContent ?? $article->content, $articleID);
             // delete all enclosures and categories and re-insert them
             $qDeleteEnclosures->run($articleID);
             $qDeleteCategories->run($articleID);
@@ -1272,90 +1430,33 @@ class Database {
             }
             // assign a new edition ID to this version of the article
             $qInsertEdition->run($articleID);
-            $qClearReadMarks->run($articleID);
-        }
-        // hide or unhide any filtered articles
-        foreach ($feed->filteredItems as $user => $filterData) {
-            $hide = [];
-            $unhide = [];
-            foreach ($filterData['new'] as $index => $keep) {
-                if (!$keep) {
-                    $hide[] = $articleMap[$index];
-                }
-            }
-            foreach ($filterData['changed'] as $article => $keep) {
-                if (!$keep) {
-                    $hide[] = $article;
-                } else {
-                    $unhide[] = $article;
-                }
-            }
-            if ($hide) {
-                $this->articleMark($user, ['hidden' => true], (new Context)->articles($hide), false);
-            }
-            if ($unhide) {
-                $this->articleMark($user, ['hidden' => false], (new Context)->articles($unhide), false);
-            }
         }
         // lastly update the feed database itself with updated information.
         $this->db->prepareArray(
-            "UPDATE arsse_feeds SET title = ?, source = ?, updated = CURRENT_TIMESTAMP, modified = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ?, icon = ? WHERE id = ?",
+            "UPDATE arsse_subscriptions SET feed_title = ?, source = ?, updated = CURRENT_TIMESTAMP, last_mod = ?, etag = ?, err_count = 0, err_msg = '', next_fetch = ?, size = ?, icon = ? WHERE id = ?",
             ["str", "str", "datetime", "strict str", "datetime", "int", "int", "int"]
         )->run(
-            $feed->data->title,
-            $feed->data->siteUrl,
+            $feed->title,
+            $feed->siteUrl,
             $feed->lastModified,
-            $feed->resource->getEtag(),
+            $feed->etag,
             $feed->nextFetch,
-            sizeof($feed->data->items),
+            sizeof($feed->items),
             $icon,
-            $feedID
+            $subID
         );
         $tr->commit();
         return true;
     }
 
-    /** Deletes orphaned newsfeeds from the database
-     *
-     * Newsfeeds are orphaned if no users are subscribed to them. Deleting a newsfeed also deletes its articles
-     */
-    public function feedCleanup(): bool {
-        $tr = $this->begin();
-        // first unmark any feeds which are no longer orphaned
-        $this->db->query("WITH active_feeds as (select id from arsse_feeds left join (select feed, count(id) as count from arsse_subscriptions group by feed) as sub_stats on sub_stats.feed = arsse_feeds.id where orphaned is not null and count is not null) UPDATE arsse_feeds set orphaned = null where id in (select id from active_feeds)");
-        // next mark any newly orphaned feeds with the current date and time
-        $this->db->query("WITH orphaned_feeds as (select id from arsse_feeds left join (select feed, count(id) as count from arsse_subscriptions group by feed) as sub_stats on sub_stats.feed = arsse_feeds.id where orphaned is null and count is null) UPDATE arsse_feeds set orphaned = CURRENT_TIMESTAMP where id in (select id from orphaned_feeds)");
-        // finally delete feeds that have been orphaned longer than the retention period, if a a purge threshold has been specified
+    /** Deletes soft-deleted newsfeed subscriptions from the database, subject to the retention period */
+    public function subscriptionCleanup(): bool {
+        // delete subscriptions that have been soft-deleted longer than the retention period, if a a purge threshold has been specified
         if (Arsse::$conf->purgeFeeds) {
             $limit = Date::sub(Arsse::$conf->purgeFeeds);
-            $out = (bool) $this->db->prepare("DELETE from arsse_feeds where orphaned <= ?", "datetime")->run($limit);
+            $out = (bool) $this->db->prepare("DELETE from arsse_subscriptions where deleted = 1 and modified <= ?", "datetime")->run($limit);
         } else {
             $out = false;
-        }
-        $tr->commit();
-        return $out;
-    }
-
-    /** Retrieves the set of filters users have applied to a given feed
-     *
-     * The result is an associative array whose keys are usernames, values
-     * being an array in turn with the following keys:
-     *
-     * - "keep": The "keep" rule as a prepared pattern; any articles which fail to match this rule are hidden
-     * - "block": The block rule as a prepared pattern; any articles which match this rule are hidden
-     */
-    public function feedRulesGet(int $feedID): array {
-        $out = [];
-        $result = $this->db->prepare("SELECT owner, coalesce(keep_rule, '') as keep, coalesce(block_rule, '') as block from arsse_subscriptions where feed = ? and (coalesce(keep_rule, '') || coalesce(block_rule, '')) <> '' order by owner", "int")->run($feedID);
-        foreach ($result as $row) {
-            try {
-                $keep = Rule::prep($row['keep']);
-                $block = Rule::prep($row['block']);
-            } catch (RuleException $e) {
-                // invalid rules should not normally appear in the database, but it's possible
-                continue;
-            }
-            $out[$row['owner']] = ['keep' => $keep, 'block' => $block];
         }
         return $out;
     }
@@ -1374,7 +1475,7 @@ class Database {
      */
     public function feedMatchLatest(int $feedID, int $count): Db\Result {
         return $this->db->prepare(
-            "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed = ? ORDER BY modified desc, id desc limit ?",
+            "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE subscription = ? ORDER BY modified desc, id desc limit ?",
             'int',
             'int'
         )->run($feedID, $count);
@@ -1403,7 +1504,7 @@ class Database {
         [$cHashTC, $tHashTC, $vHashTC] = $this->generateIn($hashesTC, "str");
         // perform the query
         return $this->db->prepareArray(
-            "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE feed = ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))",
+            "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE subscription = ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))",
             ['int', $tId, $tHashUT, $tHashUC, $tHashTC]
         )->run($feedID, $vId, $vHashUT, $vHashUC, $vHashTC);
     }
@@ -1420,7 +1521,35 @@ class Database {
      * @param string $user The user whose subscription icons are to be retrieved
      */
     public function iconList(string $user): Db\Result {
-        return $this->db->prepare("SELECT distinct i.id, i.url, i.type, i.data from arsse_icons as i join arsse_feeds as f on i.id = f.icon join arsse_subscriptions as s on s.feed = f.id where s.owner = ?", "str")->run($user);
+        return $this->db->prepare("SELECT distinct i.id, i.url, i.type, i.data from arsse_icons as i join arsse_subscriptions as s on s.icon = i.id where s.owner = ? and s.deleted = 0", "str")->run($user);
+    }
+
+    /** Retrieve data on a single icon, but its ID
+     *
+     * The returned information for the icon is identical to `iconList` above
+     *
+     * @param ?string $user The user whose subscription icon is to be retrieved, which may be omitted when necessary
+     * @param int $id The numeric identifier of the icon
+     */
+    public function iconPropertiesGet(?string $user, int $id): array {
+        if (!V::id($id)) {
+            throw new Db\ExceptionInput("typeViolation", ["action" => __FUNCTION__, "field" => "icon", 'type' => "int > 0"]);
+        }
+        $out = $this->db->prepare(
+            "SELECT distinct
+                i.id, i.url, i.type, i.data
+            from arsse_icons as i
+            join arsse_subscriptions as s on s.icon = i.id
+            where
+                s.owner = coalesce(?, s.owner)
+                and s.deleted = 0
+                and i.id = ?",
+            "str", "int"
+        )->run($user, $id)->getRow();
+        if (!$out) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "icon", 'id' => $id]);
+        }
+        return $out;
     }
 
     /** Deletes orphaned icons from the database
@@ -1430,9 +1559,9 @@ class Database {
     public function iconCleanup(): int {
         $tr = $this->begin();
         // first unmark any icons which are no longer orphaned; an icon is considered orphaned if it is not used or only used by feeds which are themselves orphaned
-        $this->db->query("UPDATE arsse_icons set orphaned = null where id in (select distinct icon from arsse_feeds where icon is not null and orphaned is null)");
+        $this->db->query("UPDATE arsse_icons set orphaned = null where id in (select distinct icon from arsse_subscriptions where icon is not null and deleted = 0)");
         // next mark any newly orphaned icons with the current date and time
-        $this->db->query("UPDATE arsse_icons set orphaned = CURRENT_TIMESTAMP where orphaned is null and id not in (select distinct icon from arsse_feeds where icon is not null and orphaned is null)");
+        $this->db->query("UPDATE arsse_icons set orphaned = CURRENT_TIMESTAMP where orphaned is null and id not in (select distinct icon from arsse_subscriptions where icon is not null and deleted = 0)");
         // finally delete icons that have been orphaned longer than the feed retention period, if a a purge threshold has been specified
         $out = 0;
         if (Arsse::$conf->purgeFeeds) {
@@ -1449,33 +1578,36 @@ class Database {
      */
     protected function articleColumns(): array {
         $greatest = $this->db->sqlToken("greatest");
+        $least = $this->db->sqlToken("least");
         return [
-            'id'                 => "arsse_articles.id",                                                                                                                                // The article's unchanging numeric ID
-            'edition'            => "latest_editions.edition",                                                                                                                          // The article's numeric ID which increases each time it is modified in the feed
-            'latest_edition'     => "max(latest_editions.edition)",                                                                                                                     // The most recent of all editions
-            'url'                => "arsse_articles.url",                                                                                                                               // The URL of the article's full content
-            'title'              => "arsse_articles.title",                                                                                                                             // The title
-            'author'             => "arsse_articles.author",                                                                                                                            // The name of the author
-            'content'            => "coalesce(case when arsse_subscriptions.scrape = 1 then arsse_articles.content_scraped end, arsse_articles.content)",                               // The article content
-            'guid'               => "arsse_articles.guid",                                                                                                                              // The GUID of the article, as presented in the feed (NOTE: Picofeed actually provides a hash of the ID)
-            'fingerprint'        => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",                              // A combination of three hashes
-            'folder'             => "coalesce(arsse_subscriptions.folder,0)",                                                                                                           // The folder of the article's feed. This is mainly for use in WHERE clauses
-            'top_folder'         => "coalesce(folder_data.top,0)",                                                                                                                      // The top-most folder of the article's feed. This is mainly for use in WHERE clauses
-            'folder_name'        => "folder_data.name",                                                                                                                                 // The name of the folder of the article's feed. This is mainly for use in WHERE clauses
-            'top_folder_name'    => "folder_data.top_name",                                                                                                                             // The name of the top-most folder of the article's feed. This is mainly for use in WHERE clauses
-            'subscription'       => "arsse_subscriptions.id",                                                                                                                           // The article's parent subscription
-            'feed'               => "arsse_subscriptions.feed",                                                                                                                         // The article's parent feed
-            'hidden'             => "coalesce(arsse_marks.hidden,0)",                                                                                                                   // Whether the article is hidden
-            'starred'            => "coalesce(arsse_marks.starred,0)",                                                                                                                  // Whether the article is starred
-            'unread'             => "abs(coalesce(arsse_marks.read,0) - 1)",                                                                                                            // Whether the article is unread
-            'note'               => "coalesce(arsse_marks.note,'')",                                                                                                                    // The article's note, if any
-            'published_date'     => "arsse_articles.published",                                                                                                                         // The date at which the article was first published i.e. its creation date
-            'edited_date'        => "arsse_articles.edited",                                                                                                                            // The date at which the article was last edited according to the feed
-            'modified_date'      => "arsse_articles.modified",                                                                                                                          // The date at which the article was last updated in our database
-            'marked_date'        => "$greatest(arsse_articles.modified, coalesce(arsse_marks.modified, '0001-01-01 00:00:00'), coalesce(label_stats.modified, '0001-01-01 00:00:00'))", // The date at which the article metadata was last modified by the user
-            'subscription_title' => "coalesce(arsse_subscriptions.title, arsse_feeds.title)",                                                                                           // The parent subscription's title
-            'media_url'          => "arsse_enclosures.url",                                                                                                                             // The URL of the article's enclosure, if any (NOTE: Picofeed only exposes one enclosure)
-            'media_type'         => "arsse_enclosures.type",                                                                                                                            // The Content-Type of the article's enclosure, if any
+            'id'                 => "arsse_articles.id",                                                                                                                                 // The article's unchanging numeric ID
+            'edition'            => "latest_editions.edition",                                                                                                                           // The article's numeric ID which increases each time it is modified in the feed
+            'latest_edition'     => "max(latest_editions.edition)",                                                                                                                      // The most recent of all editions
+            'url'                => "arsse_articles.url",                                                                                                                                // The URL of the article's full content
+            'title'              => "arsse_articles.title",                                                                                                                              // The title
+            'author'             => "arsse_articles.author",                                                                                                                             // The name of the author
+            'content'            => "arsse_article_contents.content",                                                                                                                    // The article content
+            'guid'               => "arsse_articles.guid",                                                                                                                               // The GUID of the article, as presented in the feed (NOTE: Picofeed actually provides a hash of the ID)
+            'fingerprint'        => "arsse_articles.url_title_hash || ':' || arsse_articles.url_content_hash || ':' || arsse_articles.title_content_hash",                               // A combination of three hashes
+            'folder'             => "coalesce(arsse_subscriptions.folder,0)",                                                                                                            // The folder of the article's feed. This is mainly for use in WHERE clauses
+            'top_folder'         => "coalesce(folder_data.top,0)",                                                                                                                       // The top-most folder of the article's feed. This is mainly for use in WHERE clauses
+            'folder_name'        => "folder_data.name",                                                                                                                                  // The name of the folder of the article's feed. This is mainly for use in WHERE clauses
+            'top_folder_name'    => "folder_data.top_name",                                                                                                                              // The name of the top-most folder of the article's feed. This is mainly for use in WHERE clauses
+            'subscription'       => "arsse_subscriptions.id",                                                                                                                            // The article's parent subscription
+            'hidden'             => "coalesce(arsse_articles.hidden,0)",                                                                                                                 // Whether the article is hidden
+            'starred'            => "coalesce(arsse_articles.starred,0)",                                                                                                                // Whether the article is starred
+            'unread'             => "abs(coalesce(arsse_articles.read,0) - 1)",                                                                                                          // Whether the article is unread
+            'labelled'           => "$least(coalesce(label_stats.assigned,0),1)",                                                                                                        // Whether the article has at least one label
+            'annotated'          => "(case when coalesce(arsse_articles.note,'') <> '' then 1 else 0 end)",                                                                              // Whether the article has a note
+            'note'               => "coalesce(arsse_articles.note,'')",                                                                                                                  // The article's note, if any
+            'published_date'     => "coalesce(arsse_articles.published, arsse_articles.added)",                                                                                          // The date at which the article was first published i.e. its creation date
+            'edited_date'        => "coalesce(arsse_articles.edited, arsse_articles.published, arsse_articles.modified)",                                                                // The date at which the article was last edited according to the feed
+            'modified_date'      => "arsse_articles.modified",                                                                                                                           // The date at which the article was last updated in our database
+            'added_date'         => "arsse_articles.added",                                                                                                                              // The date at which the article was created in our database
+            'marked_date'        => "$greatest(arsse_articles.modified, coalesce(arsse_articles.marked, '0001-01-01 00:00:00'), coalesce(label_stats.modified, '0001-01-01 00:00:00'))", // The date at which the article metadata was last modified by the user
+            'subscription_title' => "coalesce(arsse_subscriptions.title, arsse_subscriptions.feed_title)",                                                                               // The parent subscription's title
+            'media_url'          => "arsse_enclosures.url",                                                                                                                              // The URL of the article's enclosure, if any (NOTE: Picofeed only exposes one enclosure)
+            'media_type'         => "arsse_enclosures.type",                                                                                                                             // The Content-Type of the article's enclosure, if any
         ];
     }
 
@@ -1484,33 +1616,11 @@ class Database {
      * If an empty column list is supplied, a count of articles matching the context is queried instead
      *
      * @param string $user The user whose articles are to be queried
-     * @param Context $context The search context
+     * @param Context|UnionContext $context The search context
      * @param array $cols The columns to request in the result set
      */
-    protected function articleQuery(string $user, Context $context, array $cols = ["id"]): Query {
-        // validate input
-        if ($context->subscription()) {
-            $this->subscriptionValidateId($user, $context->subscription);
-        }
-        if ($context->folder()) {
-            $this->folderValidateId($user, $context->folder);
-        }
-        if ($context->folderShallow()) {
-            $this->folderValidateId($user, $context->folderShallow);
-        }
-        if ($context->edition()) {
-            $this->articleValidateEdition($user, $context->edition);
-        }
-        if ($context->article()) {
-            $this->articleValidateId($user, $context->article);
-        }
-        if ($context->label()) {
-            $this->labelValidateId($user, $context->label, false);
-        }
-        if ($context->labelName()) {
-            $this->labelValidateId($user, $context->labelName, true);
-        }
-        // prepare the output column list; the column definitions are also used later
+    protected function articleQuery(string $user, RootContext $context, array $cols = ["id"]): Query {
+        // prepare the output column list; the column definitions are also used for ordering
         $colDefs = $this->articleColumns();
         if (!$cols) {
             // if no columns are specified return a count; don't borther with sorting
@@ -1534,204 +1644,210 @@ class Database {
         assert(strlen($outColumns) > 0, new \Exception("No input columns matched whitelist"));
         // define the basic query, to which we add lots of stuff where necessary
         $q = new Query(
-            "SELECT 
+            "WITH RECURSIVE
+            folders(id,req) as (
+                select 0, 0 union all select f.id, f.id from arsse_folders as f where owner = ? union all select f1.id, req from arsse_folders as f1 join folders on coalesce(parent,0)=folders.id
+            ),
+            folders_top(id,top) as (
+                select f.id, f.id from arsse_folders as f where owner = ? and parent is null union all select f.id, top from arsse_folders as f join folders_top as t on parent=t.id
+            ),
+            folder_data(id,name,top,top_name) as (
+                select f1.id, f1.name, top, f2.name from arsse_folders as f1 join folders_top as f0 on f1.id = f0.id join arsse_folders as f2 on f2.id = top
+            ),
+            labelled(article,label_id,label_name) as (
+                select m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1
+            ),
+            tagged(subscription,tag_id,tag_name) as (
+                select m.subscription, t.id, t.name from arsse_tag_members as m join arsse_tags as t on t.id = m.tag where t.owner = ? and m.assigned = 1
+            )
+            select 
                 $outColumns
             from arsse_articles
-            join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed and arsse_subscriptions.owner = ?
-            join arsse_feeds on arsse_subscriptions.feed = arsse_feeds.id
+            join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription and arsse_subscriptions.owner = ? and arsse_subscriptions.deleted = 0
+            left join arsse_article_contents on arsse_article_contents.id = arsse_articles.id
             left join folder_data on arsse_subscriptions.folder = folder_data.id
-            left join arsse_marks on arsse_marks.subscription = arsse_subscriptions.id and arsse_marks.article = arsse_articles.id
             left join arsse_enclosures on arsse_enclosures.article = arsse_articles.id
-            join (
-                SELECT article, max(id) as edition from arsse_editions group by article
+            left join (
+                select article, max(id) as edition from arsse_editions group by article
             ) as latest_editions on arsse_articles.id = latest_editions.article
             left join (
-                SELECT arsse_label_members.article, max(arsse_label_members.modified) as modified, sum(arsse_label_members.assigned) as assigned from arsse_label_members join arsse_labels on arsse_labels.id = arsse_label_members.label where arsse_labels.owner = ? group by arsse_label_members.article
+                select arsse_label_members.article, max(arsse_label_members.modified) as modified, sum(arsse_label_members.assigned) as assigned from arsse_label_members join arsse_labels on arsse_labels.id = arsse_label_members.label where arsse_labels.owner = ? group by arsse_label_members.article
             ) as label_stats on label_stats.article = arsse_articles.id",
-            ["str", "str"],
-            [$user, $user]
+            ["str", "str", "str", "str", "str", "str"],
+            [$user, $user, $user, $user, $user, $user]
         );
-        $q->setCTE("topmost(f_id,top)", "SELECT id,id from arsse_folders where owner = ? and parent is null union all select id,top from arsse_folders join topmost on parent=f_id", ["str"], [$user]);
-        $q->setCTE("folder_data(id,name,top,top_name)", "SELECT f1.id, f1.name, top, f2.name from arsse_folders as f1 join topmost on f1.id = f_id join arsse_folders as f2 on f2.id = top");
         $q->setLimit($context->limit, $context->offset);
+        if ($context instanceof UnionContext) {
+            // if the context is a union context, we compute each context in turn
+            $q->setWhereRestrictive(false);
+            foreach ($context as $c) {
+                $q->setWhereGroup($this->articleFilter($c));
+            }
+        } else {
+            // if the context is not a union, first validate input to catch 404s and the like
+            if ($context->subscription()) {
+                $this->subscriptionValidateId($user, $context->subscription);
+            }
+            if ($context->folder()) {
+                $this->folderValidateId($user, $context->folder);
+            }
+            if ($context->folderShallow()) {
+                $this->folderValidateId($user, $context->folderShallow);
+            }
+            if ($context->edition()) {
+                $this->articleValidateEdition($user, $context->edition);
+            }
+            if ($context->article()) {
+                $this->articleValidateId($user, $context->article);
+            }
+            if ($context->label()) {
+                $this->labelValidateId($user, $context->label, false);
+            }
+            if ($context->labelName()) {
+                $this->labelValidateId($user, $context->labelName, true);
+            }
+            // ensure any used array-type context options contain at least one member
+            foreach ([
+                "articles",
+                "editions",
+                "subscriptions",
+                "folders",
+                "foldersShallow",
+                "labels",
+                "labelNames",
+                "tags",
+                "tagNames",
+                "searchTerms",
+                "titleTerms",
+                "authorTerms",
+                "annotationTerms",
+                "modifiedRanges",
+                "markedRanges",
+                "addedRanges",
+                "publishedRanges",
+            ] as $m) {
+                if ($context->$m() && !$context->$m) {
+                    throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]);
+                }
+            }
+            // next compute the context, supplying the query to manipulate directly
+            $this->articleFilter($context, $q);
+        }
+        // return the query
+        return $q;
+    }
+
+    /** Transforms a selection context for articles into a set of terms for an SQL "where" clause */
+    protected function articleFilter(Context $context, ?QueryFilter $q = null): QueryFilter {
+        $q = $q ?? new QueryFilter;
+        $colDefs = $this->articleColumns();
         // handle the simple context options
         $options = [
-            // each context array consists of a column identifier (see $colDefs above), a comparison operator, a data type, and an option to pair with for BETWEEN evaluation
-            "edition"          => ["edition",       "=",  "int",      ""],
-            "editions"         => ["edition",       "in", "int",      ""],
-            "article"          => ["id",            "=",  "int",      ""],
-            "articles"         => ["id",            "in", "int",      ""],
-            "oldestArticle"    => ["id",            ">=", "int",      "latestArticle"],
-            "latestArticle"    => ["id",            "<=", "int",      "oldestArticle"],
-            "oldestEdition"    => ["edition",       ">=", "int",      "latestEdition"],
-            "latestEdition"    => ["edition",       "<=", "int",      "oldestEdition"],
-            "modifiedSince"    => ["modified_date", ">=", "datetime", "notModifiedSince"],
-            "notModifiedSince" => ["modified_date", "<=", "datetime", "modifiedSince"],
-            "markedSince"      => ["marked_date",   ">=", "datetime", "notMarkedSince"],
-            "notMarkedSince"   => ["marked_date",   "<=", "datetime", "markedSince"],
-            "folderShallow"    => ["folder",        "=",  "int",      ""],
-            "foldersShallow"   => ["folder",        "in", "int",      ""],
-            "subscription"     => ["subscription",  "=",  "int",      ""],
-            "subscriptions"    => ["subscription",  "in", "int",      ""],
-            "unread"           => ["unread",        "=",  "bool",     ""],
-            "starred"          => ["starred",       "=",  "bool",     ""],
-            "hidden"           => ["hidden",        "=",  "bool",     ""],
+            // each context array consists of a column identifier (see $colDefs above), a comparison operator, and a data type; the "between" operator has special handling
+            "edition"          => ["edition",        "=",       "int"],
+            "editions"         => ["edition",        "in",      "int"],
+            "article"          => ["id",             "=",       "int"],
+            "articles"         => ["id",             "in",      "int"],
+            "articleRange"     => ["id",             "between", "int"],
+            "editionRange"     => ["edition",        "between", "int"],
+            "modifiedRange"    => ["modified_date",  "between", "datetime"],
+            "markedRange"      => ["marked_date",    "between", "datetime"],
+            "addedRange"       => ["added_date",     "between", "datetime"],
+            "publishedRange"   => ["published_date", "between", "datetime"],
+            "folderShallow"    => ["folder",         "=",       "int"],
+            "foldersShallow"   => ["folder",         "in",      "int"],
+            "subscription"     => ["subscription",   "=",       "int"],
+            "subscriptions"    => ["subscription",   "in",      "int"],
+            "unread"           => ["unread",         "=",       "bool"],
+            "starred"          => ["starred",        "=",       "bool"],
+            "hidden"           => ["hidden",         "=",       "bool"],
+            "labelled"         => ["labelled",       "=",       "bool"],
+            "annotated"        => ["annotated",      "=",       "bool"],
         ];
-        foreach ($options as $m => [$col, $op, $type, $pair]) {
-            if (!$context->$m()) {
-                // context is not being used
-                continue;
-            } elseif (is_array($context->$m)) {
-                // context option is an array of values
-                if (!$context->$m) {
-                    throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-                }
-                [$clause, $types, $values] = $this->generateIn($context->$m, $type);
-                $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
-            } elseif ($pair && $context->$pair()) {
-                // option is paired with another which is also being used
-                if ($op === ">=") {
-                    $q->setWhere("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], [$context->$m, $context->$pair]);
+        foreach ($options as $m => [$col, $op, $type]) {
+            if ($context->$m()) {
+                if ($op === "between") {
+                    // option is a range
+                    if ($context->$m[0] === null) {
+                        // range is open at the low end
+                        $q->setWhere("{$colDefs[$col]} <= ?", $type, $context->$m[1]);
+                    } elseif ($context->$m[1] === null) {
+                        // range is open at the high end
+                        $q->setWhere("{$colDefs[$col]} >= ?", $type, $context->$m[0]);
+                    } else {
+                        // range is bounded in both directions
+                        $q->setWhere("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->$m);
+                    }
+                } elseif (is_array($context->$m)) {
+                    // context option is an array of values
+                    [$clause, $types, $values] = $this->generateIn($context->$m, $type);
+                    $q->setWhere("{$colDefs[$col]} $op ($clause)", $types, $values);
                 } else {
-                    // option has already been paired
-                    continue;
+                    $q->setWhere("{$colDefs[$col]} $op ?", $type, $context->$m);
                 }
-            } else {
-                $q->setWhere("{$colDefs[$col]} $op ?", $type, $context->$m);
+            }
+            // handle the exclusionary version
+            if (method_exists($context->not, $m) && $context->not->$m()) {
+                if ($op === "between") {
+                    // option is a range
+                    if ($context->not->$m[0] === null) {
+                        // range is open at the low end
+                        $q->setWhereNot("{$colDefs[$col]} <= ?", $type, $context->not->$m[1]);
+                    } elseif ($context->not->$m[1] === null) {
+                        // range is open at the high end
+                        $q->setWhereNot("{$colDefs[$col]} >= ?", $type, $context->not->$m[0]);
+                    } else {
+                        // range is bounded in both directions
+                        $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $context->not->$m);
+                    }
+                } elseif (is_array($context->not->$m)) {
+                    if (!$context->not->$m) {
+                        // for exclusions we don't care if the array is empty
+                        continue;
+                    }
+                    [$clause, $types, $values] = $this->generateIn($context->not->$m, $type);
+                    $q->setWhereNot("{$colDefs[$col]} $op ($clause)", $types, $values);
+                } else {
+                    $q->setWhereNot("{$colDefs[$col]} $op ?", $type, $context->not->$m);
+                }
             }
         }
-        // further handle exclusionary options if specified
-        foreach ($options as $m => [$col, $op, $type, $pair]) {
-            if (!method_exists($context->not, $m) || !$context->not->$m()) {
-                // context option is not being used
-                continue;
-            } elseif (is_array($context->not->$m)) {
-                if (!$context->not->$m) {
-                    // for exclusions we don't care if the array is empty
-                    continue;
-                }
-                [$clause, $types, $values] = $this->generateIn($context->not->$m, $type);
-                $q->setWhereNot("{$colDefs[$col]} $op ($clause)", $types, $values);
-            } elseif ($pair && $context->not->$pair()) {
-                // option is paired with another which is also being used
-                if ($op === ">=") {
-                    $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], [$context->not->$m, $context->not->$pair]);
-                } else {
-                    // option has already been paired
-                    continue;
-                }
-            } else {
-                $q->setWhereNot("{$colDefs[$col]} $op ?", $type, $context->not->$m);
-            }
-        }
-        // handle labels and tags
+        // handle folder trees, labels, and tags
         $options = [
-            'label' => [
-                'match_col'  => "arsse_articles.id",
-                'cte_name'   => "labelled",
-                'cte_cols'   => ["article", "label_id", "label_name"],
-                'cte_body'   => "SELECT m.article, l.id, l.name from arsse_label_members as m join arsse_labels as l on l.id = m.label where l.owner = ? and m.assigned = 1",
-                'cte_types'  => ["str"],
-                'cte_values' => [$user],
-                'options'    => [
-                    'label'      => ['use_name' => false, 'multi' => false],
-                    'labels'     => ['use_name' => false, 'multi' => true],
-                    'labelName'  => ['use_name' => true,  'multi' => false],
-                    'labelNames' => ['use_name' => true,  'multi' => true],
-                ],
-            ],
-            'tag' => [
-                'match_col'  => "arsse_subscriptions.id",
-                'cte_name'   => "tagged",
-                'cte_cols'   => ["subscription", "tag_id", "tag_name"],
-                'cte_body'   => "SELECT m.subscription, t.id, t.name from arsse_tag_members as m join arsse_tags as t on t.id = m.tag where t.owner = ? and m.assigned = 1",
-                'cte_types'  => ["str"],
-                'cte_values' => [$user],
-                'options'    => [
-                    'tag'      => ['use_name' => false, 'multi' => false],
-                    'tags'     => ['use_name' => false, 'multi' => true],
-                    'tagName'  => ['use_name' => true,  'multi' => false],
-                    'tagNames' => ['use_name' => true,  'multi' => true],
-                ],
-            ],
+            // each context array consists of a common table expression to select from, the column to match in the main join, the column to match in the CTE, the column to select in the CTE, an operator, and a type for the match in the CTE
+            'folder'     => ["folders",  "folder",       "folders.id",          "req",        "=",  "int"],
+            'folders'    => ["folders",  "folder",       "folders.id",          "req",        "in", "int"],
+            'label'      => ["labelled", "id",           "labelled.article",    "label_id",   "=",  "int"],
+            'labels'     => ["labelled", "id",           "labelled.article",    "label_id",   "in", "int"],
+            'labelName'  => ["labelled", "id",           "labelled.article",    "label_name", "=",  "str"],
+            'labelNames' => ["labelled", "id",           "labelled.article",    "label_name", "in", "str"],
+            'tag'        => ["tagged",   "subscription", "tagged.subscription", "tag_id",     "=",  "int"],
+            'tags'       => ["tagged",   "subscription", "tagged.subscription", "tag_id",     "in", "int"],
+            'tagName'    => ["tagged",   "subscription", "tagged.subscription", "tag_name",   "=",  "str"],
+            'tagNames'   => ["tagged",   "subscription", "tagged.subscription", "tag_name",   "in", "str"],
         ];
-        foreach ($options as $opt) {
-            $seen = false;
-            $match = $opt['match_col'];
-            $table = $opt['cte_name'];
-            foreach ($opt['options'] as $m => $props) {
-                $named = $props['use_name'];
-                $multi = $props['multi'];
-                $selection = $opt['cte_cols'][0];
-                $col = $opt['cte_cols'][$named ? 2 : 1];
-                if ($context->$m()) {
-                    $seen = true;
-                    if (!$context->$m) {
-                        throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-                    }
-                    if ($multi) {
-                        [$test, $types, $values] = $this->generateIn($context->$m, $named ? "str" : "int");
-                        $test = "in ($test)";
-                    } else {
-                        $test = "= ?";
-                        $types = $named ? "str" : "int";
-                        $values = $context->$m;
-                    }
-                    $q->setWhere("$match in (select $selection from $table where $col $test)", $types, $values);
-                }
-                if ($context->not->$m()) {
-                    $seen = true;
-                    if ($multi) {
-                        [$test, $types, $values] = $this->generateIn($context->not->$m, $named ? "str" : "int");
-                        $test = "in ($test)";
-                    } else {
-                        $test = "= ?";
-                        $types = $named ? "str" : "int";
-                        $values = $context->not->$m;
-                    }
-                    $q->setWhereNot("$match in (select $selection from $table where $col $test)", $types, $values);
+        foreach ($options as $m => [$cte, $outerCol, $selection, $innerCol, $op, $type]) {
+            if ($context->$m()) {
+                if ($op === "in") {
+                    [$inClause, $inTypes, $inValues] = $this->generateIn($context->$m, $type);
+                    $q->setWhere("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol in($inClause))", $inTypes, $inValues);
+                } else {
+                    $q->setWhere("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol = ?)", $type, $context->$m);
                 }
             }
-            if ($seen) {
-                $spec = $opt['cte_name']."(".implode(",", $opt['cte_cols']).")";
-                $q->setCTE($spec, $opt['cte_body'], $opt['cte_types'], $opt['cte_values']);
+            // handle the exclusionary version
+            if ($context->not->$m()) {
+                if ($op === "in") {
+                    if (!$context->not->$m) {
+                        // for exclusions we don't care if the array is empty
+                        continue;
+                    }
+                    [$inClause, $inTypes, $inValues] = $this->generateIn($context->not->$m, $type);
+                    $q->setWhereNot("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol in($inClause))", $inTypes, $inValues);
+                } else {
+                    $q->setWhereNot("{$colDefs[$outerCol]} in (select $selection from $cte where $innerCol = ?)", $type, $context->not->$m);
+                }
             }
-        }
-        // handle complex context options
-        if ($context->annotated()) {
-            $comp = ($context->annotated) ? "<>" : "=";
-            $q->setWhere("coalesce(arsse_marks.note,'') $comp ''");
-        }
-        if ($context->labelled()) {
-            // any label (true) or no label (false)
-            $op = $context->labelled ? ">" : "=";
-            $q->setWhere("coalesce(label_stats.assigned,0) $op 0");
-        }
-        if ($context->folder()) {
-            // add a common table expression to list the folder and its children so that we select from the entire subtree
-            $q->setCTE("folders(folder)", "SELECT ? union all select id from arsse_folders join folders on coalesce(parent,0) = folder", "int", $context->folder);
-            // limit subscriptions to the listed folders
-            $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders)");
-        }
-        if ($context->folders()) {
-            [$inClause, $inTypes, $inValues] = $this->generateIn($context->folders, "int");
-            // add a common table expression to list the folders and their children so that we select from the entire subtree
-            $q->setCTE("folders_multi(folder)", "SELECT id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi union select id from arsse_folders join folders_multi on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
-            // limit subscriptions to the listed folders
-            $q->setWhere("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi)");
-        }
-        if ($context->not->folder()) {
-            // add a common table expression to list the folder and its children so that we exclude from the entire subtree
-            $q->setCTE("folders_excluded(folder)", "SELECT ? union all select id from arsse_folders join folders_excluded on coalesce(parent,0) = folder", "int", $context->not->folder);
-            // excluded any subscriptions in the listed folders
-            $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_excluded)");
-        }
-        if ($context->not->folders()) {
-            [$inClause, $inTypes, $inValues] = $this->generateIn($context->not->folders, "int");
-            // add a common table expression to list the folders and their children so that we select from the entire subtree
-            $q->setCTE("folders_multi_excluded(folder)", "SELECT id as folder from (select id from (select 0 as id union all select id from arsse_folders where owner = ?) as f where id in ($inClause)) as folders_multi_excluded union select id from arsse_folders join folders_multi_excluded on coalesce(parent,0) = folder", ["str", $inTypes], [$user, $inValues]);
-            // limit subscriptions to the listed folders
-            $q->setWhereNot("coalesce(arsse_subscriptions.folder,0) in (select folder from folders_multi_excluded)");
         }
         // handle text-matching context options
         $options = [
@@ -1741,29 +1857,58 @@ class Database {
             "annotationTerms" => ["note"],
         ];
         foreach ($options as $m => $columns) {
-            if (!$context->$m()) {
-                continue;
-            } elseif (!$context->$m) {
-                throw new Db\ExceptionInput("tooShort", ['field' => $m, 'action' => $this->caller(), 'min' => 1]); // must have at least one array element
-            }
             $columns = array_map(function($c) use ($colDefs) {
                 assert(isset($colDefs[$c]), new Exception("constantUnknown", $c));
                 return $colDefs[$c];
             }, $columns);
-            $q->setWhere(...$this->generateSearch($context->$m, $columns));
-        }
-        // further handle exclusionary text-matching context options
-        foreach ($options as $m => $columns) {
-            if (!$context->not->$m() || !$context->not->$m) {
-                continue;
+            if ($context->$m()) {
+                $q->setWhere(...$this->generateSearch($context->$m, $columns));
             }
-            $columns = array_map(function($c) use ($colDefs) {
-                assert(isset($colDefs[$c]), new Exception("constantUnknown", $c));
-                return $colDefs[$c];
-            }, $columns);
-            $q->setWhereNot(...$this->generateSearch($context->not->$m, $columns, true));
+            // handle the exclusionary version
+            if ($context->not->$m() && $context->not->$m) {
+                $q->setWhereNot(...$this->generateSearch($context->not->$m, $columns, true));
+            }
         }
-        // return the query
+        // handle arrays of ranges
+        $options = [
+            'modifiedRanges'  => ["modified_date",  "datetime"],
+            'markedRanges'    => ["marked_date",    "datetime"],
+            'addedRanges'     => ["added_date",     "datetime"],
+            'publishedRanges' => ["published_date", "datetime"],
+        ];
+        foreach ($options as $m => [$col, $type]) {
+            if ($context->$m()) {
+                $subq = (new QueryFilter)->setWhereRestrictive(false);
+                foreach ($context->$m as $r) {
+                    if ($r[0] === null) {
+                        // range is open at the low end
+                        $subq->setWhere("{$colDefs[$col]} <= ?", $type, $r[1]);
+                    } elseif ($r[1] === null) {
+                        // range is open at the high end
+                        $subq->setWhere("{$colDefs[$col]} >= ?", $type, $r[0]);
+                    } else {
+                        // range is bounded in both directions
+                        $subq->setWhere("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $r);
+                    }
+                }
+                $q->setWhereGroup($subq);
+            }
+            // handle the exclusionary version
+            if ($context->not->$m() && $context->not->$m) {
+                foreach ($context->not->$m as $r) {
+                    if ($r[0] === null) {
+                        // range is open at the low end
+                        $q->setWhereNot("{$colDefs[$col]} <= ?", $type, $r[1]);
+                    } elseif ($r[1] === null) {
+                        // range is open at the high end
+                        $q->setWhereNot("{$colDefs[$col]} >= ?", $type, $r[0]);
+                    } else {
+                        // range is bounded in both directions
+                        $q->setWhereNot("{$colDefs[$col]} BETWEEN ? AND ?", [$type, $type], $r);
+                    }
+                }
+            }
+        }
         return $q;
     }
 
@@ -1772,11 +1917,11 @@ class Database {
      * If an empty column list is supplied, a count of articles is returned instead
      *
      * @param string $user The user whose articles are to be listed
-     * @param Context $context The search context
-     * @param array $fieldss The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
+     * @param RootContext $context The search context
+     * @param array $fields The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
      * @param array $sort The columns to sort the result by eg. "edition desc" in decreasing order of importance
      */
-    public function articleList(string $user, Context $context = null, array $fields = ["id"], array $sort = []): Db\Result {
+    public function articleList(string $user, ?RootContext $context = null, array $fields = ["id"], array $sort = []): Db\Result {
         // make a base query based on context and output columns
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, $fields);
@@ -1818,9 +1963,9 @@ class Database {
     /** Returns a count of articles which match the given query context
      *
      * @param string $user The user whose articles are to be counted
-     * @param Context $context The search context
+     * @param RootContext $context The search context
      */
-    public function articleCount(string $user, Context $context = null): int {
+    public function articleCount(string $user, ?RootContext $context = null): int {
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, []);
         return (int) $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->getValue();
@@ -1840,7 +1985,7 @@ class Database {
      * @param Context $context The query context to match articles against
      * @param bool $updateTimestamp Whether to also update the timestamp. This should only be false if a mark is changed as a result of an automated action not taken by the user
      */
-    public function articleMark(string $user, array $data, Context $context = null, bool $updateTimestamp = true): int {
+    public function articleMark(string $user, array $data, ?Context $context = null, bool $updateTimestamp = true): int {
         $data = [
             'read'    => $data['read'] ?? null,
             'starred' => $data['starred'] ?? null,
@@ -1853,22 +1998,25 @@ class Database {
         $context = $context ?? new Context;
         $tr = $this->begin();
         $out = 0;
-        if ($data['read'] || $data['starred'] || $data['hidden'] || strlen($data['note'] ?? "")) {
-            // first prepare a query to insert any missing marks rows for the articles we want to mark
-            // but only insert new mark records if we're setting at least one "positive" mark
-            $q = $this->articleQuery($user, $context, ["id", "subscription", "note"]);
-            $q->setWhere("arsse_marks.starred is null"); // null means there is no marks row for the article, because the column is defined not-null
-            $this->db->prepare("INSERT INTO arsse_marks(article,subscription,note) ".$q->getQuery(), $q->getTypes())->run($q->getValues());
-        }
         if (isset($data['read']) && (isset($data['starred']) || isset($data['hidden']) || isset($data['note'])) && ($context->edition() || $context->editions())) {
-            // if marking by edition both read and something else, do separate marks for starred and note than for read
-            // marking as read is ignored if the edition is not the latest, but the same is not true of the other two marks
-            $this->db->query("UPDATE arsse_marks set touched = 0 where touched <> 0");
-            // set read marks
-            $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-            $q->setWhere("arsse_marks.read <> coalesce(?,arsse_marks.read)", "bool", $data['read']);
-            $q->pushCTE("target_articles(article,subscription)");
-            $q->setBody("UPDATE arsse_marks set \"read\" = ?, touched = 1 where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", "bool", $data['read']);
+            // if marking by edition both read and something else, do separate marks for starred, hidden, and note than for read
+            //   marking as read is ignored if the edition is not the latest, but the same is not true of the other two marks
+            $subq = $this->articleQuery($user, $context);
+            $subq->setWhere("arsse_articles.read <> coalesce(?,arsse_articles.read)", "bool", $data['read']);
+            $q = new Query(
+                "WITH RECURSIVE
+                target_articles(article) as (
+                    {$subq->getQuery()}
+                )
+                update arsse_articles
+                set 
+                    \"read\" = ?, 
+                    touched = 1 
+                where 
+                    id in (select article from target_articles)", 
+                [$subq->getTypes(), "bool"], 
+                [$subq->getValues(), $data['read']]
+            );
             $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
             // get the articles associated with the requested editions
             if ($context->edition()) {
@@ -1878,21 +2026,33 @@ class Database {
             }
             // set starred, hidden, and/or note marks (unless all requested editions actually do not exist)
             if ($context->article || $context->articles) {
-                $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-                $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool"], [$data['note'], $data['starred'], $data['hidden']]);
-                $q->pushCTE("target_articles(article,subscription)");
-                $data = array_filter($data, function($v) {
+                $setData = array_filter($data, function($v) {
                     return isset($v);
                 });
-                [$set, $setTypes, $setValues] = $this->generateSet($data, ['starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
-                $q->setBody("UPDATE arsse_marks set touched = 1, $set where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
+                [$set, $setTypes, $setValues] = $this->generateSet($setData, ['starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
+                $subq = $this->articleQuery($user, $context);
+                $subq->setWhere("(arsse_articles.note <> coalesce(?,arsse_articles.note) or arsse_articles.starred <> coalesce(?,arsse_articles.starred) or arsse_articles.hidden <> coalesce(?,arsse_articles.hidden))", ["str", "bool", "bool"], [$data['note'], $data['starred'], $data['hidden']]);
+                $q = new Query(
+                    "WITH RECURSIVE
+                    target_articles(article) as (
+                        {$subq->getQuery()}
+                    )
+                    update arsse_articles
+                    set 
+                        touched = 1,
+                        $set 
+                    where 
+                        id in (select article from target_articles)",
+                    [$subq->getTypes(), $setTypes], 
+                    [$subq->getValues(), $setValues]
+                );
                 $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
             }
             // finally set the modification date for all touched marks and return the number of affected marks
             if ($updateTimestamp) {
-                $out = $this->db->query("UPDATE arsse_marks set modified = CURRENT_TIMESTAMP, touched = 0 where touched = 1")->changes();
+                $out = $this->db->query("UPDATE arsse_articles set marked = CURRENT_TIMESTAMP, touched = 0 where touched = 1")->changes();
             } else {
-                $out = $this->db->query("UPDATE arsse_marks set touched = 0 where touched = 1")->changes();
+                $out = $this->db->query("UPDATE arsse_articles set touched = 0 where touched = 1")->changes();
             }
         } else {
             if (!isset($data['read']) && ($context->edition() || $context->editions())) {
@@ -1906,17 +2066,28 @@ class Database {
                     return 0;
                 }
             }
-            $q = $this->articleQuery($user, $context, ["id", "subscription"]);
-            $q->setWhere("(arsse_marks.note <> coalesce(?,arsse_marks.note) or arsse_marks.starred <> coalesce(?,arsse_marks.starred) or arsse_marks.read <> coalesce(?,arsse_marks.read) or arsse_marks.hidden <> coalesce(?,arsse_marks.hidden))", ["str", "bool", "bool", "bool"], [$data['note'], $data['starred'], $data['read'], $data['hidden']]);
-            $q->pushCTE("target_articles(article,subscription)");
-            $data = array_filter($data, function($v) {
+            $setData = array_filter($data, function($v) {
                 return isset($v);
             });
-            [$set, $setTypes, $setValues] = $this->generateSet($data, ['read' => "bool", 'starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
+            [$set, $setTypes, $setValues] = $this->generateSet($setData, ['read' => "bool", 'starred' => "bool", 'hidden' => "bool", 'note' => "str"]);
             if ($updateTimestamp) {
-                $set .= ", modified = CURRENT_TIMESTAMP";
+                $set .= ", marked = CURRENT_TIMESTAMP";
             }
-            $q->setBody("UPDATE arsse_marks set $set where article in(select article from target_articles) and subscription in(select distinct subscription from target_articles)", $setTypes, $setValues);
+            $subq = $this->articleQuery($user, $context);
+            $subq->setWhere("(arsse_articles.note <> coalesce(?,arsse_articles.note) or arsse_articles.starred <> coalesce(?,arsse_articles.starred) or arsse_articles.read <> coalesce(?,arsse_articles.read) or arsse_articles.hidden <> coalesce(?,arsse_articles.hidden))", ["str", "bool", "bool", "bool"], [$data['note'], $data['starred'], $data['read'], $data['hidden']]);
+            $q = new Query(
+                "WITH RECURSIVE
+                target_articles(article) as (
+                    {$subq->getQuery()}
+                )
+                update arsse_articles
+                set
+                    $set
+                where
+                    id in (select article from target_articles)",
+                [$subq->getTypes(), $setTypes],
+                [$subq->getValues(), $setValues]
+            );
             $out = $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues())->changes();
         }
         $tr->commit();
@@ -1938,7 +2109,7 @@ class Database {
                 coalesce(sum(abs(\"read\" - 1)),0) as unread,
                 coalesce(sum(\"read\"),0) as \"read\"
             FROM (
-                select \"read\" from arsse_marks where starred = 1 and hidden <> 1 and subscription in (select id from arsse_subscriptions where owner = ?)
+                select \"read\" from arsse_articles where starred = 1 and hidden <> 1 and subscription in (select id from arsse_subscriptions where owner = ? and deleted = 0)
             ) as starred_data",
             "str"
         )->run($user)->getRow();
@@ -1971,7 +2142,6 @@ class Database {
 
     /** Deletes from the database articles which are beyond the configured clean-up threshold */
     public function articleCleanup(): bool {
-        $integer = $this->db->sqlToken("integer");
         $query = $this->db->prepareArray(
             "WITH RECURSIVE
             exempt_articles as (
@@ -1980,40 +2150,18 @@ class Database {
                 from arsse_articles join (
                     SELECT article, max(id) as edition from arsse_editions group by article
                 ) as latest_editions on arsse_articles.id = latest_editions.article 
-                where feed = ? order by edition desc limit ?
-            ),
-            target_articles as (
-                SELECT 
-                    id 
-                from arsse_articles
-                join (
-                    select 
-                        feed, 
-                        count(*) as subs 
-                    from arsse_subscriptions
-                    where feed = ?
-                    group by feed
-                ) as feed_stats on feed_stats.feed = arsse_articles.feed
-                left join (
-                    select 
-                        article, 
-                        sum(cast((starred = 1 and hidden = 0) as $integer)) as starred, 
-                        sum(cast((\"read\" = 1 or hidden = 1) as $integer)) as \"read\", 
-                        max(arsse_marks.modified) as marked_date 
-                    from arsse_marks 
-                    group by article
-                ) as mark_stats on mark_stats.article = arsse_articles.id
-                where
-                    coalesce(starred,0) = 0 
-                    and (
-                        coalesce(marked_date,modified) <= ? 
-                        or (
-                            coalesce(\"read\",0) = coalesce(subs,0) 
-                            and coalesce(marked_date,modified) <= ?
-                        )
-                    )
+                where subscription = ? order by edition desc limit ?
             )
-            DELETE FROM arsse_articles WHERE id not in (select id from exempt_articles) and id in (select id from target_articles)",
+            DELETE FROM 
+                arsse_articles
+            where
+                subscription = ?
+                and (starred = 0 or hidden = 1)
+                and (
+                    coalesce(marked,modified) <= ? 
+                    or (coalesce(marked,modified) <= ? and (\"read\" = 1 or hidden = 1))
+                )
+                and id not in (select id from exempt_articles)",
             ["int", "int", "int", "datetime", "datetime"]
         );
         $limitRead = null;
@@ -2024,11 +2172,13 @@ class Database {
         if (Arsse::$conf->purgeArticlesUnread) {
             $limitUnread = Date::sub(Arsse::$conf->purgeArticlesUnread);
         }
-        $feeds = $this->db->query("SELECT id, size from arsse_feeds")->getAll();
         $deleted = 0;
+        $tr = $this->begin();
+        $feeds = $this->db->query("SELECT id, size from arsse_subscriptions")->getAll();
         foreach ($feeds as $feed) {
             $deleted += $query->run($feed['id'], $feed['size'], $feed['id'], $limitUnread, $limitRead)->changes();
         }
+        $tr->commit();
         return (bool) $deleted;
     }
 
@@ -2047,8 +2197,8 @@ class Database {
             "SELECT articles.article as article, max(arsse_editions.id)  as edition from (
                 select arsse_articles.id as article
                 FROM arsse_articles
-                    join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed
-                WHERE arsse_articles.id = ? and arsse_subscriptions.owner = ?
+                    join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
+                WHERE arsse_articles.id = ? and arsse_subscriptions.owner = ? and arsse_subscriptions.deleted = 0
             ) as articles left join arsse_editions on arsse_editions.article = articles.article group by articles.article",
             ["int", "str"]
         )->run($id, $user)->getRow();
@@ -2074,9 +2224,9 @@ class Database {
                 arsse_editions.id, arsse_editions.article, edition_stats.edition as current
             from arsse_editions 
                 join arsse_articles on arsse_articles.id = arsse_editions.article
-                join arsse_subscriptions on arsse_subscriptions.feed = arsse_articles.feed
+                join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
                 join (select article, max(id) as edition from arsse_editions group by article) as edition_stats on edition_stats.article = arsse_editions.article
-            where arsse_editions.id = ? and arsse_subscriptions.owner = ?",
+            where arsse_editions.id = ? and arsse_subscriptions.owner = ? and arsse_subscriptions.deleted = 0",
             ["int", "str"]
         )->run($id, $user)->getRow();
         if (!$out) {
@@ -2086,7 +2236,7 @@ class Database {
     }
 
     /** Returns the numeric identifier of the most recent edition of an article matching the given context */
-    public function editionLatest(string $user, Context $context = null): int {
+    public function editionLatest(string $user, ?RootContext $context = null): int {
         $context = $context ?? new Context;
         $q = $this->articleQuery($user, $context, ["latest_edition"]);
         return (int) $this->db->prepare((string) $q, $q->getTypes())->run($q->getValues())->getValue();
@@ -2129,27 +2279,33 @@ class Database {
      * @param boolean $includeEmpty Whether to include (true) or supress (false) labels which have no articles assigned to them
      */
     public function labelList(string $user, bool $includeEmpty = true): Db\Result {
-        $integer = $this->db->sqlToken("integer");
+        $integerType = $this->db->sqlToken("integer");
         return $this->db->prepareArray(
             "SELECT * FROM (
                 SELECT
                     id,
                     name,
-                    coalesce(articles - coalesce(hidden, 0), 0) as articles,
-                    coalesce(marked, 0) as \"read\"
+                    cast(coalesce(articles - coalesce(hidden, 0), 0) as $integerType) as articles, -- this cast is required for MySQL for unclear reasons
+                    cast(coalesce(marked, 0) as $integerType) as \"read\" -- this cast is required for MySQL for unclear reasons
                 from arsse_labels
                     left join (
-                        SELECT label, sum(assigned) as articles from arsse_label_members group by label
+                        SELECT
+                            label, 
+                            sum(assigned) as articles 
+                        from arsse_label_members
+                            join arsse_articles on arsse_articles.id = arsse_label_members.article
+                            join arsse_subscriptions on arsse_articles.subscription = arsse_subscriptions.id and arsse_subscriptions.deleted = 0
+                        group by label
                     ) as label_stats on label_stats.label = arsse_labels.id
                     left join (
                         SELECT
                             label,
                             sum(hidden) as hidden,
-                            sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
-                        from arsse_marks
-                            join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription
-                            join arsse_label_members on arsse_label_members.article = arsse_marks.article
-                        where arsse_subscriptions.owner = ?
+                            sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
+                        from arsse_articles
+                            join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
+                            join arsse_label_members on arsse_label_members.article = arsse_articles.id
+                        where arsse_subscriptions.owner = ? and arsse_subscriptions.deleted = 0
                         group by label
                     ) as mark_stats on mark_stats.label = arsse_labels.id
                 WHERE owner = ?
@@ -2195,7 +2351,6 @@ class Database {
         $this->labelValidateId($user, $id, $byName, false);
         $field = $byName ? "name" : "id";
         $type = $byName ? "str" : "int";
-        $integer = $this->db->sqlToken("integer");
         $out = $this->db->prepareArray(
             "SELECT
                 id,
@@ -2204,17 +2359,23 @@ class Database {
                 coalesce(marked, 0) as \"read\"
             FROM arsse_labels
                 left join (
-                    SELECT label, sum(assigned) as articles from arsse_label_members group by label
+                    SELECT
+                        label, 
+                        sum(assigned) as articles 
+                    from arsse_label_members
+                    join arsse_articles on arsse_articles.id = arsse_label_members.article
+                    join arsse_subscriptions on arsse_articles.subscription = arsse_subscriptions.id and arsse_subscriptions.deleted = 0
+                    group by label
                 ) as label_stats on label_stats.label = arsse_labels.id
                 left join (
                     SELECT
                         label,
                         sum(hidden) as hidden,
-                        sum(cast((\"read\" = 1 and hidden = 0) as $integer)) as marked
-                    from arsse_marks
-                    join arsse_subscriptions on arsse_subscriptions.id = arsse_marks.subscription
-                    join arsse_label_members on arsse_label_members.article = arsse_marks.article
-                    where arsse_subscriptions.owner = ?
+                        sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
+                    from arsse_articles
+                        join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
+                        join arsse_label_members on arsse_label_members.article = arsse_articles.id
+                    where arsse_subscriptions.owner = ? and arsse_subscriptions.deleted = 0
                     group by label
                 ) as mark_stats on mark_stats.label = arsse_labels.id
             WHERE $field = ? and owner = ?",
@@ -2289,11 +2450,11 @@ class Database {
      *
      * @param string $user The owner of the label
      * @param integer|string $id The numeric identifier or name of the label
-     * @param Context $context The query context matching the desired articles
+     * @param RootContext $context The query context matching the desired articles
      * @param int $mode Whether to add (ASSOC_ADD), remove (ASSOC_REMOVE), or replace with (ASSOC_REPLACE) the matching associations
      * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
      */
-    public function labelArticlesSet(string $user, $id, Context $context, int $mode = self::ASSOC_ADD, bool $byName = false): int {
+    public function labelArticlesSet(string $user, $id, RootContext $context, int $mode = self::ASSOC_ADD, bool $byName = false): int {
         assert(in_array($mode, [self::ASSOC_ADD, self::ASSOC_REMOVE, self::ASSOC_REPLACE]), new Exception("constantUnknown", $mode));
         // validate the tag ID, and get the numeric ID if matching by name
         $id = $this->labelValidateId($user, $id, $byName, true)['id'];
@@ -2303,7 +2464,7 @@ class Database {
         if (!sizeof($articles)) {
             if ($mode == self::ASSOC_REPLACE) {
                 // replacing with an empty set means setting everything to zero
-                return $this->db->prepare("UPDATE arsse_label_members set assigned = 0, modified = CURRENT_TIMESTAMP where label = ? and assigned = 1", "int")->run($id)->changes();
+                return $this->db->prepare("UPDATE arsse_label_members set assigned = 0, modified = CURRENT_TIMESTAMP where label = ? and assigned = 1 and article not in (select id from arsse_articles where subscription in (select id from arsse_subscriptions where deleted = 1))", "int")->run($id)->changes();
             } else {
                 // adding or removing is a no-op
                 return 0;
@@ -2313,9 +2474,9 @@ class Database {
         }
         // prepare up to three queries: removing requires one, adding two, and replacing three
         [$inClause, $inTypes, $inValues] = $this->generateIn($articles, "int");
-        $updateQ = "UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article %in% ($inClause)";
+        $updateQ = "UPDATE arsse_label_members set assigned = ?, modified = CURRENT_TIMESTAMP where label = ? and assigned <> ? and article %in% ($inClause) and article not in (select id from arsse_articles where subscription in (select id from arsse_subscriptions where deleted = 1))";
         $updateT = ["bool", "int", "bool", $inTypes];
-        $insertQ = "INSERT INTO arsse_label_members(label,article,subscription) SELECT ?,a.id,s.id from arsse_articles as a join arsse_subscriptions as s on a.feed = s.feed where s.owner = ? and a.id not in (select article from arsse_label_members where label = ?) and a.id in ($inClause)";
+        $insertQ = "INSERT INTO arsse_label_members(label,article) SELECT ?,a.id from arsse_articles as a join arsse_subscriptions as s on a.subscription = s.id where s.owner = ? and a.id not in (select article from arsse_label_members where label = ?) and a.id in ($inClause)";
         $insertT = ["int", "str", "int", $inTypes];
         $clearQ = str_replace("%in%", "not in", $updateQ);
         $clearT = $updateT;
@@ -2419,12 +2580,22 @@ class Database {
      * @param boolean $includeEmpty Whether to include (true) or supress (false) tags which have no subscriptions assigned to them
      */
     public function tagList(string $user, bool $includeEmpty = true): Db\Result {
+        $integerType = $this->db->sqlToken("integer");
         return $this->db->prepareArray(
             "SELECT * FROM (
                 SELECT
-                    id,name,coalesce(subscriptions,0) as subscriptions
+                    id,
+                    name,
+                    cast(coalesce(subscriptions,0) as $integerType) as subscriptions -- this cast is required for MySQL for unclear reasons
                 from arsse_tags 
-                    left join (SELECT tag, sum(assigned) as subscriptions from arsse_tag_members group by tag) as tag_stats on tag_stats.tag = arsse_tags.id
+                    left join (
+                        SELECT 
+                            tag, 
+                            sum(assigned) as subscriptions 
+                        from arsse_tag_members
+                            join arsse_subscriptions on arsse_subscriptions.id = arsse_tag_members.subscription and arsse_subscriptions.deleted = 0
+                        group by tag
+                    ) as tag_stats on tag_stats.tag = arsse_tags.id
                 WHERE owner = ?
             ) as tag_data
             where subscriptions >= ? order by name",
@@ -2438,8 +2609,7 @@ class Database {
      *
      * - "tag_id": The tag's numeric identifier
      * - "tag_name" The tag's textual name
-     * - "subscription_id": The numeric identifier of the associated subscription
-     * - "subscription_name" The subscription's textual name
+     * - "subscription": The numeric identifier of the associated subscription
      *
      * @param string $user The user whose tags are to be listed
      */
@@ -2451,6 +2621,7 @@ class Database {
                 arsse_tag_members.subscription as subscription
             FROM arsse_tag_members
                 join arsse_tags on arsse_tags.id = arsse_tag_members.tag
+                join arsse_subscriptions on arsse_subscriptions.id = arsse_tag_members.subscription and arsse_subscriptions.deleted = 0
             WHERE arsse_tags.owner = ? and assigned = 1",
             ["str"]
         )->run($user);
@@ -2493,10 +2664,19 @@ class Database {
         $type = $byName ? "str" : "int";
         $out = $this->db->prepareArray(
             "SELECT
-                id,name,coalesce(subscriptions,0) as subscriptions
+                id,
+                name,
+                coalesce(subscriptions,0) as subscriptions
             FROM arsse_tags
-                left join (SELECT tag, sum(assigned) as subscriptions from arsse_tag_members group by tag) as tag_stats on tag_stats.tag = arsse_tags.id
-            WHERE $field = ? and owner = ?",
+                left join (
+                    SELECT 
+                        tag, 
+                        sum(assigned) as subscriptions 
+                    from arsse_tag_members
+                        join arsse_subscriptions on arsse_subscriptions.id = arsse_tag_members.subscription and arsse_subscriptions.deleted = 0
+                    group by tag
+                ) as tag_stats on tag_stats.tag = arsse_tags.id
+            WHERE $field = ? and arsse_tags.owner = ?",
             [$type, "str"]
         )->run($id, $user)->getRow();
         if (!$out) {
@@ -2543,9 +2723,18 @@ class Database {
     public function tagSubscriptionsGet(string $user, $id, bool $byName = false): array {
         // just do a syntactic check on the tag ID
         $this->tagValidateId($user, $id, $byName, false);
-        $field = !$byName ? "id" : "name";
+        $field = !$byName ? "t.id" : "t.name";
         $type = !$byName ? "int" : "str";
-        $out = $this->db->prepare("SELECT subscription from arsse_tag_members join arsse_tags on tag = id where assigned = 1 and $field = ? and owner = ? order by subscription", $type, "str")->run($id, $user)->getAll();
+        $out = $this->db->prepare(
+            "SELECT 
+                subscription 
+            from arsse_tag_members as m
+                join arsse_tags as t on m.tag = t.id
+                join arsse_subscriptions as s on m.subscription = s.id and s.deleted = 0
+            where assigned = 1 and $field = ? and t.owner = ?
+            order by subscription",
+            $type, "str"
+        )->run($id, $user)->getAll();
         if (!$out) {
             // if no results were returned, do a full validation on the tag ID
             $this->tagValidateId($user, $id, $byName, true, true);
@@ -2573,7 +2762,7 @@ class Database {
         if (!sizeof($subscriptions)) {
             if ($mode == self::ASSOC_REPLACE) {
                 // replacing with an empty set means setting everything to zero
-                return $this->db->prepare("UPDATE arsse_tag_members set assigned = 0, modified = CURRENT_TIMESTAMP where tag = ? and assigned = 1", "int")->run($id)->changes();
+                return $this->db->prepare("UPDATE arsse_tag_members set assigned = 0, modified = CURRENT_TIMESTAMP where tag = ? and assigned = 1 and subscription not in (select id from arsse_subscriptions where deleted = 1)", "int")->run($id)->changes();
             } else {
                 // adding or removing is a no-op
                 return 0;
@@ -2581,7 +2770,7 @@ class Database {
         }
         // prepare up to three queries: removing requires one, adding two, and replacing three
         [$inClause, $inTypes, $inValues] = $this->generateIn($subscriptions, "int");
-        $updateQ = "UPDATE arsse_tag_members set assigned = ?, modified = CURRENT_TIMESTAMP where tag = ? and assigned <> ? and subscription in (select id from arsse_subscriptions where owner = ? and id %in% ($inClause))";
+        $updateQ = "UPDATE arsse_tag_members set assigned = ?, modified = CURRENT_TIMESTAMP where tag = ? and assigned <> ? and subscription in (select id from arsse_subscriptions where owner = ? and id %in% ($inClause) and id not in (select id from arsse_subscriptions where deleted = 1))";
         $updateT = ["bool", "int", "bool", "str", $inTypes];
         $insertQ = "INSERT INTO arsse_tag_members(tag,subscription) SELECT ?,id from arsse_subscriptions where id not in (select subscription from arsse_tag_members where tag = ?) and owner = ? and id in ($inClause)";
         $insertT = ["int", "int", "str", $inTypes];

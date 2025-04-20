@@ -4,13 +4,14 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Db\MySQL;
 
-/**
- * @group slow
- * @covers \JKingWeb\Arsse\Db\MySQL\Statement<extended>
- * @covers \JKingWeb\Arsse\Db\MySQL\ExceptionBuilder
- * @covers \JKingWeb\Arsse\Db\SQLState */
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group("slow")]
+#[CoversClass(\JKingWeb\Arsse\Db\MySQL\Statement::class)]
 class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\MySQL;
 
@@ -18,7 +19,7 @@ class TestStatement extends \JKingWeb\Arsse\TestCase\Db\BaseStatement {
         return [static::$interface, $q, $types];
     }
 
-    protected function decorateTypeSyntax(string $value, string $type): string {
+    protected static function decorateTypeSyntax(string $value, string $type): string {
         switch ($type) {
             case "float":
                 return (substr($value, -2) === ".0") ? "'".substr($value, 0, strlen($value) - 2)."'" : "'$value'";

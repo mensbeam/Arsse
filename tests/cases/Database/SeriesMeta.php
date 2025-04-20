@@ -1,25 +1,27 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Database;
 
-use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Database;
+use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesMeta {
+    protected static $drv;
+
     protected function setUpSeriesMeta(): void {
         $dataBare = [
             'arsse_meta' => [
-                'columns' => [
-                    'key'   => 'str',
-                    'value' => 'str',
-                ],
-                'rows' => [
-                //['schema_version', "".\JKingWeb\Arsse\Database::SCHEMA_VERSION],
-                ['album',"A Farewell to Kings"],
+                'columns' => ["key", "value"],
+                'rows'    => [
+                    //['schema_version', "".\JKingWeb\Arsse\Database::SCHEMA_VERSION],
+                    ['album',"A Farewell to Kings"],
                 ],
             ],
         ];
@@ -35,6 +37,7 @@ trait SeriesMeta {
         unset($this->data);
     }
 
+    //#[CoversMethod(Database::class, "metaSet")]
     public function testAddANewValue(): void {
         $this->assertTrue(Arsse::$db->metaSet("favourite", "Cygnus X-1"));
         $state = $this->primeExpectations($this->data, ['arsse_meta' => ['key','value']]);
@@ -42,6 +45,7 @@ trait SeriesMeta {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    //#[CoversMethod(Database::class, "metaSet")]
     public function testAddANewTypedValue(): void {
         $this->assertTrue(Arsse::$db->metaSet("answer", 42, "int"));
         $this->assertTrue(Arsse::$db->metaSet("true", true, "bool"));
@@ -55,6 +59,7 @@ trait SeriesMeta {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    //#[CoversMethod(Database::class, "metaSet")]
     public function testChangeAnExistingValue(): void {
         $this->assertTrue(Arsse::$db->metaSet("album", "Hemispheres"));
         $state = $this->primeExpectations($this->data, ['arsse_meta' => ['key','value']]);
@@ -62,6 +67,7 @@ trait SeriesMeta {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    //#[CoversMethod(Database::class, "metaRemove")]
     public function testRemoveAValue(): void {
         $this->assertTrue(Arsse::$db->metaRemove("album"));
         $this->assertFalse(Arsse::$db->metaRemove("album"));
@@ -70,6 +76,7 @@ trait SeriesMeta {
         $this->compareExpectations(static::$drv, $state);
     }
 
+    //#[CoversMethod(Database::class, "metaGet")]
     public function testRetrieveAValue(): void {
         $this->assertSame("".Database::SCHEMA_VERSION, Arsse::$db->metaGet("schema_version"));
         $this->assertSame("A Farewell to Kings", Arsse::$db->metaGet("album"));

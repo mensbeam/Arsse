@@ -1,11 +1,17 @@
 <?php
+/** @license MIT
+ * Copyright 2017 J. King, Dustin Wilson et al.
+ * See LICENSE and AUTHORS files for details */
+
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Db;
 
 use JKingWeb\Arsse\Db\ResultAggregate;
 use JKingWeb\Arsse\Test\Result;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \JKingWeb\Arsse\Db\ResultAggregate<extended> */
+#[CoversClass(\JKingWeb\Arsse\Db\ResultAggregate::class)]
 class TestResultAggregate extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testGetChangeCountAndLastInsertId(): void {
         $in = [

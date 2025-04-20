@@ -10,12 +10,12 @@
     <dt>API endpoint</dt>
         <dd>/tt-rss/api</dd>
     <dt>Specifications</dt>
-        <dd><a href="https://git.tt-rss.org/git/tt-rss/wiki/ApiReference">Main</a>, <a href="https://git.tt-rss.org/fox/tt-rss/wiki/SearchSyntax">search syntax</a>, <a href="https://github.com/jangernert/FeedReader/blob/master/data/tt-rss-feedreader-plugin/README.md">FeedReader extensions</a>, <a href="https://github.com/hrk/tt-rss-newsplus-plugin/blob/master/README.md">News+ extension</a></dd>
+        <dd><a href="https://tt-rss.org/ApiReference/">Main</a>, <a href="https://tt-rss.org/wiki/SearchSyntax">search syntax</a>, <a href="https://github.com/jangernert/FeedReader/blob/master/data/tt-rss-feedreader-plugin/README.md">FeedReader extensions</a>, <a href="https://github.com/hrk/tt-rss-newsplus-plugin/blob/master/README.md">News+ extension</a></dd>
 </dl>
 
 The Arsse supports not only the Tiny Tiny RSS protocol, but also extensions required by the FeedReader client and the more commonly supported `getCompactHeadlines` extension.
 
-It allows organizing newsfeeds into nested folders, and supports an odd patchwork subset of Tiny Tiny RSS' full capabilities. The FeedReader extensions round out the protocol with significantly more features. Unlike with TT-RSS itself, API access is always enabled with The Arsse.
+It allows organizing newsfeeds into nested folders, and supports an odd patchwork subset of Tiny Tiny RSS' full capabilities. The FeedReader extensions round out the protocol with significantly more features, however no extant client is known to use these extensions. Unlike with TT-RSS itself, API access is always enabled with The Arsse. API level 15 is implemented, with exceptions as noted below.
 
 # Missing features
 
@@ -37,8 +37,7 @@ The Arsse does not currently support the entire protocol. Notably missing featur
 - Processing of the `search` parameter of the `getHeadlines` operation differs in the following ways:
     - Values other than `"true"` or `"false"` for the `unread`, `star`, and `pub` special keywords treat the entire token as a search term rather than as `"false"`
     - Invalid dates are ignored rather than assumed to be `"1970-01-01"`
-    - Only a single negative date is allowed (this is a known bug rather than intentional)
-    - Dates are always relative to UTC
+    - Specifying multiple non-negative dates usually returns no results as articles must match all specified dates simultaneously; The Arsse instead returns articles matching any of the specified dates
     - Full-text search is not yet employed with any database, including PostgreSQL
 - Article hashes are normally SHA1; The Arsse uses SHA256 hashes
 - Article attachments normally have unique IDs; The Arsse always gives attachments an ID of `"0"`

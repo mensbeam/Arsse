@@ -1,29 +1,32 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\User;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\User\Driver as DriverInterface;
 use JKingWeb\Arsse\User\Internal\Driver;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 
-/** @covers \JKingWeb\Arsse\User\Internal\Driver */
+#[CoversClass(\JKingWeb\Arsse\User\Internal\Driver::class)]
 class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
+    protected $d;
+
     public function setUp(): void {
-        parent::setUp();
+        self::clearData();
         self::setConf();
         // create a mock database interface
-        $this->dbMock = $this->mock(Database::class);
-        $this->dbMock->begin->returns($this->mock(\JKingWeb\Arsse\Db\Transaction::class));
-    }
-
-    protected function prepTest(): Driver {
-        Arsse::$db = $this->dbMock->get();
-        return new Driver;
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(\JKingWeb\Arsse\Db\Transaction::class));
+        $this->d = new Driver;
     }
 
     public function testConstruct(): void {
@@ -34,20 +37,18 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTrue(strlen(Driver::driverName()) > 0);
     }
 
-    /**
-     * @dataProvider provideAuthentication
-     * @group slow
-     */
+    #[DataProvider('provideAuthentication')]
+    #[Group('slow')]
     public function testAuthenticateAUser(string $user, $password, bool $exp): void {
-        $this->dbMock->userPasswordGet->with("john.doe@example.com")->returns('$2y$10$1zbqRJhxM8uUjeSBPp4IhO90xrqK0XjEh9Z16iIYEFRV4U.zeAFom'); // hash of "secret"
-        $this->dbMock->userPasswordGet->with("jane.doe@example.com")->returns('$2y$10$bK1ljXfTSyc2D.NYvT.Eq..OpehLRXVbglW.23ihVuyhgwJCd.7Im'); // hash of "superman"
-        $this->dbMock->userPasswordGet->with("owen.hardy@example.com")->returns("");
-        $this->dbMock->userPasswordGet->with("kira.nerys@example.com")->throws(new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist"));
-        $this->dbMock->userPasswordGet->with("007@example.com")->returns(null);
-        $this->assertSame($exp, $this->prepTest()->auth($user, $password));
+        \Phake::when(Arsse::$db)->userPasswordGet("john.doe@example.com")->thenReturn('$2y$10$1zbqRJhxM8uUjeSBPp4IhO90xrqK0XjEh9Z16iIYEFRV4U.zeAFom'); // hash of "secret"
+        \Phake::when(Arsse::$db)->userPasswordGet("jane.doe@example.com")->thenReturn('$2y$10$bK1ljXfTSyc2D.NYvT.Eq..OpehLRXVbglW.23ihVuyhgwJCd.7Im'); // hash of "superman"
+        \Phake::when(Arsse::$db)->userPasswordGet("owen.hardy@example.com")->thenReturn("");
+        \Phake::when(Arsse::$db)->userPasswordGet("kira.nerys@example.com")->thenThrow(new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$db)->userPasswordGet("007@example.com")->thenReturn(null);
+        $this->assertSame($exp, $this->d->auth($user, $password));
     }
 
-    public function provideAuthentication(): iterable {
+    public static function provideAuthentication(): iterable {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
         $owen = "owen.hardy@example.com";
@@ -73,111 +74,111 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testListUsers(): void {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
-        $this->dbMock->userList->returns([$john, $jane])->returns([$jane, $john]);
-        $driver = $this->prepTest();
+        \Phake::when(Arsse::$db)->userList->thenReturn([$john, $jane])->thenReturn([$jane, $john]);
+        $driver = $this->d;
         $this->assertSame([$john, $jane], $driver->userList());
         $this->assertSame([$jane, $john], $driver->userList());
-        $this->dbMock->userList->times(2)->called();
+        \Phake::verify(Arsse::$db, \Phake::times(2))->userList(\Phake::anyParameters());
     }
 
     public function testAddAUser(): void {
         $john = "john.doe@example.com";
-        $this->dbMock->userAdd->does(function($user, $pass) {
+        \Phake::when(Arsse::$db)->userAdd->thenReturnCallback(function($user, $pass) {
             return $pass;
         });
-        $driver = $this->prepTest();
+        $driver = $this->d;
         $this->assertNull($driver->userAdd($john));
         $this->assertNull($driver->userAdd($john, null));
         $this->assertSame("secret", $driver->userAdd($john, "secret"));
-        $this->dbMock->userAdd->calledWith($john, "secret");
-        $this->dbMock->userAdd->called();
+        \Phake::verify(Arsse::$db)->userAdd($john, "secret");
+        \Phake::verify(Arsse::$db)->userAdd(\Phake::anyParameters());
     }
 
     public function testRenameAUser(): void {
         $john = "john.doe@example.com";
-        $this->dbMock->userExists->returns(true);
-        $this->assertTrue($this->prepTest()->userRename($john, "jane.doe@example.com"));
-        $this->assertFalse($this->prepTest()->userRename($john, $john));
-        $this->dbMock->userExists->times(2)->calledWith($john);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertTrue($this->d->userRename($john, "jane.doe@example.com"));
+        $this->assertFalse($this->d->userRename($john, $john));
+        \Phake::verify(Arsse::$db, \Phake::times(2))->userExists($john);
     }
 
     public function testRenameAMissingUser(): void {
         $john = "john.doe@example.com";
-        $this->dbMock->userExists->returns(false);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
-        $this->prepTest()->userRename($john, "jane.doe@example.com");
+        $this->d->userRename($john, "jane.doe@example.com");
     }
 
     public function testRemoveAUser(): void {
         $john = "john.doe@example.com";
-        $this->dbMock->userRemove->returns(true)->throws(new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist"));
-        $driver = $this->prepTest();
+        \Phake::when(Arsse::$db)->userRemove->thenReturn(true)->thenThrow(new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist"));
+        $driver = $this->d;
         $this->assertTrue($driver->userRemove($john));
-        $this->dbMock->userRemove->calledWith($john);
+        \Phake::verify(Arsse::$db)->userRemove($john);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         try {
             $this->assertFalse($driver->userRemove($john));
         } finally {
-            $this->dbMock->userRemove->times(2)->calledWith($john);
+            \Phake::verify(Arsse::$db, \Phake::times(2))->userRemove($john);
         }
     }
 
     public function testSetAPassword(): void {
         $john = "john.doe@example.com";
-        $this->dbMock->userExists->returns(true);
-        $this->assertSame("superman", $this->prepTest()->userPasswordSet($john, "superman"));
-        $this->assertSame(null, $this->prepTest()->userPasswordSet($john, null));
-        $this->dbMock->userPasswordSet->never()->called();
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertSame("superman", $this->d->userPasswordSet($john, "superman"));
+        $this->assertSame(null, $this->d->userPasswordSet($john, null));
+        \Phake::verify(Arsse::$db, \Phake::never())->userPasswordSet(\Phake::anyParameters());
     }
 
     public function testSetAPasswordForAMssingUser(): void {
-        $this->dbMock->userExists->returns(false);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
-        $this->prepTest()->userPasswordSet("john.doe@example.com", "secret");
+        $this->d->userPasswordSet("john.doe@example.com", "secret");
     }
 
     public function testUnsetAPassword(): void {
-        $this->dbMock->userExists->returns(true);
-        $this->assertTrue($this->prepTest()->userPasswordUnset("john.doe@example.com"));
-        $this->dbMock->userPasswordSet->never()->called();
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertTrue($this->d->userPasswordUnset("john.doe@example.com"));
+        \Phake::verify(Arsse::$db, \Phake::never())->userPasswordSet(\Phake::anyParameters());
     }
 
     public function testUnsetAPasswordForAMssingUser(): void {
-        $this->dbMock->userExists->returns(false);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
-        $this->prepTest()->userPasswordUnset("john.doe@example.com");
+        $this->d->userPasswordUnset("john.doe@example.com");
     }
 
     public function testGetUserProperties(): void {
-        $this->dbMock->userExists->returns(true);
-        $this->assertSame([], $this->prepTest()->userPropertiesGet("john.doe@example.com"));
-        $this->dbMock->userExists->calledWith("john.doe@example.com");
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertSame([], $this->d->userPropertiesGet("john.doe@example.com"));
+        \Phake::verify(Arsse::$db)->userExists("john.doe@example.com");
     }
 
     public function testGetPropertiesForAMissingUser(): void {
-        $this->dbMock->userExists->returns(false);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         try {
-            $this->prepTest()->userPropertiesGet("john.doe@example.com");
+            $this->d->userPropertiesGet("john.doe@example.com");
         } finally {
-            $this->dbMock->userExists->calledWith("john.doe@example.com");
+            \Phake::verify(Arsse::$db)->userExists("john.doe@example.com");
         }
     }
 
     public function testSetUserProperties(): void {
         $in = ['admin' => true];
-        $this->dbMock->userExists->returns(true);
-        $this->assertSame($in, $this->prepTest()->userPropertiesSet("john.doe@example.com", $in));
-        $this->dbMock->userExists->calledWith("john.doe@example.com");
+        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        $this->assertSame($in, $this->d->userPropertiesSet("john.doe@example.com", $in));
+        \Phake::verify(Arsse::$db)->userExists("john.doe@example.com");
     }
 
     public function testSetPropertiesForAMissingUser(): void {
-        $this->dbMock->userExists->returns(false);
+        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         try {
-            $this->prepTest()->userPropertiesSet("john.doe@example.com", ['admin' => true]);
+            $this->d->userPropertiesSet("john.doe@example.com", ['admin' => true]);
         } finally {
-            $this->dbMock->userExists->calledWith("john.doe@example.com");
+            \Phake::verify(Arsse::$db)->userExists("john.doe@example.com");
         }
     }
 }

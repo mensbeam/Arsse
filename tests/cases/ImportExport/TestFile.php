@@ -1,16 +1,20 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\ImportExport;
 
 use JKingWeb\Arsse\ImportExport\AbstractImportExport;
 use JKingWeb\Arsse\ImportExport\Exception;
 use org\bovigo\vfs\vfsStream;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
-/** @covers \JKingWeb\Arsse\ImportExport\AbstractImportExport */
+#[CoversClass(\JKingWeb\Arsse\ImportExport\AbstractImportExport::class)]
 class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $vfs;
     protected $path;
@@ -19,9 +23,9 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         parent::setUp();
         // create a mock Import/Export processor with stubbed underlying import/export routines
-        $this->proc = $this->partialMock(AbstractImportExport::class);
-        $this->proc->export->returns("EXPORT_FILE");
-        $this->proc->import->returns(true);
+        $this->proc = \Phake::partialMock(AbstractImportExport::class);
+        \Phake::when($this->proc)->export->thenReturn("EXPORT_FILE");
+        \Phake::when($this->proc)->import->thenReturn(true);
         $this->vfs = vfsStream::setup("root", null, [
             'exportGoodFile' => "",
             'exportGoodDir'  => [],
@@ -44,23 +48,24 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
         parent::tearDown();
     }
 
-    /** @dataProvider provideFileExports */
+
+    #[DataProvider('provideFileExports')]
     public function testExportToAFile(string $file, string $user, bool $flat, $exp): void {
         $path = $this->path.$file;
         try {
             if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
                 $this->assertException($exp);
-                $this->proc->get()->exportFile($path, $user, $flat);
+                $this->proc->exportFile($path, $user, $flat);
             } else {
-                $this->assertSame($exp, $this->proc->get()->exportFile($path, $user, $flat));
+                $this->assertSame($exp, $this->proc->exportFile($path, $user, $flat));
                 $this->assertSame("EXPORT_FILE", $this->vfs->getChild($file)->getContent());
             }
         } finally {
-            $this->proc->export->calledWith($user, $flat);
+            \Phake::verify($this->proc)->export($user, $flat);
         }
     }
 
-    public function provideFileExports(): iterable {
+    public static function provideFileExports(): iterable {
         $createException = new Exception("fileUncreatable");
         $writeException = new Exception("fileUnwritable");
         return [
@@ -83,22 +88,23 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    /** @dataProvider provideFileImports */
+
+    #[DataProvider('provideFileImports')]
     public function testImportFromAFile(string $file, string $user, bool $flat, bool $replace, $exp): void {
         $path = $this->path.$file;
         try {
             if ($exp instanceof \JKingWeb\Arsse\AbstractException) {
                 $this->assertException($exp);
-                $this->proc->get()->importFile($path, $user, $flat, $replace);
+                $this->proc->importFile($path, $user, $flat, $replace);
             } else {
-                $this->assertSame($exp, $this->proc->get()->importFile($path, $user, $flat, $replace));
+                $this->assertSame($exp, $this->proc->importFile($path, $user, $flat, $replace));
             }
         } finally {
-            $this->proc->import->times((int) ($exp === true))->calledWith($user, "GOOD_FILE", $flat, $replace);
+            \Phake::verify($this->proc, \Phake::times((int) ($exp === true)))->import($user, "GOOD_FILE", $flat, $replace);
         }
     }
 
-    public function provideFileImports(): iterable {
+    public static function provideFileImports(): iterable {
         $missingException = new Exception("fileMissing");
         $permissionException = new Exception("fileUnreadable");
         return [

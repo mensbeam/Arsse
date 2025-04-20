@@ -18,36 +18,40 @@
 
     ],
     "require": {
-        "php": "^7.1 || ^8.0",
+        "php": ">=7.3",
         "ext-intl": "*",
         "ext-json": "*",
         "ext-hash": "*",
         "ext-filter": "*",
         "ext-dom": "*",
-        "nicolus/picofeed": "^0.1.43",
-        "hosteurope/password-generator": "1.*",
-        "docopt/docopt": "1.*",
+        "mensbeam/mimesniff": "^0.3.0",
         "jkingweb/druuid": "3.*",
-        "laminas/laminas-diactoros": "2.*",
-        "laminas/laminas-httphandlerrunner": "1.*"
+        "hosteurope/password-generator": "1.*",
+        "docopt/docopt": "dev-master",
+        "nicolus/picofeed": "dev-arsse",
+        "guzzlehttp/psr7": "2.*",
+        "laminas/laminas-xml": "dev-fixup as 1.4.0",
+        "laminas/laminas-httphandlerrunner": "2.*"
     },
     "require-dev": {
         "bamarni/composer-bin-plugin": "*"
     },
     "suggest": {
-        "ext-pcntl": "To respond to signals, particular to reload configuration via SIGHUP"
+        "ext-pcntl": "To respond to signals, particularly to reload configuration via SIGHUP"
     },
     "config": {
         "platform": {
-            "php": "7.1.33"
+            "php": "7.3.33"
         },
         "allow-plugins": {
             "bamarni/composer-bin-plugin": true
         }
     },
-    "scripts": {
-        "post-install-cmd": ["@composer bin all install"],
-        "post-update-cmd": ["@composer bin all update"]
+    "extra": {
+        "bamarni-bin": {
+            "bin-links": false,
+            "forward-command": true
+        }
     },
     "autoload": {
         "psr-4": {
@@ -59,5 +63,20 @@
             "JKingWeb\\Arsse\\Test\\": "tests/lib/",
             "JKingWeb\\Arsse\\TestCase\\": "tests/cases/"
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/JKingweb/picoFeed-1/"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/JKingweb/laminas-xml/"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/mensbeam/docopt.php/"
+        }
+        
+    ]
 }

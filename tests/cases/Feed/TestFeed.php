@@ -1,21 +1,25 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Feed;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Feed;
 use JKingWeb\Arsse\Database;
+use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Test\Result;
-use Eloquent\Phony\Phpunit\Phony;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 
-/**
- * @covers \JKingWeb\Arsse\Feed
- * @group slow */
+#[CoversClass(\JKingWeb\Arsse\Feed::class)]
+#[Group('slow')]
 class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $host = "http://localhost:8000/";
     protected $base = "";
@@ -95,13 +99,11 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->base = self::$host."Feed/";
         parent::setUp();
         self::setConf();
-        $this->dbMock = $this->mock(Database::class);
-        $this->dbMock->feedMatchLatest->with(Phony::wildcard())->returns(new Result([]));
-        $this->dbMock->feedMatchLatest->with(1, Phony::any())->returns(new Result($this->latest));
-        $this->dbMock->feedMatchIds->with(Phony::wildcard())->returns(new Result([]));
-        $this->dbMock->feedMatchIds->with(1, Phony::wildcard())->returns(new Result($this->others));
-        $this->dbMock->feedRulesGet->returns([]);
-        Arsse::$db = $this->dbMock->get();
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->feedMatchLatest->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
+        \Phake::when(Arsse::$db)->feedMatchIds->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->feedMatchIds(1, \Phake::ignoreRemaining())->thenReturn(new Result($this->others));
     }
 
     public function testParseAFeed(): void {
@@ -113,26 +115,26 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $h0 = "0a4f0e3768c8a5e9d8d9a16545ae4ff5b097f6dac3ad49555a94a7cace68ba73"; // hash of Atom ID
         $h1 = "a135beced0236b723d12f845ff20ec22d4fc3afe1130012618f027170d57cb4e"; // hash of RSS2 GUID
         $h2 = "205e986f4f8b3acfa281227beadb14f5e8c32c8dae4737f888c94c0df49c56f8"; // hash of Dublin Core identifier
-        $this->assertSame($h0, $f->data->items[0]->id);
-        $this->assertSame($h1, $f->data->items[1]->id);
-        $this->assertSame($h2, $f->data->items[2]->id);
+        $this->assertSame($h0, $f->items[0]->id);
+        $this->assertSame($h1, $f->items[1]->id);
+        $this->assertSame($h2, $f->items[2]->id);
         // check null hashes
         $h3 = "6287ba30f534e404e68356237e809683e311285d8b9f47d046ac58784eece052"; // URL hash
         $h4 = "6cbb5d2dcb11610a99eb3f633dc246690c0acf33327bf7534f95542caa8f27c4"; // title hash
         $h5 = "2b7c57ffa9adde92ccd1884fa1153a5bcd3211e48d99e27be5414cb078e6891c"; // content/enclosure hash
-        $this->assertNotEquals("", $f->data->items[3]->urlTitleHash);
-        $this->assertSame($h3, $f->data->items[3]->urlContentHash);
-        $this->assertSame("", $f->data->items[3]->titleContentHash);
-        $this->assertNotEquals("", $f->data->items[4]->urlTitleHash);
-        $this->assertSame("", $f->data->items[4]->urlContentHash);
-        $this->assertSame($h4, $f->data->items[4]->titleContentHash);
-        $this->assertSame("", $f->data->items[5]->urlTitleHash);
-        $this->assertNotEquals("", $f->data->items[5]->urlContentHash);
-        $this->assertNotEquals("", $f->data->items[5]->titleContentHash);
+        $this->assertNotEquals("", $f->items[3]->urlTitleHash);
+        $this->assertSame($h3, $f->items[3]->urlContentHash);
+        $this->assertSame("", $f->items[3]->titleContentHash);
+        $this->assertNotEquals("", $f->items[4]->urlTitleHash);
+        $this->assertSame("", $f->items[4]->urlContentHash);
+        $this->assertSame($h4, $f->items[4]->titleContentHash);
+        $this->assertSame("", $f->items[5]->urlTitleHash);
+        $this->assertNotEquals("", $f->items[5]->urlContentHash);
+        $this->assertNotEquals("", $f->items[5]->titleContentHash);
         // check null IDs
-        $this->assertSame(null, $f->data->items[3]->id);
-        $this->assertSame(null, $f->data->items[4]->id);
-        $this->assertSame(null, $f->data->items[5]->id);
+        $this->assertSame(null, $f->items[3]->id);
+        $this->assertSame(null, $f->items[4]->id);
+        $this->assertSame(null, $f->items[5]->id);
         // check categories
         $categories = [
             "Aniki!",
@@ -140,11 +142,11 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
             "Bodybuilders",
             "Men",
         ];
-        $this->assertSame([], $f->data->items[0]->categories);
-        $this->assertSame([], $f->data->items[1]->categories);
-        $this->assertSame([], $f->data->items[3]->categories);
-        $this->assertSame([], $f->data->items[4]->categories);
-        $this->assertSame($categories, $f->data->items[5]->categories);
+        $this->assertSame([], $f->items[0]->categories);
+        $this->assertSame([], $f->items[1]->categories);
+        $this->assertSame([], $f->items[3]->categories);
+        $this->assertSame([], $f->items[4]->categories);
+        $this->assertSame($categories, $f->items[5]->categories);
     }
 
     public function testDiscoverAFeedSuccessfully(): void {
@@ -225,17 +227,18 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("http://example.com/1", $f->newItems[0]->url);
     }
 
-    /** @dataProvider provide304ResponseURLs */
+
+    #[DataProvider('provide304ResponseURLs')]
     public function testHandleCacheHeadersOn304(string $url): void {
         // upon 304, the client should re-use the caching header values it supplied to the server
         $t = Date::transform("2010-01-01T00:00:00Z", "unix");
         $e = "78567a";
         $f = new Feed(null, $this->base.$url."?t=$t&e=$e", Date::transform($t, "http"), $e);
         $this->assertTime($t, $f->lastModified);
-        $this->assertSame($e, $f->resource->getETag());
+        $this->assertSame($e, $f->etag);
     }
 
-    public function provide304ResponseURLs() {
+    public static function provide304ResponseURLs() {
         return [
             'Control'                   => ["Caching/304Conditional"],
             'Random last-mod and ETag'  => ["Caching/304Random"],
@@ -250,15 +253,15 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $t = time() - 2000;
         $f = new Feed(null, $this->base."Caching/200Past");
         $this->assertTime($t, $f->lastModified);
-        $this->assertNotEmpty($f->resource->getETag());
+        $this->assertNotEmpty($f->etag);
         $t = time() - 2000;
         $f = new Feed(null, $this->base."Caching/200Past", Date::transform(time(), "http"));
         $this->assertTime($t, $f->lastModified);
-        $this->assertNotEmpty($f->resource->getETag());
+        $this->assertNotEmpty($f->etag);
         $t = time() + 2000;
         $f = new Feed(null, $this->base."Caching/200Future");
         $this->assertTime($t, $f->lastModified);
-        $this->assertNotEmpty($f->resource->getETag());
+        $this->assertNotEmpty($f->etag);
         // these tests have no HTTP headers and rely on article dates
         $t = strtotime("2002-05-19T15:21:36Z");
         $f = new Feed(null, $this->base."Caching/200PubDateOnly");
@@ -285,7 +288,8 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider provide304Timestamps */
+
+    #[DataProvider('provide304Timestamps')]
     public function testComputeNextFetchFrom304(string $t, string $exp): void {
         $t = $t ? strtotime($t) : "";
         $f = new Feed(null, $this->base."NextFetch/NotModified?t=$t", Date::transform($t, "http"));
@@ -293,7 +297,7 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertTime($exp, $f->nextFetch);
     }
 
-    public function provide304Timestamps(): iterable {
+    public static function provide304Timestamps(): iterable {
         return [
             'less than half an hour 1'     => ["now",                      "now + 15 minutes"],
             'less than half an hour 2'     => ["now - 29 minutes",         "now + 15 minutes"],
@@ -342,10 +346,9 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testMatchLatestArticles(): void {
-        $this->dbMock = $this->mock(Database::class);
-        $this->dbMock->feedMatchLatest->with(Phony::wildcard())->returns(new Result([]));
-        $this->dbMock->feedMatchLatest->with(1, Phony::any())->returns(new Result($this->latest));
-        Arsse::$db = $this->dbMock->get();
+        Arsse::$db = \Phake::mock(Database::class);
+        \Phake::when(Arsse::$db)->feedMatchLatest(\Phake::anyParameters())->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
         $f = new Feed(1, $this->base."Matching/1");
         $this->assertCount(0, $f->newItems);
         $this->assertCount(0, $f->changedItems);
@@ -372,11 +375,38 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = "<p>Partial content</p>";
         $this->assertSame($exp, $f->newItems[0]->content);
         // now try to scrape and get different content
-        $f = new Feed(null, $this->base."Scraping/Feed", "", "", "", "", true);
+        $f = new Feed(null, $this->base."Scraping/Feed", "", "", null, null, true);
         $exp = "<p>Partial content, followed by more content</p>";
         $this->assertSame($exp, $f->newItems[0]->scrapedContent);
         $exp = "<p>Partial content</p>";
         $this->assertSame($exp, $f->newItems[0]->content);
+    }
+
+    public function testScrapeFullContentWithError(): void {
+        // this should not throw any exceptions
+        $f = new Feed(null, $this->base."Scraping/Partial", "", "", null, null, true);
+        $exp1 = "<p>Partial content, followed by more content</p>";
+        $exp2 = "<p>Partial content</p>";
+        $this->assertSame($exp1, $f->newItems[1]->scrapedContent);
+        $this->assertSame($exp2, $f->newItems[1]->content);
+        $this->assertSame(null, $f->newItems[0]->scrapedContent);
+        $this->assertSame($exp2, $f->newItems[0]->content);
+    }
+
+    public function testScrapeFullExplicitly(): void {
+        $act = Feed::scrapeSingle($this->base."Scraping/Document", $this->base."Scraping/Document");
+        $exp = "<p>Partial content, followed by more content</p>";
+        $this->assertSame($exp, $act);
+    }
+
+    public function testScrapeFullExplicitlyWithoutContent(): void {
+        $act = Feed::scrapeSingle($this->base."Discovery/Valid", $this->base."Scraping/Document");
+        $this->assertSame("", $act);
+    }
+
+    public function testScrapeFullExplicitlyWithError(): void {
+        $this->expectException(FeedException::class);
+        Feed::scrapeSingle($this->base."Fetching/Error?code=404", $this->base."Scraping/Partial");
     }
 
     public function testFetchWithIcon(): void {
@@ -385,27 +415,5 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(self::$host."Icon/GIF", $f->iconUrl);
         $this->assertSame("image/gif", $f->iconType);
         $this->assertSame($d, $f->iconData);
-    }
-
-    public function testApplyFilterRules(): void {
-        $exp = [
-            'jack' => ['new' => [false, true, true,  false, true],  'changed' => [7 => true,  47 => true, 2112 => false, 1 => true,  42 => false]],
-            'sam'  => ['new' => [false, true, false, false, false], 'changed' => [7 => false, 47 => true, 2112 => false, 1 => false, 42 => false]],
-        ];
-        $this->dbMock->feedMatchIds->returns(new Result([
-            // these are the sixth through tenth entries in the feed; the title hashes have been omitted for brevity
-            ['id' => 7,    'guid' => '0f2a218c311e3d8105f1b075142a5d26dabf056ffc61abe77e96c8f071bbf4a7', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
-            ['id' => 47,   'guid' => '1c19e3b9018bc246b7414ae919ddebc88d0c575129e8c4a57b84b826c00f6db5', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
-            ['id' => 2112, 'guid' => '964db0b9292ad0c7a6c225f2e0966f3bda53486fae65db0310c97409974e65b8', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
-            ['id' => 1,    'guid' => '436070cda5713a0d9a8fdc8652c7ab142f0550697acfd5206a16c18aee355039', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
-            ['id' => 42,   'guid' => '1a731433a1904220ef26e731ada7262e1d5bcecae53e7b5df9e1f5713af6e5d3', 'edited' => null, 'url_title_hash' => "", 'url_content_hash' => '', 'title_content_hash' => ''],
-        ]));
-        $this->dbMock->feedRulesGet->returns([
-            'jack' => ['keep' => "",         'block' => '`A|W|J|S`u'],
-            'sam'  => ['keep' => "`B|T|X`u", 'block' => '`C`u'],
-        ]);
-        Arsse::$db = $this->dbMock->get();
-        $f = new Feed(5, $this->base."Filtering/1");
-        $this->assertSame($exp, $f->filteredItems);
     }
 }

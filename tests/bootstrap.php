@@ -1,9 +1,11 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse;
 
 const NS_BASE = __NAMESPACE__."\\";
@@ -12,8 +14,7 @@ const DOCROOT = BASE."tests".DIRECTORY_SEPARATOR."docroot".DIRECTORY_SEPARATOR;
 ini_set("memory_limit", "-1");
 ini_set("zend.assertions", "1");
 ini_set("assert.exception", "true");
-// FIXME: This is required because various dependencies have yet to adjust to PHP 8.1
-error_reporting(\E_ALL & ~\E_DEPRECATED);
+error_reporting(\E_ALL);
 require_once BASE."vendor".DIRECTORY_SEPARATOR."autoload.php";
 
 if (function_exists("xdebug_set_filter")) {
@@ -22,4 +23,8 @@ if (function_exists("xdebug_set_filter")) {
     } else {
         xdebug_set_filter(\XDEBUG_FILTER_CODE_COVERAGE, XDEBUG_PATH_WHITELIST, [BASE."lib/"]);
     }
+}
+
+if (class_exists(\Phake::class)) {
+    \Phake::setClient(\Phake::CLIENT_PHPUNIT9);
 }

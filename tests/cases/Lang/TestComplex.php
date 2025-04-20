@@ -1,14 +1,18 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Lang;
 
 use JKingWeb\Arsse\Lang as TestClass;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Depends;
 
-/** @covers \JKingWeb\Arsse\Lang */
+#[CoversClass(\JKingWeb\Arsse\Lang::class)]
 class TestComplex extends \JKingWeb\Arsse\Test\AbstractTest {
     use \JKingWeb\Arsse\Test\Lang\Setup;
 
@@ -25,9 +29,7 @@ class TestComplex extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertArrayNotHasKey('Test.absentText', $this->l->dump());
     }
 
-    /**
-     * @depends testLazyLoad
-     */
+    #[Depends('testLazyLoad')]
     public function testGetWantedAndLoadedLocale(): void {
         $this->l->set("en", true);
         $this->l->set("ja");
@@ -43,9 +45,7 @@ class TestComplex extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals('und der Stein der Weisen', $str['Test.presentText']);
     }
 
-    /**
-     * @depends testLoadCascadeOfFiles
-     */
+    #[Depends('testLoadCascadeOfFiles')]
     public function testLoadSubtag(): void {
         $this->assertEquals("en_ca", $this->l->set("en_ca", true));
     }
@@ -55,49 +55,37 @@ class TestComplex extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals('und der Stein der Weisen', $this->l->msg('Test.presentText'));
     }
 
-    /**
-     * @depends testFetchAMessage
-     */
+    #[Depends('testFetchAMessage')]
     public function testFetchAMessageWithMissingParameters(): void {
         $this->l->set("en_ca", true);
         $this->assertEquals('{0} and {1}', $this->l->msg('Test.presentText'));
     }
 
-    /**
-     * @depends testFetchAMessage
-     */
+    #[Depends('testFetchAMessage')]
     public function testFetchAMessageWithSingleNumericParameter(): void {
         $this->l->set("en_ca", true);
         $this->assertEquals('Default language file "en" missing', $this->l->msg('Exception.JKingWeb/Arsse/Lang/Exception.defaultFileMissing', TestClass::DEFAULT));
     }
 
-    /**
-     * @depends testFetchAMessage
-     */
+    #[Depends('testFetchAMessage')]
     public function testFetchAMessageWithMultipleNumericParameters(): void {
         $this->l->set("en_ca", true);
         $this->assertEquals('Happy Rotter and the Philosopher\'s Stone', $this->l->msg('Test.presentText', ['Happy Rotter', 'the Philosopher\'s Stone']));
     }
 
-    /**
-     * @depends testFetchAMessage
-     */
+    #[Depends('testFetchAMessage')]
     public function testFetchAMessageWithNamedParameters(): void {
         $this->assertEquals('Message string "Test.absentText" missing from all loaded language files (en)', $this->l->msg('Exception.JKingWeb/Arsse/Lang/Exception.stringMissing', ['msgID' => 'Test.absentText', 'fileList' => 'en']));
     }
 
-    /**
-     * @depends testFetchAMessage
-     */
+    #[Depends('testFetchAMessage')]
     public function testReloadDefaultStrings(): void {
         $this->l->set("de", true);
         $this->l->set("en", true);
         $this->assertEquals('and the Philosopher\'s Stone', $this->l->msg('Test.presentText'));
     }
 
-    /**
-     * @depends testFetchAMessage
-     */
+    #[Depends('testFetchAMessage')]
     public function testReloadGeneralTagAfterSubtag(): void {
         $this->l->set("en", true);
         $this->l->set("en_us", true);

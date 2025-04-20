@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\Db\SQLite3;
 
 class Result extends \JKingWeb\Arsse\Db\AbstractResult {
@@ -25,7 +26,7 @@ class Result extends \JKingWeb\Arsse\Db\AbstractResult {
 
     // constructor/destructor
 
-    public function __construct(\SQLite3Result $result, array $changes = [0,0], Statement $statement = null) {
+    public function __construct(\SQLite3Result $result, array $changes = [0,0], ?Statement $statement = null) {
         $this->st = $statement; //keeps the statement from being destroyed, invalidating the result set
         $this->set = $result;
         $this->rows = $changes[0];

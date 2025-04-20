@@ -4,13 +4,12 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Db\SQLite3PDO;
 
-/**
- * @covers \JKingWeb\Arsse\Db\SQLite3\PDODriver<extended>
- * @covers \JKingWeb\Arsse\Db\PDODriver
- * @covers \JKingWeb\Arsse\Db\PDOError
- * @covers \JKingWeb\Arsse\Db\SQLState */
+use PHPUnit\Framework\Attributes\CoversClass;
+
+#[CoversClass(\JKingWeb\Arsse\Db\SQLite3\PDODriver::class)]
 class TestUpdate extends \JKingWeb\Arsse\TestCase\Db\BaseUpdate {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\SQLite3PDO;
 

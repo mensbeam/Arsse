@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse;
 
 use JKingWeb\Arsse\REST\Fever\User as Fever;
@@ -71,7 +72,7 @@ USAGE_TEXT;
         return ($file === "-" ? null : $file) ?? $stdinOrStdout;
     }
 
-    public function dispatch(array $argv = null): int {
+    public function dispatch(?array $argv = null): int {
         $argv = $argv ?? $_SERVER['argv'];
         $argv0 = array_shift($argv);
         $args = \Docopt::handle($this->usage($argv0), [
@@ -79,10 +80,12 @@ USAGE_TEXT;
             'help' => false,
         ]);
         try {
-            // ensure the require extensions are loaded
-            Arsse::checkExtensions(...Arsse::REQUIRED_EXTENSIONS);
             // reconstitute multi-token commands (e.g. user add) into a single string
             $cmd = $this->command($args);
+            // ensure the require extensions are loaded, unless we're just generating the default configuration file
+            if ($cmd !== "conf save-defaults") {
+                Arsse::checkExtensions(...Arsse::REQUIRED_EXTENSIONS);
+            }
             if ($cmd && !in_array($cmd, ["", "conf save-defaults", "daemon"])) {
                 // only certain commands don't require configuration to be loaded; daemon loads configuration after forking (if applicable)
                 $this->loadConf();
@@ -105,7 +108,7 @@ USAGE_TEXT;
                     }
                     return 0;
                 case "feed refresh":
-                    return (int) !Arsse::$db->feedUpdate((int) $args['<n>'], true);
+                    return (int) !Arsse::$db->subscriptionUpdate(null, (int) $args['<n>'], true);
                 case "feed refresh-all":
                     Arsse::$obj->get(Service::class)->watch(false);
                     return 0;
@@ -197,7 +200,7 @@ USAGE_TEXT;
         return 0;
     }
 
-    protected function userAddOrSetPassword(string $method, string $user, string $password = null, string $oldpass = null): int {
+    protected function userAddOrSetPassword(string $method, string $user, ?string $password = null, ?string $oldpass = null): int {
         $passwd = Arsse::$user->$method(...array_slice(func_get_args(), 1));
         if (is_null($password)) {
             echo $passwd.\PHP_EOL;

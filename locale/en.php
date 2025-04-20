@@ -34,8 +34,16 @@ return [
     'API.Miniflux.Error.InvalidTitle'                                      => 'Invalid feed title',
     'API.Miniflux.Error.InvalidImportCategory'                             => 'Payload contains an invalid category name',
     'API.Miniflux.Error.DuplicateImportCategory'                           => 'Payload contains the same category name twice',
-    'API.Miniflux.Error.FailedImportFeed'                                  => 'Unable to import feed at URL "{url}" (code {code}',
+    'API.Miniflux.Error.FailedImportFeed'                                  => 'Unable to import feed at URL "{url}" (code {code})',
     'API.Miniflux.Error.InvalidImportLabel'                                => 'Payload contains an invalid label name',
+    'API.Miniflux.Error.NoIntegrations'                                    => 'no third-party integration enabled',
+
+    'API.NCNv1.Error.401'                                                  => 'You must be authenticated before performing this action.',
+    'API.NCNv1.Error.403'                                                  => 'You are not authorized to perform this action.',
+    'API.NCNv1.Error.404'                                                  => 'The requested resource was not found.',
+    'API.NCNv1.Error.405'                                                  => 'The request method "{0}" is not allowed for this resource.',
+    'API.NCNv1.Error.415'                                                  => 'The request content-type "{0}" is not acceptable for this resource.',
+    'API.NCNv1.Error.ParseError'                                           => 'The provided entity body could not be successfully parsed as JSON.',
 
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',
@@ -147,6 +155,7 @@ return [
             0 {Automatic updating of the {driver_name} database failed because it is already up to date with the requested version, {target}}
             other {Automatic updating of the {driver_name} database failed because its version, {current}, is newer than the requested version, {target}}
         }',
+    'Exception.JKingWeb/Arsse/Db/Exception.updateSchemaDowngrade'          => 'Database schema version is newer than the application schema version',
     'Exception.JKingWeb/Arsse/Db/Exception.engineErrorGeneral'             => '{0}',
     // indicates programming error
     'Exception.JKingWeb/Arsse/Db/Exception.savepointStatusUnknown'         => 'Savepoint status code {0} not implemented',

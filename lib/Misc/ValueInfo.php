@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\Misc;
 
 use JKingWeb\Arsse\ExceptionType;
@@ -59,7 +60,7 @@ class ValueInfo {
         'float'     => ["U.u",                    "U.u"                  ],
     ];
 
-    public static function normalize($value, int $type, string $dateInFormat = null, $dateOutFormat = null) {
+    public static function normalize($value, int $type, ?string $dateInFormat = null, $dateOutFormat = null) {
         $allowNull = ($type & self::M_NULL);
         $strict = ($type & (self::M_STRICT | self::M_DROP));
         $drop = ($type & self::M_DROP);
@@ -107,7 +108,7 @@ class ValueInfo {
                     if ($strict && !$drop) {
                         throw new ExceptionType("strictFailure", $type);
                     }
-                    return (!$drop) ? (int) $value->getTimestamp(): null;
+                    return (!$drop) ? (int) $value->getTimestamp() : null;
                 } elseif ($value instanceof \DateInterval) {
                     if ($strict && !$drop) {
                         throw new ExceptionType("strictFailure", $type);
@@ -159,7 +160,7 @@ class ValueInfo {
                     if ($strict && !$drop) {
                         throw new ExceptionType("strictFailure", $type);
                     }
-                    return (!$drop) ? (float) $value->getTimestamp(): null;
+                    return (!$drop) ? (float) $value->getTimestamp() : null;
                 } elseif ($value instanceof \DateInterval) {
                     if ($drop) {
                         return null;
@@ -203,13 +204,13 @@ class ValueInfo {
                     if ($value->days) {
                         $dateSpec = $value->days."D";
                     } else {
-                        $dateSpec .= $value->y ? $value->y."Y": "";
-                        $dateSpec .= $value->m ? $value->m."M": "";
-                        $dateSpec .= $value->d ? $value->d."D": "";
+                        $dateSpec .= $value->y ? $value->y."Y" : "";
+                        $dateSpec .= $value->m ? $value->m."M" : "";
+                        $dateSpec .= $value->d ? $value->d."D" : "";
                     }
-                    $timeSpec .= $value->h ? $value->h."H": "";
-                    $timeSpec .= $value->i ? $value->i."M": "";
-                    $timeSpec .= $value->s ? $value->s."S": "";
+                    $timeSpec .= $value->h ? $value->h."H" : "";
+                    $timeSpec .= $value->i ? $value->i."M" : "";
+                    $timeSpec .= $value->s ? $value->s."S" : "";
                     $timeSpec = $timeSpec ? "T".$timeSpec : "";
                     if (!$dateSpec && !$timeSpec) {
                         return "PT0S";
@@ -281,15 +282,15 @@ class ValueInfo {
                             if (!$out) {
                                 throw new \Exception;
                             }
-                            return $out;
+                            return $out->setTimezone(new \DateTimeZone("UTC"));
                         } else {
-                            return new \DateTimeImmutable($value, new \DateTimeZone("UTC"));
+                            // if the string fails to parse it will produce an exception which is caught just below
+                            return (new \DateTimeImmutable($value, new \DateTimeZone("UTC")))->setTimezone(new \DateTimeZone("UTC"));
                         }
                     } catch (\Exception $e) {
                         if ($strict && !$drop) {
                             throw new ExceptionType("strictFailure", $type);
                         }
-                        return null;
                     }
                 } elseif ($strict && !$drop) {
                     throw new ExceptionType("strictFailure", $type);
@@ -510,7 +511,7 @@ class ValueInfo {
         }
     }
 
-    public static function bool($value, bool $default = null): ?bool {
+    public static function bool($value, ?bool $default = null): ?bool {
         if (is_null($value) || ValueInfo::str($value) & ValueInfo::WHITE) {
             return $default;
         }

@@ -1,9 +1,11 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Test\Database;
@@ -29,6 +31,10 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
     protected static $drv;
     protected static $failureReason = "";
     protected $primed = false;
+    protected $data;
+    protected $user;
+    protected $checkTables;
+    protected $series;
 
     abstract protected function nextID(string $table): int;
 
@@ -50,7 +56,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
         // but other engines should clean up from potentially interrupted prior tests
         static::setConf();
         try {
-            static::$drv = new static::$dbDriverClass;
+            static::$drv = new static::$dbDriverClass();
         } catch (\JKingWeb\Arsse\Db\Exception $e) {
             static::$failureReason = $e->getMessage();
             return;
@@ -64,7 +70,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function setUp(): void {
         // get the name of the test's test series
-        $this->series = $this->findTraitofTest($this->getName(false));
+        $this->series = $this->findTraitofTest($this->name());
         static::clearData();
         static::setConf();
         if (strlen(static::$failureReason)) {
@@ -73,8 +79,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db = new Database(static::$drv);
         Arsse::$db->driverSchemaUpdate();
         // create a mock user manager
-        $this->userMock = $this->mock(User::class);
-        Arsse::$user = $this->userMock->get();
+        Arsse::$user = \Phake::mock(User::class);
         // call the series-specific setup method
         $setUp = "setUp".$this->series;
         $this->$setUp();
@@ -86,7 +91,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function tearDown(): void {
         // call the series-specific teardown method
-        $this->series = $this->findTraitofTest($this->getName(false));
+        $this->series = $this->findTraitofTest($this->name());
         $tearDown = "tearDown".$this->series;
         $this->$tearDown();
         // clean up

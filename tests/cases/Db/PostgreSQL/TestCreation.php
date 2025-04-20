@@ -4,14 +4,17 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\PostgreSQL\Driver;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 
-/**
- * @group slow
- * @covers \JKingWeb\Arsse\Db\PostgreSQL\Driver<extended> */
+#[Group("slow")]
+#[CoversClass(\JKingWeb\Arsse\Db\PostgreSQL\Driver::class)]
 class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         if (!Driver::requirementsMet()) {
@@ -19,7 +22,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    /** @dataProvider provideConnectionStrings */
+    #[DataProvider("provideConnectionStrings")]
     public function testGenerateConnectionString(bool $pdo, string $user, string $pass, string $db, string $host, int $port, string $service, string $exp): void {
         self::setConf();
         $timeout = (string) ceil(Arsse::$conf->dbTimeoutConnect ?? 0);
@@ -35,7 +38,7 @@ class TestCreation extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-    public function provideConnectionStrings(): iterable {
+    public static function provideConnectionStrings(): iterable {
         return [
             [false, "arsse",           "secret",   "arsse",     "",          5432, "",      "dbname='arsse' password='secret' user='arsse'"],
             [false, "arsse",           "p word",   "arsse",     "",          5432, "",      "dbname='arsse' password='p word' user='arsse'"],

@@ -1,23 +1,25 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Service;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Service\Driver as DriverInterface;
 use JKingWeb\Arsse\Service\Serial\Driver;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \JKingWeb\Arsse\Service\Serial\Driver */
+#[CoversClass(\JKingWeb\Arsse\Service\Serial\Driver::class)]
 class TestSerial extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         parent::setUp();
         self::setConf();
-        $this->dbMock = $this->mock(Database::class);
-        Arsse::$db = $this->dbMock->get();
+        Arsse::$db = \Phake::mock(Database::class);
     }
 
     public function testConstruct(): void {
@@ -41,8 +43,8 @@ class TestSerial extends \JKingWeb\Arsse\Test\AbstractTest {
         $d = new Driver;
         $d->queue(1, 4, 3);
         $this->assertSame(Arsse::$conf->serviceQueueWidth, $d->exec());
-        $this->dbMock->feedUpdate->calledWith(1);
-        $this->dbMock->feedUpdate->calledWith(4);
-        $this->dbMock->feedUpdate->calledWith(3);
+        \Phake::verify(Arsse::$db)->subscriptionUpdate(null, 1);
+        \Phake::verify(Arsse::$db)->subscriptionUpdate(null, 4);
+        \Phake::verify(Arsse::$db)->subscriptionUpdate(null, 3);
     }
 }

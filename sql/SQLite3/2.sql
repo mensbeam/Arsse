@@ -13,7 +13,7 @@ create table arsse_users_new(
     avatar_type text,                                                                                       -- internal avatar image's MIME content type
     avatar_data blob,                                                                                       -- internal avatar image's binary data
     admin boolean default 0,                                                                                -- whether the user is a member of the special "admin" group
-    rights integer not null default 0                                                                       -- temporary admin-rights marker FIXME: remove reliance on this
+    rights integer not null default 0                                                                       -- temporary admin-rights marker
 );
 insert into arsse_users_new(id,password,name,avatar_type,avatar_data,admin,rights) select id,password,name,avatar_type,avatar_data,admin,rights from arsse_users;
 drop table arsse_users;

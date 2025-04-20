@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\Db;
 
 interface Driver {
@@ -38,10 +39,10 @@ interface Driver {
     public function savepointCreate(): int;
 
     /** Manually commits either the latest or a specified nested transaction */
-    public function savepointRelease(int $index = null): bool;
+    public function savepointRelease(?int $index = null): bool;
 
     /** Manually rolls back either the latest or a specified nested transaction */
-    public function savepointUndo(int $index = null): bool;
+    public function savepointUndo(?int $index = null): bool;
 
     /** Performs an in-place upgrade of the database schema
      *
@@ -72,6 +73,7 @@ interface Driver {
      * The tokens the implementation must understand are:
      *
      * - "greatest": the GREATEST function implemented by PostgreSQL and MySQL
+     * - "least": the LEAST function implemented by PostgreSQL and MySQL
      * - "nocase": the name of a general-purpose case-insensitive collation sequence
      * - "like": the case-insensitive LIKE operator
      * - "integer": the integer type to use for explicit casts
@@ -91,4 +93,7 @@ interface Driver {
      * This should be restricted to quick maintenance; in SQLite terms it might include ANALYZE, but not VACUUM
      */
     public function maintenance(): bool;
+
+    /** Reports whether the implementation will coerce integer and float values to text (string) */
+    public function stringOutput(): bool;
 }

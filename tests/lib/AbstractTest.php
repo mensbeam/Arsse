@@ -1,13 +1,13 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\Test;
 
-use Eloquent\Phony\Mock\Handle\InstanceHandle;
-use Eloquent\Phony\Phpunit\Phony;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use JKingWeb\Arsse\Exception;
@@ -17,32 +17,162 @@ use JKingWeb\Arsse\Db\Driver;
 use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Factory;
 use JKingWeb\Arsse\Misc\Date;
-use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\Misc\URL;
+use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Laminas\Diactoros\ServerRequest;
-use Laminas\Diactoros\Response\JsonResponse;
-use Laminas\Diactoros\Response\XmlResponse;
+use GuzzleHttp\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @coversNothing */
+#[CoversClass(Database::class)]
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
-    use \DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
-
-    protected $objMock;
-    protected $confMock;
-    protected $langMock;
-    protected $dbMock;
-    protected $userMock;
+    protected const COL_DEFS = [
+        'arsse_meta' => [
+            'key'   => "str",
+            'value' => "str",
+        ],
+        'arsse_users' => [
+            'id'       => "str",
+            'password' => "str",
+            'num'      => "int",
+            'admin'    => "bool",
+        ],
+        'arsse_user_meta' => [
+            'owner'    => "str",
+            'key'      => "str",
+            'modified' => "datetime",
+            'value'    => "str",
+        ],
+        'arsse_sessions' => [
+            'id'      => "str",
+            'created' => "datetime",
+            'expires' => "datetime",
+            'user'    => "str",
+        ],
+        'arsse_tokens' => [
+            'id'      => "str",
+            'class'   => "str",
+            'user'    => "str",
+            'created' => "datetime",
+            'expires' => "datetime",
+            'data'    => "str",
+        ],
+        'arsse_icons' => [
+            'id'         => "int",
+            'url'        => "str",
+            'modified'   => "datetime",
+            'etag'       => "str",
+            'next_fetch' => "datetime",
+            'orphaned'   => "datetime",
+            'type'       => "str",
+            'data'       => "blob",
+        ],
+        'arsse_articles' => [
+            'id'                 => "int",
+            'subscription'       => "int",
+            'read'               => "bool",
+            'starred'            => "bool",
+            'hidden'             => "bool",
+            'url'                => "str",
+            'title'              => "str",
+            'author'             => "str",
+            'published'          => "datetime",
+            'edited'             => "datetime",
+            'added'              => "datetime",
+            'modified'           => "datetime",
+            'marked'             => "datetime",
+            'guid'               => "str",
+            'url_title_hash'     => "str",
+            'url_content_hash'   => "str",
+            'title_content_hash' => "str",
+            'note'               => "str",
+        ],
+        'arsse_article_contents' => [
+            'id'      => "int",
+            'content' => "str",
+        ],
+        'arsse_editions' => [
+            'id'       => "int",
+            'article'  => "int",
+            'modified' => "datetime",
+        ],
+        'arsse_enclosures' => [
+            'article' => "int",
+            'url'     => "str",
+            'type'    => "str",
+        ],
+        'arsse_categories' => [
+            'article' => "int",
+            'name'    => "str",
+        ],
+        'arsse_subscriptions' => [
+            'id'         => "int",
+            'owner'      => "str",
+            'url'        => "str",
+            'feed_title' => "str",
+            'title'      => "str",
+            'folder'     => "int",
+            'last_mod'   => "datetime",
+            'etag'       => "str",
+            'next_fetch' => "datetime",
+            'added'      => "datetime",
+            'source'     => "str",
+            'updated'    => "datetime",
+            'err_count'  => "int",
+            'err_msg'    => "str",
+            'size'       => "int",
+            'icon'       => "int",
+            'modified'   => "datetime",
+            'order_type' => "int",
+            'pinned'     => "bool",
+            'scrape'     => "bool",
+            'keep_rule'  => "str",
+            'block_rule' => "str",
+            'deleted'    => "bool",
+            'user_agent' => "str",
+            'cookie'     => "str",
+        ],
+        'arsse_folders' => [
+            'id'       => "int",
+            'owner'    => "str",
+            'parent'   => "int",
+            'name'     => "str",
+            'modified' => "datetime",
+        ],
+        'arsse_tags' => [
+            'id'       => "int",
+            'owner'    => "str",
+            'name'     => "str",
+            'modified' => "datetime",
+        ],
+        'arsse_tag_members' => [
+            'tag'          => "int",
+            'subscription' => "int",
+            'assigned'     => "bool",
+            'modified'     => "datetime",
+        ],
+        'arsse_labels' => [
+            'id'       => "int",
+            'owner'    => "str",
+            'name'     => "str",
+            'modified' => "datetime",
+        ],
+        'arsse_label_members' => [
+            'label'        => "int",
+            'article'      => "int",
+            'assigned'     => "bool",
+            'modified'     => "datetime",
+        ],
+    ];
 
     public function setUp(): void {
         self::clearData();
         // create the object factory as a mock
-        $this->objMock = Arsse::$obj = $this->mock(Factory::class);
-        $this->objMock->get->does(function(string $class) {
-            return new $class;
+        Arsse::$obj = \Phake::mock(Factory::class);
+        \Phake::when(Arsse::$obj)->get->thenReturnCallback(function(string $class) {
+            return new $class();
         });
     }
 
@@ -54,7 +184,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             Arsse::$$prop = null;
         }
         if ($loadLang) {
-            Arsse::$lang = new \JKingWeb\Arsse\Lang();
+            Arsse::$lang = new \JKingWeb\Arsse\Lang;
         }
     }
 
@@ -62,22 +192,22 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         $defaults = [
             'dbSQLite3File'      => ":memory:",
             'dbSQLite3Timeout'   => 0,
-            'dbPostgreSQLHost'   => $_ENV['ARSSE_TEST_PGSQL_HOST']   ?: "",
-            'dbPostgreSQLPort'   => $_ENV['ARSSE_TEST_PGSQL_PORT']   ?: 5432,
-            'dbPostgreSQLUser'   => $_ENV['ARSSE_TEST_PGSQL_USER']   ?: "arsse_test",
-            'dbPostgreSQLPass'   => $_ENV['ARSSE_TEST_PGSQL_PASS']   ?: "arsse_test",
-            'dbPostgreSQLDb'     => $_ENV['ARSSE_TEST_PGSQL_DB']     ?: "arsse_test",
+            'dbPostgreSQLHost'   => $_ENV['ARSSE_TEST_PGSQL_HOST'] ?: "",
+            'dbPostgreSQLPort'   => $_ENV['ARSSE_TEST_PGSQL_PORT'] ?: 5432,
+            'dbPostgreSQLUser'   => $_ENV['ARSSE_TEST_PGSQL_USER'] ?: "arsse_test",
+            'dbPostgreSQLPass'   => $_ENV['ARSSE_TEST_PGSQL_PASS'] ?: "arsse_test",
+            'dbPostgreSQLDb'     => $_ENV['ARSSE_TEST_PGSQL_DB'] ?: "arsse_test",
             'dbPostgreSQLSchema' => $_ENV['ARSSE_TEST_PGSQL_SCHEMA'] ?: "arsse_test",
-            'dbMySQLHost'        => $_ENV['ARSSE_TEST_MYSQL_HOST']   ?: "localhost",
-            'dbMySQLPort'        => $_ENV['ARSSE_TEST_MYSQL_PORT']   ?: 3306,
-            'dbMySQLUser'        => $_ENV['ARSSE_TEST_MYSQL_USER']   ?: "arsse_test",
-            'dbMySQLPass'        => $_ENV['ARSSE_TEST_MYSQL_PASS']   ?: "arsse_test",
-            'dbMySQLDb'          => $_ENV['ARSSE_TEST_MYSQL_DB']     ?: "arsse_test",
+            'dbMySQLHost'        => $_ENV['ARSSE_TEST_MYSQL_HOST'] ?: "localhost",
+            'dbMySQLPort'        => $_ENV['ARSSE_TEST_MYSQL_PORT'] ?: 3306,
+            'dbMySQLUser'        => $_ENV['ARSSE_TEST_MYSQL_USER'] ?: "arsse_test",
+            'dbMySQLPass'        => $_ENV['ARSSE_TEST_MYSQL_PASS'] ?: "arsse_test",
+            'dbMySQLDb'          => $_ENV['ARSSE_TEST_MYSQL_DB'] ?: "arsse_test",
         ];
         Arsse::$conf = (($force ? null : Arsse::$conf) ?? (new Conf))->import($defaults)->import($conf);
     }
 
-    protected function serverRequest(string $method, string $url, string $urlPrefix, array $headers = [], array $vars = [], $body = null, string $type = "", $params = [], string $user = null): ServerRequestInterface {
+    protected function serverRequest(string $method, string $url, string $urlPrefix, array $headers = [], array $vars = [], $body = null, string $type = "", $params = [], ?string $user = null): ServerRequestInterface {
         $server = [
             'REQUEST_METHOD' => $method,
             'REQUEST_URI'    => $url,
@@ -112,7 +242,8 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             }
         }
         $server = array_merge($server, $vars);
-        $req = new ServerRequest($server, [], $url, $method, "php://memory", [], [], $params, $parsedBody);
+        $req = new ServerRequest($method, $url, $headers, $body, "1.1", $server);
+        $req = $req->withParsedBody($parsedBody)->withQueryParams($params);
         if (isset($user)) {
             if (strlen($user)) {
                 $req = $req->withAttribute("authenticated", true)->withAttribute("authenticatedUser", $user);
@@ -140,19 +271,24 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return $req;
     }
 
-    public static function assertMatchesRegularExpression(string $pattern, string $string, string $message = ''): void {
-        if (method_exists(parent::class, "assertMatchesRegularExpression")) {
-            parent::assertMatchesRegularExpression($pattern, $string, $message);
+    public function assertArraySubset($expected, $actual, string $message = ''): void {
+        $this->assertIsArray($actual);
+        if (array_is_list($expected)) {
+            $missing = $actual;
+            $actual = [];
+            foreach ($expected as $k => $v) {
+                $found = array_search($v, $missing, true);
+                if ($found !== false) {
+                    $actual[$k] = $missing[$found];
+                    unset($missing[$found]);
+                }
+            }
+            $this->assertEquals($expected, $actual, $message ?: "Array subset does not match expectation.");
         } else {
-            parent::assertRegExp($pattern, $string, $message);
-        }
-    }
-
-    public static function assertFileDoesNotExist(string $filename, string $message = ''): void {
-        if (method_exists(parent::class, "assertFileDoesNotExist")) {
-            parent::assertFileDoesNotExist($filename, $message);
-        } else {
-            parent::assertFileNotExists($filename, $message);
+            $actual = array_intersect_key($actual, $expected);
+            ksort($actual);
+            ksort($expected);
+            $this->assertEquals($expected, $actual, $message ?: "Array subset does not match expectation.");
         }
     }
 
@@ -191,17 +327,30 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
             $this->assertSame($exp->getMethod(), $act->getMethod(), $text);
             $this->assertSame($exp->getRequestTarget(), $act->getRequestTarget(), $text);
         }
-        if ($exp instanceof JsonResponse) {
-            $this->assertInstanceOf(JsonResponse::class, $act, $text);
-            $this->assertEquals($exp->getPayload(), $act->getPayload(), $text);
-            $this->assertSame($exp->getPayload(), $act->getPayload(), $text);
-        } elseif ($exp instanceof XmlResponse) {
-            $this->assertInstanceOf(XmlResponse::class, $act, $text);
+        if ($exp instanceof ResponseInterface && HTTP::matchType($exp, ["application/json", "text/json"], false)) {
+            $expBody = json_encode(@json_decode((string) $exp->getBody(), false), \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
+            try {
+                $actBody = json_encode(@json_decode((string) $act->getBody(), false, 512, \JSON_THROW_ON_ERROR), \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
+            } catch (\JsonException $e) {
+                $actBody = (string) $act->getBody();
+            }
+            $this->assertSame($expBody, $actBody, $text);
+        } elseif ($exp instanceof ResponseInterface && HTTP::matchType($exp, ["application/xml", "text/xml"], false)) {
             $this->assertXmlStringEqualsXmlString((string) $exp->getBody(), (string) $act->getBody(), $text);
         } else {
             $this->assertSame((string) $exp->getBody(), (string) $act->getBody(), $text);
         }
         $this->assertEquals($exp->getHeaders(), $act->getHeaders(), $text);
+    }
+
+    protected function extractMessageJson(MessageInterface $msg) {
+        if (HTTP::matchType($msg, ["application/json", "text/json"], false)) {
+            $json = @json_decode((string) $msg->getBody(), true);
+            if (json_last_error() === \JSON_ERROR_NONE) {
+                return $json;
+            }
+        }
+        return null;
     }
 
     public function assertTime($exp, $test, string $msg = ''): void {
@@ -241,14 +390,34 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return $value;
     }
 
+    /** Inserts into the database test data in the following format:
+     *
+     * ```php
+     * $data = [
+     *  'some_table' => [
+     *   'columns' => ["id", "name"],
+     *   'rows'    => [
+     *    [1,"Dupond"],
+     *    [2,"Dupont"],
+     *   ]
+     *  ],
+     *  'other_table' => [
+     *   ...
+     *  ]
+     * ];
+     * ```
+     */
     public function primeDatabase(Driver $drv, array $data): bool {
         $tr = $drv->begin();
         foreach ($data as $table => $info) {
             $cols = array_map(function($v) {
                 return '"'.str_replace('"', '""', $v).'"';
-            }, array_keys($info['columns']));
+            }, $info['columns']);
             $cols = implode(",", $cols);
-            $bindings = array_values($info['columns']);
+            $bindings = array_map(function($c) use ($table) {
+                assert(isset(self::COL_DEFS[$table][$c]), new \Exception("Type for column $table.$c is not defined in ".__FILE__));
+                return self::COL_DEFS[$table][$c];
+            }, $info['columns']);
             $params = implode(",", array_fill(0, sizeof($info['columns']), "?"));
             $s = $drv->prepareArray("INSERT INTO $table($cols) values($params)", $bindings);
             foreach ($info['rows'] as $row) {
@@ -260,70 +429,104 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         return true;
     }
 
-    public function compareExpectations(Driver $drv, array $expected): bool {
+    public function compareExpectations(Driver $drv, array $expected): void {
         foreach ($expected as $table => $info) {
-            $cols = array_map(function($v) {
-                return '"'.str_replace('"', '""', $v).'"';
-            }, array_keys($info['columns']));
-            $cols = implode(",", $cols);
-            $types = $info['columns'];
-            $data = $drv->prepare("SELECT $cols from $table")->run()->getAll();
-            $cols = array_keys($info['columns']);
-            foreach ($info['rows'] as $index => $row) {
-                $this->assertCount(sizeof($cols), $row, "The number of columns in array index $index of expectations for table $table does not match its definition");
-                $row = array_combine($cols, $row);
-                foreach ($data as $index => $test) {
-                    foreach ($test as $col => $value) {
-                        switch ($types[$col]) {
-                            case "datetime":
-                                $test[$col] = $this->approximateTime($row[$col], $value);
-                                break;
-                            case "int":
-                                $test[$col] = ValueInfo::normalize($value, ValueInfo::T_INT | ValueInfo::M_DROP | valueInfo::M_NULL);
-                                break;
-                            case "float":
-                                $test[$col] = ValueInfo::normalize($value, ValueInfo::T_FLOAT | ValueInfo::M_DROP | valueInfo::M_NULL);
-                                break;
-                            case "bool":
-                                $test[$col] = (int) ValueInfo::normalize($value, ValueInfo::T_BOOL | ValueInfo::M_DROP | valueInfo::M_NULL);
-                                break;
-                        }
+            // serialize the rows of the expected output
+            $exp = [];
+            $dates = [];
+            foreach ($info['rows'] as $r) {
+                $row = [];
+                foreach ($r as $c => $v) {
+                    // store any date values for later comparison
+                    if (is_string($v) && preg_match("/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/", $v)) {
+                        $dates[] = $v;
                     }
-                    if ($row === $test) {
-                        $data[$index] = $test;
-                        break;
+                    // serialize to CSV, null being represented by no value
+                    if ($v === null) {
+                        $row[] = "";
+                    } elseif ($drv->stringOutput() || is_string($v)) {
+                        $row[] = '"'.str_replace('"', '""', (string) $v).'"';
+                    } else {
+                        $row[] = (string) $v;
                     }
                 }
-                $this->assertContains($row, $data, "Actual Table $table does not contain record at expected array index $index");
-                $found = array_search($row, $data, true);
-                unset($data[$found]);
+                $exp[] = implode(",", $row);
             }
-            $this->assertSame([], $data, "Actual table $table contains extra rows not in expectations");
+            // serialize the rows of the actual output
+            $cols = implode(",", array_map(function($v) {
+                return '"'.str_replace('"', '""', $v).'"';
+            }, $info['columns']));
+            $data = $drv->prepare("SELECT $cols from $table")->run()->getAll();
+            $act = [];
+            $extra = [];
+            foreach ($data as $r) {
+                $row = [];
+                foreach ($r as $c => $v) {
+                    // account for dates which might be off by one second
+                    if (is_string($v) && preg_match("/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/", $v)) {
+                        if (array_search($v, $dates, true) === false) {
+                            $v = Date::transform(Date::sub("PT1S", $v), "sql");
+                            if (array_search($v, $dates, true) === false) {
+                                $v = Date::transform(Date::add("PT2S", $v), "sql");
+                                if (array_search($v, $dates, true) === false) {
+                                    $v = Date::transform(Date::sub("PT1S", $v), "sql");
+                                }
+                            }
+                        }
+                    }
+                    if ($v === null) {
+                        $row[] = "";
+                    } elseif (is_string($v)) {
+                        $row[] = '"'.str_replace('"', '""', (string) $v).'"';
+                    } else {
+                        $row[] = (string) $v;
+                    }
+                }
+                $row = implode(",", $row);
+                // now search for the actual output row in the expected output
+                $found = array_keys($exp, $row, true);
+                foreach ($found as $k) {
+                    if (!isset($act[$k])) {
+                        $act[$k] = $row;
+                        // skip to the next row
+                        continue 2;
+                    }
+                }
+                // if the row was not found, add it to a buffer which will be added to the actual output once all found rows are processed
+                $extra[] = $row;
+            }
+            // add any unfound rows to the end of the actual array
+            $base = sizeof($exp);
+            foreach ($extra as $k => $v) {
+                $act[$base + $k] = $v;
+            }
+            // sort the actual output by keys
+            ksort($act);
+            // finally perform the comparison to be shown to the tester
+            $this->assertSame($exp, $act, "Actual table $table does not match expectations");
         }
-        return true;
     }
 
     public function primeExpectations(array $source, array $tableSpecs): array {
         $out = [];
         foreach ($tableSpecs as $table => $columns) {
             // make sure the source has the table we want
-            $this->assertArrayHasKey($table, $source, "Source for expectations does not contain requested table $table.");
+            if (!isset($source[$table])) {
+                throw new \Exception("Source for expectations does not contain requested table $table.");
+            }
+            // fill the output, particularly the correct number of (empty) rows
+            $rows = sizeof($source[$table]['rows']);
             $out[$table] = [
-                'columns' => [],
-                'rows'    => array_fill(0, sizeof($source[$table]['rows']), []),
+                'columns' => $columns,
+                'rows'    => array_fill(0, $rows, []),
             ];
-            // make sure the source has all the columns we want for the table
-            $cols = array_flip($columns);
-            $cols = array_intersect_key($cols, $source[$table]['columns']);
-            $this->assertSame(array_keys($cols), $columns, "Source for table $table does not contain all requested columns");
-            // get a map of source value offsets and keys
-            $targets = array_flip(array_keys($source[$table]['columns']));
-            foreach ($cols as $key => $order) {
-                // fill the column-spec
-                $out[$table]['columns'][$key] = $source[$table]['columns'][$key];
-                foreach ($source[$table]['rows'] as $index => $row) {
-                    // fill each row column-wise with re-ordered values
-                    $out[$table]['rows'][$index][$order] = $row[$targets[$key]];
+            // fill the rows with the requested data, column-wise
+            foreach ($columns as $c) {
+                if (($index = array_search($c, $source[$table]['columns'], true)) === false) {
+                    throw new \Exception("Expected column $table.$c is not present in test data");
+                }
+                for ($a = 0; $a < $rows; $a++) {
+                    $out[$table]['rows'][$a][] = $source[$table]['rows'][$a][$index];
                 }
             }
         }
@@ -335,12 +538,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         // stringify our expectations if necessary
         if (static::$stringOutput ?? false) {
             $expected = $this->stringify($expected);
-            // MySQL is extra-special and mixes strings and integers, so we cast the data, too
-            if ((static::$implementation ?? "") === "MySQL") {
-                $data = $this->stringify($data);
-            }
         }
-        $this->assertCount(sizeof($expected), $data, "Number of result rows (".sizeof($data).") differs from number of expected rows (".sizeof($expected).")");
         if (sizeof($expected)) {
             // make sure the expectations are consistent
             foreach ($expected as $exp) {
@@ -368,27 +566,19 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $found = array_search($row, $expected);
                 unset($expected[$found]);
             }
-            $this->assertArraySubset($expected, [], false, "Expectations not in result set.");
+            $this->assertEmpty($expected, "Expectations not in result set.");
         }
     }
 
     /** Guzzle's exception classes require some fairly complicated construction; this abstracts it all away so that only message and code need be supplied  */
     protected function mockGuzzleException(string $class, ?string $message = null, ?int $code = null, ?\Throwable $e = null): GuzzleException {
         if (is_a($class, RequestException::class, true)) {
-            $req = $this->mock(RequestInterface::class);
-            $res = $this->mock(ResponseInterface::class);
-            $res->getStatusCode->returns($code ?? 0);
-            return new $class($message ?? "", $req->get(), $res->get(), $e);
+            $req = \Phake::mock(RequestInterface::class);
+            $res = \Phake::mock(ResponseInterface::class);
+            \Phake::when($res)->getStatusCode->thenReturn($code ?? 0);
+            return new $class($message ?? "", $req, $res, $e);
         } else {
             return new $class($message ?? "", $code ?? 0, $e);
         }
-    }
-
-    protected function mock(string $class): InstanceHandle {
-        return Phony::mock($class);
-    }
-
-    protected function partialMock(string $class, ...$argument): InstanceHandle {
-        return Phony::partialMock($class, $argument);
     }
 }

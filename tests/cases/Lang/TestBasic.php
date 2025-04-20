@@ -1,14 +1,18 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Lang;
 
 use JKingWeb\Arsse\Lang as TestClass;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Depends;
 
-/** @covers \JKingWeb\Arsse\Lang */
+#[CoversClass(\JKingWeb\Arsse\Lang::class)]
 class TestBasic extends \JKingWeb\Arsse\Test\AbstractTest {
     use \JKingWeb\Arsse\Test\Lang\Setup;
 
@@ -20,9 +24,7 @@ class TestBasic extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertCount(sizeof($this->files), $this->l->list("en"));
     }
 
-    /**
-     * @depends testListLanguages
-     */
+    #[Depends('testListLanguages')]
     public function testSetLanguage(): void {
         $this->assertEquals("en", $this->l->set("en"));
         $this->assertEquals("en_ca", $this->l->set("en_ca"));
@@ -33,18 +35,14 @@ class TestBasic extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals("", $this->l->set(""));
     }
 
-    /**
-     * @depends testSetLanguage
-     */
+    #[Depends('testSetLanguage')]
     public function testLoadInternalStrings(): void {
         $exp = (new \ReflectionClassConstant(TestClass::class, "REQUIRED"))->getValue();
         $this->assertEquals("", $this->l->set("", true));
         $this->assertCount(sizeof($exp), $this->l->dump());
     }
 
-    /**
-     * @depends testLoadInternalStrings
-     */
+    #[Depends('testLoadInternalStrings')]
     public function testLoadDefaultLanguage(): void {
         $this->assertEquals(TestClass::DEFAULT, $this->l->set(TestClass::DEFAULT, true));
         $str = $this->l->dump();
@@ -52,9 +50,7 @@ class TestBasic extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertArrayHasKey('Test.presentText', $str);
     }
 
-    /**
-     * @depends testLoadDefaultLanguage
-     */
+    #[Depends('testLoadDefaultLanguage')]
     public function testLoadSupplementaryLanguage(): void {
         $this->l->set(TestClass::DEFAULT, true);
         $this->assertEquals("ja", $this->l->set("ja", true));

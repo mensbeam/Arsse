@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\User\Internal;
 
 use JKingWeb\Arsse\Arsse;
@@ -32,7 +33,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
         return password_verify($password, $hash);
     }
 
-    public function userAdd(string $user, string $password = null): ?string {
+    public function userAdd(string $user, ?string $password = null): ?string {
         if (isset($password)) {
             // only add the user if the password is not null; the user manager will retry with a generated password if null is returned
             Arsse::$db->userAdd($user, $password);
@@ -58,7 +59,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
         return Arsse::$db->userList();
     }
 
-    public function userPasswordSet(string $user, ?string $newPassword, string $oldPassword = null): ?string {
+    public function userPasswordSet(string $user, ?string $newPassword, ?string $oldPassword = null): ?string {
         // do nothing: the internal database is updated regardless of what the driver does (assuming it does not throw an exception)
         // throw an exception if the user does not exist
         if (!$this->userExists($user)) {
@@ -68,7 +69,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
         }
     }
 
-    public function userPasswordUnset(string $user, string $oldPassword = null): bool {
+    public function userPasswordUnset(string $user, ?string $oldPassword = null): bool {
         // do nothing: the internal database is updated regardless of what the driver does (assuming it does not throw an exception)
         // throw an exception if the user does not exist
         if (!$this->userExists($user)) {
@@ -86,7 +87,7 @@ class Driver implements \JKingWeb\Arsse\User\Driver {
         return Arsse::$db->userExists($user);
     }
 
-    public function userPropertiesGet(string $user, bool $includeLarge = true): array {
+    public function userPropertiesGet(string $user): array {
         // do nothing: the internal database will retrieve everything for us
         if (!$this->userExists($user)) {
             throw new ExceptionConflict("doesNotExist", ['action' => __FUNCTION__, 'user' => $user]);

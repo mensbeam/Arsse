@@ -4,6 +4,7 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse;
 
 class Lang {
@@ -123,7 +124,7 @@ class Lang {
         return $out;
     }
 
-    public function match(string $locale, array $list = null): string {
+    public function match(string $locale, ?array $list = null): string {
         $list = $list ?? $this->listFiles();
         $default = ($this->locale === "") ? self::DEFAULT : $this->locale;
         return \Locale::lookup($list, $locale, true, $default);
@@ -131,7 +132,7 @@ class Lang {
 
     protected function checkRequirements(): bool {
         if (!extension_loaded("intl")) {
-            throw new ExceptionFatal("The \"Intl\" extension is required, but not loaded"); // @codeCoverageIgnore
+            throw new ExceptionFatal("The \"intl\" PHP extension is not installed or not enabled"); // @codeCoverageIgnore
         }
         $this->requirementsMet = true;
         return true;
@@ -160,12 +161,12 @@ class Lang {
         if (!$this->requirementsMet) {
             $this->checkRequirements();
         }
+        $this->synched = true;
+        $this->formatter = null;
         // if we've requested no locale (""), just load the fallback strings and return
         if ($this->wanted === "") {
             $this->strings = self::REQUIRED;
             $this->locale = $this->wanted;
-            $this->synched = true;
-            $this->formatter = null;
             return true;
         }
         // decompose the requested locale from specific to general, building a list of files to load
@@ -190,16 +191,14 @@ class Lang {
             $files[] = $file;
         }
         // if we need to load all files, start with the fallback strings
-        $strings = [];
         if ($files === $loaded) {
-            $strings[] = self::REQUIRED;
-        } else {
-            // otherwise start with the strings we already have if we're going from e.g. "fr" to "fr_ca"
-            $strings[] = $this->strings;
+            $this->strings = self::REQUIRED;
+            $this->locale = "";
         }
-        // read files in reverse order
-        $files = array_reverse($files);
-        foreach ($files as $file) {
+        $this->loaded = array_diff($loaded, $files);
+        while ($files) {
+            // read files in reverse order, from most general to most specific
+            $file = array_pop($files);
             if (!file_exists($this->path."$file.php")) {
                 throw new Lang\Exception("fileMissing", $file);
             } elseif (!is_readable($this->path."$file.php")) {
@@ -217,14 +216,10 @@ class Lang {
             if (!is_array($arr)) {
                 throw new Lang\Exception("fileCorrupt", $file);
             }
-            $strings[] = $arr;
+            $this->strings = array_replace_recursive($this->strings, $arr);
+            $this->loaded[] = $file;
+            $this->locale = $file;
         }
-        // apply the results and return
-        $this->strings = call_user_func_array("array_replace_recursive", $strings);
-        $this->loaded = $loaded;
-        $this->locale = $this->wanted;
-        $this->synched = true;
-        $this->formatter = null;
         return true;
     }
 }

@@ -4,12 +4,14 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Db\PostgreSQL;
 
-/**
- * @group slow
- * @covers \JKingWeb\Arsse\Db\PostgreSQL\Result<extended>
- */
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group("slow")]
+#[CoversClass(\JKingWeb\Arsse\Db\PostgreSQL\Result::class)]
 class TestResult extends \JKingWeb\Arsse\TestCase\Db\BaseResult {
     use \JKingWeb\Arsse\Test\DatabaseDrivers\PostgreSQL;
 

@@ -1,14 +1,19 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Misc\Query;
+use JKingWeb\Arsse\Misc\QueryFilter;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \JKingWeb\Arsse\Misc\Query */
+#[CoversClass(\JKingWeb\Arsse\Misc\Query::class)]
+#[CoversClass(\JKingWeb\Arsse\Misc\QueryFilter::class)]
 class TestQuery extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testBasicQuery(): void {
         $q = new Query("select * from table where a = ?", "int", 3);
@@ -77,38 +82,35 @@ class TestQuery extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame([], $q->getValues());
     }
 
-    public function testQueryWithCommonTableExpression(): void {
-        $q = (new Query("select * from table where a in (select * from cte where a = ?)", "int", 1))->setCTE("cte", "select * from other_table where a = ? and b = ?", ["str", "str"], [2, 3]);
-        $this->assertSame("WITH RECURSIVE cte as (select * from other_table where a = ? and b = ?) select * from table where a in (select * from cte where a = ?)", $q->getQuery());
-        $this->assertSame(["str", "str", "int"], $q->getTypes());
-        $this->assertSame([2, 3, 1], $q->getValues());
-        // multiple CTEs
-        $q = (new Query("select * from table where a in (select * from cte1 join cte2 using (a) where a = ?)", "int", 1))->setCTE("cte1", "select * from other_table where a = ? and b = ?", ["str", "str"], [2, 3])->setCTE("cte2", "select * from other_table where c between ? and ?", ["datetime", "datetime"], [4, 5]);
-        $this->assertSame("WITH RECURSIVE cte1 as (select * from other_table where a = ? and b = ?), cte2 as (select * from other_table where c between ? and ?) select * from table where a in (select * from cte1 join cte2 using (a) where a = ?)", $q->getQuery());
-        $this->assertSame(["str", "str", "datetime", "datetime", "int"], $q->getTypes());
-        $this->assertSame([2, 3, 4, 5, 1], $q->getValues());
-    }
-
-    public function testQueryWithPushedCommonTableExpression(): void {
-        $q = (new Query("select * from table1"))->setWhere("a between ? and ?", ["datetime", "datetime"], [1, 2])
-            ->setCTE("cte1", "select * from table2 where a = ? and b = ?", ["str", "str"], [3, 4])
-            ->pushCTE("cte2")
-            ->setBody("select * from table3 join cte1 using (a) join cte2 using (a) where a = ?", "int", 5);
-        $this->assertSame("WITH RECURSIVE cte1 as (select * from table2 where a = ? and b = ?), cte2 as (select * from table1 WHERE a between ? and ?) select * from table3 join cte1 using (a) join cte2 using (a) where a = ?", $q->getQuery());
-        $this->assertSame(["str", "str", "datetime", "datetime", "int"], $q->getTypes());
-        $this->assertSame([3, 4, 1, 2, 5], $q->getValues());
-    }
-
     public function testComplexQuery(): void {
-        $q = (new query("select *, ? as const from table", "datetime", 1))
+        $q = (new query("SELECT *, ? as const from table", "datetime", 1))
             ->setWhereNot("b = ?", "bool", 2)
             ->setGroup("col1", "col2")
             ->setWhere("a = ?", "str", 3)
             ->setLimit(4, 5)
-            ->setOrder("col3")
-            ->setCTE("cte", "select ? as const", "int", 6);
-        $this->assertSame("WITH RECURSIVE cte as (select ? as const) select *, ? as const from table WHERE a = ? AND NOT (b = ?) GROUP BY col1, col2 ORDER BY col3 LIMIT 4 OFFSET 5", $q->getQuery());
-        $this->assertSame(["int", "datetime", "str", "bool"], $q->getTypes());
-        $this->assertSame([6, 1, 3, 2], $q->getValues());
+            ->setOrder("col3");
+        $this->assertSame("SELECT *, ? as const from table WHERE a = ? AND NOT (b = ?) GROUP BY col1, col2 ORDER BY col3 LIMIT 4 OFFSET 5", $q->getQuery());
+        $this->assertSame(["datetime", "str", "bool"], $q->getTypes());
+        $this->assertSame([1, 3, 2], $q->getValues());
+    }
+
+    public function testNestedWhereConditions(): void {
+        $q = new Query("SELECT *, ? as const from table", "datetime", 1);
+        $f = new QueryFilter;
+        $f->setWhere("a = ?", "str", "ook")->setWhere("b = c")->setWhere("c = ?", "int", 42);
+        $this->assertSame("a = ? AND b = c AND c = ?", (string) $f);
+        $this->assertSame(["str", "int"], $f->getTypes());
+        $this->assertSame(["ook", 42], $f->getValues());
+        $q->setWhereGroup($f);
+        $f->setWhereRestrictive(false);
+        $this->assertSame("a = ? OR b = c OR c = ?", (string) $f);
+        $q->setWhereGroup($f);
+        $this->assertSame("SELECT *, ? as const from table WHERE (a = ? AND b = c AND c = ?) AND (a = ? OR b = c OR c = ?)", $q->getQuery());
+        $this->assertSame(["datetime", "str", "int", "str", "int"], $q->getTypes());
+        $this->assertSame([1, "ook", 42, "ook", 42], $q->getValues());
+        $q->setWhereRestrictive(false);
+        $this->assertSame("SELECT *, ? as const from table WHERE (a = ? AND b = c AND c = ?) OR (a = ? OR b = c OR c = ?)", $q->getQuery());
+        $this->assertSame(["datetime", "str", "int", "str", "int"], $q->getTypes());
+        $this->assertSame([1, "ook", 42, "ook", 42], $q->getValues());
     }
 }

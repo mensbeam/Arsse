@@ -4,10 +4,13 @@
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\Db;
 
 trait PDODriver {
     use PDOError;
+
+    protected $db;
 
     public function exec(string $query): bool {
         try {

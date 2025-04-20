@@ -1,9 +1,11 @@
 <?php
+
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
 
 declare(strict_types=1);
+
 namespace JKingWeb\Arsse\TestCase\Db;
 
 use JKingWeb\Arsse\Db\Statement;
@@ -42,7 +44,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
             "INSERT INTO arsse_meta(\"key\",value) values('schema_version','0')",
         ]);
         // construct a fresh driver for each test
-        $this->drv = new static::$dbDriverClass;
+        $this->drv = new static::$dbDriverClass();
     }
 
     public function tearDown(): void {
@@ -387,9 +389,11 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         $integer = $this->drv->sqlToken("InTEGer");
         $asc = $this->drv->sqlToken("asc");
         $desc = $this->drv->sqlToken("desc");
+        $least = $this->drv->sqlToken("leASt");
 
         $this->assertSame("NOT_A_TOKEN", $this->drv->sqlToken("NOT_A_TOKEN"));
 
+        $this->assertSame("A", $this->drv->query("SELECT $least('Z', 'A')")->getValue());
         $this->assertSame("Z", $this->drv->query("SELECT $greatest('Z', 'A')")->getValue());
         $this->assertSame("Z", $this->drv->query("SELECT 'Z' collate $nocase")->getValue());
         $this->assertSame("Z", $this->drv->query("SELECT 'Z' where 'Z' $like 'z'")->getValue());
