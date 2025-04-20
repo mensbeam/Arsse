@@ -1,5 +1,5 @@
 Name:           arsse
-Version:        0.10.0
+Version:        0.12.0
 Release:        0
 Summary:        Multi-protocol RSS/Atom newsfeed synchronization server
 License:        MIT
@@ -8,7 +8,7 @@ URL:            https://thearsse.com/
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
 
-%define minphpver  7.1
+%define minphpver  7.3
 %define arssepath  %{_datadir}/php/arsse
 %define socketpath %{_rundir}/php-fpm/arsse.sock
 

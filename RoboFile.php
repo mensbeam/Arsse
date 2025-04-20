@@ -277,24 +277,6 @@ class RoboFile extends \Robo\Tasks {
                 $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^pkgver=.*$/m')->to("pkgver=$archVersion"));
                 // patch the Arch PKGBUILD file with the correct source file
                 $t->addTask($this->taskReplaceInFile($dir."dist/arch/PKGBUILD")->regex('/^source=\("arsse-[^"]+"\)$/m')->to('source=("'.basename($tarball).'")'));
-                // perform Debian-specific tasks
-                if (file_exists($dir."dist/debian")) {
-                    // generate the Debian changelog; this also validates our original changelog
-                    $changelog = $this->changelogParse(file_get_contents($dir."CHANGELOG"), $version);
-                    $debianChangelog = $this->changelogDebian($changelog, $version);
-                    // save the Debian-format changelog
-                    $t->addTask($this->taskWriteToFile($dir."dist/debian/changelog")->text($debianChangelog));
-                    // perform RPM-specific tasks
-                    if (file_exists($dir."dist/rpm")) {
-                        // patch the spec file with the correct version and release
-                        $t->addTask($this->taskReplaceInFile($dir."dist/rpm/arsse.spec")->regex('/^Version:        .*$/m')->to("Version:        $baseVersion"));
-                        $t->addTask($this->taskReplaceInFile($dir."dist/rpm/arsse.spec")->regex('/^Release:        .*$/m')->to("Release:        $release"));
-                        // patch the spec file with the correct tarball name
-                        $t->addTask($this->taskReplaceInFile($dir."dist/rpm/arsse.spec")->regex('/^Source0:        .*$/m')->to("Source0:        arsse-$version.tar.gz"));
-                        // append the RPM changelog to the spec file
-                        $t->addTask($this->taskWriteToFile($dir."dist/rpm/arsse.spec")->append(true)->text("\n\n%changelog\n".$this->changelogRPM($changelog, $version)));
-                    }
-                }
             }
             // perform Debian-specific tasks
             if (file_exists($dir."dist/debian")) {
