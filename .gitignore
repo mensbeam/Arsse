@@ -1,5 +1,6 @@
 # Temporary files
 
+/release/
 /documentation/
 /manual/
 /tests/coverage/
