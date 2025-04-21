@@ -67,6 +67,29 @@ The Arsse does not at this time have any first party clients. However, because T
    <th colspan="7">Desktop</th>
   </tr>
   <tr>
+   <td><a href="https://pbh.dev/cloudnews/">CloudNews</a></td>
+   <td>macOS</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>
+    <p>Also available for iOS.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/jeena/feedthemonkey">FeedTheMonkey</a></td>
+   <td>Windows, macOS, Linux</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td>
+    <p>Very basic client; does not support HTTP authentication.</p>
+    <p>Mainly distributed as source code.
+   </td>
+  </tr>
+  <tr>
    <td><a href="https://hyliu.me/fluent-reader/">Fluent Reader</a></td>
    <td>Windows, macOS, Linux</td>
    <td class="Y">✔</td>
@@ -146,6 +169,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td>
     <p>Very bland looking application, but it functions well.</p>
+    <p>Also available for macOS.</p>
    </td>
   </tr>
   <tr>
@@ -201,17 +225,6 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td>Requires token authentication.</td>
-  </tr>
-  <tr>
-   <td><a href="https://github.com/SimonSchubert/NewsOut">Newsout</a></td>
-   <td>Android, iOS</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td>
-    <p>iOS version only as source code; discontinued</p>
-   </td>
   </tr>
   <tr>
    <td><a href="https://github.com/nextcloud/news-android/">Nextcloud News</a></td>
@@ -287,17 +300,6 @@ The Arsse does not at this time have any first party clients. However, because T
   </tr>
  </thead>
  <tbody>
-  <tr>
-   <td><a href="https://github.com/jeena/feedthemonkey">FeedTheMonkey</a></td>
-   <td>Linux</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="Y">✔</td>
-   <td class="N">✘</td>
-   <td>
-    <p></p>
-   </td>
-  </tr>
   <tr>
    <td><a href="https://github.com/Huessenbergnetz/Fuoten">Fuoten</a></td>
    <td>Sailfish</td>
