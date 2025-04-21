@@ -31,7 +31,7 @@ The Arsse does not at this time have any first party clients. However, because T
   </tr>
   <tr>
    <td><a href="https://github.com/electh/ReactFlux">ReactFlux</a></td>
-   <td>Web</td>
+   <td></td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
