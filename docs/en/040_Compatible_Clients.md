@@ -68,7 +68,7 @@ The Arsse does not at this time have any first party clients. However, because T
   </tr>
   <tr>
    <td><a href="https://hyliu.me/fluent-reader/">Fluent Reader</a></td>
-   <td>Linux</td>
+   <td>Windows, macOS, Linux</td>
    <td class="Y">✔</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
