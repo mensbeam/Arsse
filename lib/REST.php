@@ -66,9 +66,18 @@ class REST {
             'strip' => '',
             'class' => REST\Miniflux\Status::class,
         ],
+        'freshrss' => [ // Google Reader as implemented by FreshRSS  https://freshrss.github.io/FreshRSS/en/developers/06_GoogleReader_API.html
+            'match' => '/api/greader.php/reader/api/0/',
+            'strip' => '/api/greader.php/reader/api/0',
+            'class' => REST\Reader\Reader::class,
+        ],
+        'freshrss-auth' => [ // User authentication for FreshRSS
+            'match' => '/api/greader.php/accounts/ClientLogin',
+            'strip' => '/api/greader.php/accounts/ClientLogin',
+            'class' => REST\Reader\Reader::class,
+        ],
         // Other candidates:
         // Microsub             https://indieweb.org/Microsub
-        // Google Reader        http://feedhq.readthedocs.io/en/latest/api/index.html
         // Feedbin v2           https://github.com/feedbin/feedbin-api
         // CommaFeed            https://www.commafeed.com/api/
         // Selfoss              https://github.com/SSilence/selfoss/wiki/Restful-API-for-Apps-or-any-other-external-access
