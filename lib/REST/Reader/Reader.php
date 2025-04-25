@@ -20,32 +20,40 @@ use Psr\Http\Message\ServerRequestInterface;
 class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     use Common;
 
+    protected const BODY_IGNORE = 0;
+    protected const BODY_READ = 1;
+    protected const BODY_PARSE= 2;
     /** The list of URL matches for calls
      * 
-     * An asterisk in a URL is a stand-in for any stream ID
+     * An asterisk in a URL is a stand-in for any stream ID. Resources may
+     * allow GET or POST or both; entries with "T req" true require a POST
+     * token, and those with "Atom" true allow output in the Atom format.
+     * 
+     * The list of allowed parameters excludes "T" and "output", which are
+     * handled specially when input is parsed.
     */
-    protected const CALLS = [         // Handler method     GET    POST   Allowed params
-        '/disable-tag'            => ["tagDisable",         false, true,  ['s' => V::T_STRING, 't' => V::T_STRING]],
-        '/edit-tag'               => ["tagEdit",            false, true,  ['i' => V::T_MIXED | V::T_ARRAY, 'a' => V::T_STRING | V::T_ARRAY, 'r' => V::T_STRING | V::T_ARRAY]],
-        '/friend/list'            => ["friendsGet",         true,  false, []],
-        '/mark-all-as-read'       => ["streamMark",         false, true,  ['s' => V::T_STRING, 'ts' => V::T_STRING]], // 'ts' is actually a date, but it's in an irregular format, so will require special handling
-        '/preference/list'        => ["prefsGet",           true,  false, []],
-        '/preference/stream/list' => ["prefsStreamGet",     true,  false, []],
-        '/rename-tag'             => ["tagRename",          false, true,  ['s' => V::T_STRING, 't' => V::T_STRING, 'dest' =>V::T_STRING]],
-        '/stream/contents/*'      => ["streamContents",     true,  false, ['r' => V::T_STRING, 'n' => V::T_INT, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE]],
-        '/stream/items/contents'  => ["itemContents",       true,  true,  []],
-        '/stream/items/count'     => ["itemCount",          true,  false, ['s' => V::T_STRING, 'a' => V::T_BOOL]],
-        '/stream/items/ids'       => ["itemIds",            true,  false, ['s' => V::T_STRING, 'n' => V::T_INT, 'includeAllDirectStreamIds' => V::T_BOOL, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE]],
-        '/subscribed'             => ["subscriptionValid",  true,  false, ['s' => V::T_STRING]],
-        '/subscription/edit'      => ["subscriptionEdit",   false, true,  ['ac' => V::T_STRING, 's' => V::T_STRING, 't' => V::T_STRING, 'a' => V::T_STRING | V::T_ARRAY, 'r' => V::T_STRING | V::T_ARRAY]],
-        '/subscription/export'    => ["subscriptionExport", true,  false, []],
-        '/subscription/import'    => ["subscriptionImport", false, true,  []],
-        '/subscription/list'      => ["subscriptionList",   true,  false, []],
-        '/subscription/quickadd'  => ["subscriptionAdd",    false, true,  ['quickadd' => V::T_STRING]],
-        '/tag/list'               => ["tagList",            true,  false, []],
-        '/token'                  => ["tokenGet",           true,  false, []],
-        '/unread-count'           => ["countsGet",          true,  false, []],
-        '/user-info'              => ["userGet",            true,  false, []],
+    protected const CALLS = [         // Handler method     GET    POST   T req  Atom   Allowed params
+        '/disable-tag'            => ["tagDisable",         false, true,  true,  false, ['s' => V::T_STRING, 't' => V::T_STRING]],
+        '/edit-tag'               => ["tagEdit",            false, true,  true,  false, ['i' => V::T_MIXED + V::M_ARRAY, 'a' => V::T_STRING + V::M_ARRAY, 'r' => V::T_STRING + V::M_ARRAY]],
+        '/friend/list'            => ["friendsGet",         true,  false, false, false, []],
+        '/mark-all-as-read'       => ["streamMark",         false, true,  true,  false, ['s' => V::T_STRING, 'ts' => V::T_STRING]], // 'ts' is actually a date, but it's in an irregular format, so will require special handling
+        '/preference/list'        => ["prefsGet",           true,  false, false, false, []],
+        '/preference/stream/list' => ["prefsStreamGet",     true,  false, false, false, []],
+        '/rename-tag'             => ["tagRename",          false, true,  true,  false, ['s' => V::T_STRING, 't' => V::T_STRING, 'dest' =>V::T_STRING]],
+        '/stream/contents/*'      => ["streamContents",     true,  false, false, true,  ['r' => V::T_STRING, 'n' => V::T_INT, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE]],
+        '/stream/items/contents'  => ["itemContents",       true,  true,  false, true,  ['i' => V::T_STRING + V::M_ARRAY]],
+        '/stream/items/count'     => ["itemCount",          true,  false, false, false, ['s' => V::T_STRING, 'a' => V::T_BOOL]],
+        '/stream/items/ids'       => ["itemIds",            true,  false, false, false, ['s' => V::T_STRING, 'n' => V::T_INT, 'includeAllDirectStreamIds' => V::T_BOOL, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE]],
+        '/subscribed'             => ["subscriptionValid",  true,  false, false, false, ['s' => V::T_STRING]],
+        '/subscription/edit'      => ["subscriptionEdit",   false, true,  true,  false, ['ac' => V::T_STRING, 's' => V::T_STRING, 't' => V::T_STRING, 'a' => V::T_STRING + V::M_ARRAY, 'r' => V::T_STRING + V::M_ARRAY]],
+        '/subscription/export'    => ["subscriptionExport", true,  false, false, false, []],
+        '/subscription/import'    => ["subscriptionImport", false, true,  false, false, []],
+        '/subscription/list'      => ["subscriptionList",   true,  false, false, false, []],
+        '/subscription/quickadd'  => ["subscriptionAdd",    false, true,  true,  false, ['quickadd' => V::T_STRING]],
+        '/tag/list'               => ["tagList",            true,  false, false, false, []],
+        '/token'                  => ["tokenGet",           true,  false, false, false, []],
+        '/unread-count'           => ["countsGet",          true,  false, false, false, []],
+        '/user-info'              => ["userGet",            true,  false, false, false, []],
     ];
     protected const OUTPUT_TYPES = [
         "application/json",
@@ -73,22 +81,18 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($this->authenticate($req)) {
             return $this->challenge(self::respError("401", 401));
         }
-        // perform content negotiation; this is used by some but not all routes
-        $format = self::FORMAT_MAP[MimeType::negotiate(self::OUTPUT_TYPES, $req->getHeaderLine("Accept")) ?? "application/xml"];
         // determine which handler to call
         $func = $this->chooseCall($target, $method);
         if ($func instanceof ResponseInterface) {
             return $func;
         }
-        [$func, $params] = $func;
-        // parse body and query parameters
-        if ($func === "subscriptionImport") {
-            // OPML importing is a special case; our importing infrastructure will parse it
-            $body = (string) $req->getBody();
-        } else {
-            $body = $this->argParse((string) $req->getBody(), $params);
-        }
-        $query = $this->argParse(parse_url($req->getRequestTarget(), \PHP_URL_QUERY) ?? "", $params);
+        [$func, $params, $reqT, $atomAllowed] = $func;
+        // parse body and query arguments (the body is not parsed for OPML import, only extracted)
+        $bodyMode = $method === "POST" ? ($func !== "subscriptionImport" ? self::BODY_PARSE : self::BODY_READ) : self::BODY_IGNORE;
+        [$format, $query, $body] = $this->inputParse($req, $params, $bodyMode);
+        // perform content negotiation if a format is not specified in the query
+        $format = $format ?? self::FORMAT_MAP[MimeType::negotiate(self::OUTPUT_TYPES, $req->getHeaderLine("Accept")) ?? "application/xml"];
+        $format = ($format === "atom" && !$atomAllowed) ? "xml" : $format;
         // handle the request
         try {
             return $this->$func($target, $query, $body, $format);
@@ -109,12 +113,12 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $url = "/stream/contents/*";
         }
         if (isset(self::CALLS[$url])) {
-            [$func, $GET, $POST, $params] = self::CALLS[$url];
+            [$func, $GET, $POST, $reqT, $atom, $params] = self::CALLS[$url];
             switch ($method) {
                 case "GET":
                 case "POST":
                     if ($$method) {
-                        return [$func, $params];
+                        return [$func, $params, $reqT, $atom];
                     }
                     // no break
                 default:
@@ -154,9 +158,88 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
-    protected function argParse(string $data, array $allowed): array {
-        // STUB
-        return [];
+    /** Extracts body and query input from a request
+     * 
+     * Returns an indexed array containing three members:
+     * 
+     * - The requested output format ("json", "xml", "atom", or null)
+     * - The used query parameters as an array, with allowed but unused members
+     *   set to null or an empty array, as appropriate
+     * - The entity body, parsed the same as teh query unless requested otherwise
+     */
+    protected function inputParse(ServerRequestInterface $req, array $allowed, int $bodyMode): array {
+        $format = null;
+        // fill an array with all allowed keys
+        foreach ($allowed as $k => $t) {
+            $outG[$k] = ($t >= V::M_ARRAY) ? [] : null;
+        }
+        // parse the query
+        foreach (explode("&", parse_url($req->getRequestTarget(), \PHP_URL_QUERY) ?? "") as $q) {
+            [$k, $v] = array_pad(explode("=", $q, 2), 2, "");
+            $v = urldecode($v);
+            if ($k === "output" && in_array($v, self::FORMAT_MAP)) {
+                // handle the "output" parameter which may dictate the format of our output
+                $format = $v;
+                continue;
+            } elseif (!isset($allowed[$k])) {
+                // the parameter is not allowed for this call, so can be ignored
+                continue;
+            } elseif ($v === "") {
+                // if the value is empty, ignore it
+                continue;
+            }
+            $t = $allowed[$k] & ~V::M_ARRAY;
+            $a = $allowed[$k] >= V::M_ARRAY;
+            if ($a) {
+                $outG[$k][] = V::normalize($v, $t + V::M_DROP, "unix");
+            } else {
+                // NOTE: The last value is kept in case of duplicates; this is
+                //   what FreshRSS does because it's what PHP does
+                $outG[$k] = V::normalize($v, $t + V::M_DROP, "unix");
+            }
+        }
+        if ($bodyMode === self::BODY_IGNORE) {
+            // if we don't care about the body, don't even read it
+            $outP = [];
+        } else {
+            // otherwise read it
+            $body = (string) $req->getBody();
+            if ($bodyMode === self::BODY_READ) {
+                // but return it as-is if so requested (e.g. for OPML import)
+                $outP = $body;
+            } else {
+                // otherwise parse it similar to the query
+                foreach ($allowed as $k => $t) {
+                    $outP[$k] = ($t >= V::M_ARRAY) ? [] : null;
+                }
+                $outP['T'] = null; // POST token
+                foreach (explode("&", $body) as $q) {
+                    [$k, $v] = array_pad(explode("=", $q, 2), 2, "");
+                    $v = urldecode($v);
+                    if ($k === "T") {
+                        // handle POST tokens
+                        $outP[$k] = $v;
+                        continue;
+                    } elseif (!isset($allowed[$k])) {
+                        // the parameter is not allowed for this call, so can be ignored
+                        continue;
+                    } elseif ($v === "") {
+                        // if the value is empty, ignore it
+                        continue;
+                    }
+                    $t = $allowed[$k] & ~V::M_ARRAY;
+                    $a = $allowed[$k] >= V::M_ARRAY;
+                    if ($a) {
+                        $outG[$k][] = V::normalize($v, $t + V::M_DROP, "unix");
+                    } else {
+                        // NOTE: The last value is kept in case of duplicates; this is
+                        //   what FreshRSS does because it's what PHP does
+                        $outG[$k] = V::normalize($v, $t + V::M_DROP, "unix");
+                    }
+                }
+            }
+        }
+        return [$format, $outG, $outP];
     }
 
     /** Converts an item ID (which could be a plain integer or a tag URN) into an internal database ID
