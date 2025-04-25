@@ -299,6 +299,59 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         return false;
     }
+    /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#user-info */
+    protected function userGet(string $target, array $query, array $body, string $format): ResponseInterface {
+        $user = Arsse::$user->id;
+        $meta = Arsse::$user->propertiesGet($user);
+        return self::respond($format, [
+            'userName'            => $user,
+            'userEmail'           => "",
+            'userId'              => (string) $meta['num'],
+            'userProfileId'       => (string) $meta['num'],
+            'isBloggerUser'       => false,
+            'signupTimeSec'       => V::normalize($this->now(), V::T_INT),
+            'isMultiLoginEnabled' => false,
+        ]);
+    }
+
+    /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#friend-list */
+    protected function friendsGet(string $target, array $query, array $body, string $format): ResponseInterface {
+        $user = Arsse::$user->id;
+        $meta = Arsse::$user->propertiesGet($user);
+        return self::respond($format, [
+            'friends' => [
+                [
+                    'userIds'                 => (string) [$meta['num']],
+                    'profileIds'              => (string) [$meta['num']],
+                    'contactId'               => '-1',
+                    'stream'                  => "user/{$meta['num']}/state/com.google/broadcast",
+                    'flags'                   => 1,
+                    'displayName'             => $user,
+                    'givenName'               => $user,
+                    'n'                       => '',
+                    'p'                       => '',
+                    'hasSharedItemsOnProfile' => false,
+                ]
+            ]
+        ]);
+    }
+    
+    /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#preference-list */
+    protected function prefsGet(string $target, array $query, array $body, string $format): ResponseInterface {
+        return self::respond($format, [
+            'prefs' => [
+                [
+                    'id' => "lhn-prefs",
+                    'value' => '{"subscriptions":{"ssa":"true"}}',
+                ],
+            ],
+        ]);
+    }
+    
+    /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#preference-stream-list */
+    protected function prefsStreamGet(string $target, array $query, array $body, string $format): ResponseInterface {
+        return self::respond($format, ['streamprefs' => new \stdClass]);
+    }
 
     protected static function respond(string $format, array $data, int $status = 200, array $headers = []): ResponseInterface {
         assert(in_array($format, ["json", "xml", "atom"]), new \Exception("Invalid format passed for output"));
@@ -317,19 +370,19 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * 
      * @see https://github.com/feedhq/feedhq/blob/65f4f04b4e81f4911e30fa4d4014feae4e172e0d/feedhq/reader/renderers.py#L48
      */
-    protected static function makeXML(array $data, \DOMDocument $d): \DOMElement {
+    protected static function makeXML(iterable $data, \DOMDocument $d): \DOMElement {
         // this is a very simplistic check for an indexed array;
         //   it would not pass muster in the face of generic data,
         //   but we'll assume our code produces only well-ordered
         //   indexed arrays
-        $object = !isset($v[0]);
+        $object = is_object($data) || !isset($data[0]);
         $p = $d->createElement($object ? "object" : "list");
         foreach ($data as $k => $v) {
             if (is_string($v)) {
                 $pp = $d->createElement("string", $v);
             } elseif (is_numeric($v)) {
                 $pp = $d->createElement("number", (string) $v);
-            } elseif (is_array($v)) {
+            } elseif (is_array($v) || is_object($v)) {
                 $pp = self::makeXML($v, $d);
             } else {
                 throw new \Exception("Unsupported type for XML output"); // @codeCoverageIgnore
