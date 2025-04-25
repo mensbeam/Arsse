@@ -45,6 +45,8 @@ return [
     'API.NCNv1.Error.415'                                                  => 'The request content-type "{0}" is not acceptable for this resource.',
     'API.NCNv1.Error.ParseError'                                           => 'The provided entity body could not be successfully parsed as JSON.',
 
+    'API.Reader.Error.401'                                                 => 'Unauthorized!',
+
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',
     'API.TTRSS.Category.Labels'                                            => 'Labels',

@@ -12,7 +12,7 @@ use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\ResponseInterface;
 
 trait Common {
-    protected function challenge(): ResponseInterface {
+    protected function challenge(ResponseInterface $res): ResponseInterface {
         $useBasic = true;
         $useReader = true;
         if (!isset(Arsse::$user->id) && Arsse::$conf->userHTTPAuthRequired) {
@@ -22,12 +22,13 @@ trait Common {
             // don't present HTTP-level authentication if it has already been passed successfully
             $useBasic = false;
         }
-        $head = $useReader ? ['WWW-Authenticate' => "GoogleLogin"] : [];
-        $out = HTTP::respEmpty(401, $head);
-        if ($useBasic) {
-            $out = HTTP::challenge($out);
+        if ($useReader) {
+            $res = $res->withAddedHeader("WWW-Authenticate", "GoogleLogin");
         }
-        return $out;
+        if ($useBasic) {
+            $res = HTTP::challenge($res);
+        }
+        return $res;
     }
 
     public static function respError($message, int $status = 400, array $headers = []): ResponseInterface {

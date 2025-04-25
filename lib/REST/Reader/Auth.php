@@ -41,7 +41,8 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
             $token = Arsse::$db->tokenCreate($user, "reader.login", null, $this->now()->add(new \DateInterval("P7D")));
             return HTTP::respText("SID=$token\nLSID=$token\nAuth=$token");
         } else {
-            return $this->challenge();
+            // NOTE: FreshRSS uses a different error response, but this seems to be what all other Reader implementations do
+            return $this->challenge(HTTP::respText("Error=BadAuthentication", 401));
         }
     }
 }
