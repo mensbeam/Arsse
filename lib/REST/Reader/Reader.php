@@ -10,6 +10,7 @@ namespace JKingWeb\Arsse\REST\Reader;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Db\ExceptionInput;
+use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Exception;
@@ -351,6 +352,56 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#preference-stream-list */
     protected function prefsStreamGet(string $target, array $query, array $body, string $format): ResponseInterface {
         return self::respond($format, ['streamprefs' => new \stdClass]);
+    }
+    
+    /** @see https://github.com/feedhq/feedhq/blob/65f4f04b4e81f4911e30fa4d4014feae4e172e0d/feedhq/reader/views.py#L284 */
+    protected function countsGet(string $target, array $query, array $body, string $format): ResponseInterface {
+        $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
+        $out = [];
+        $total = 0;
+        $ts = null;
+        $summary = [];
+        $tags = [];
+        // process each subscription, keeping a basic summary for tags
+        foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $sub) {
+            $date = $sub['article_latest'];
+            $unread = (int) $sub['unread'];
+            $out[] = [
+                'id'                      => "feed/".$sub['url'],
+                'count'                   => $unread,
+                'newestItemTimestampUsec' => Date::transform($date, "unix", "sql")."000000",
+            ];
+            // add the count and date to the summary
+            $summary[$sub['id']] = ['count' => $unread, 'ts' => $date];
+            // add to the grand total
+            $total += $unread;
+            // overwrite the global date if appropriate
+            $ts = max($ts, $date);
+        }
+        // aggregate information on tags
+        foreach (Arsse::$db->tagSummarize(Arsse::$user->id) as $tag) {
+            if (!isset($tags[$tag['name']])) {
+                $tags[$tag['name']] = ['count' => 0, 'ts' => null];
+            }
+            $tags[$tag['name']]['count'] += $summary[$tag['subscription']]['count'];
+            $tags[$tag['name']]['ts'] = max($tags[$tag['id']]['ts'], $summary[$tag['subscription']]['ts']);
+        }
+        // add tags to output
+        foreach ($tags as $name => $data) {
+            $out[] = [
+                'id'                      => "user/{$meta['num']}/label/$name",
+                'count'                   => $data['count'],
+                'newestItemTimestampUsec' => Date::transform($data['ts'], "unix", "sql")."000000",
+            ];
+        }
+        // add "reading list" (all articles) to output
+        $out[] = [
+            'id' => "user/{$meta['num']}/state/com.google/reading-list",
+            'count' => $total,
+            'newestItemTimestampUsec' => Date::transform($ts, "unix", "sql")."000000",
+        ];
+        // return the whole list
+        return self::respond($format, $out);
     }
 
     protected static function respond(string $format, array $data, int $status = 200, array $headers = []): ResponseInterface {
