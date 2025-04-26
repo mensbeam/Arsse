@@ -1269,7 +1269,7 @@ class Database {
     }
 
     /** Returns an indexed array of numeric identifiers for newsfeeds which should be refreshed */
-    public function feedListStale(): array {
+    public function subscriptionListStale(): array {
         $feeds = $this->db->query("SELECT id from arsse_subscriptions where next_fetch <= CURRENT_TIMESTAMP")->getAll();
         return array_column($feeds, 'id');
     }
@@ -1468,18 +1468,18 @@ class Database {
      * - "url_content_hash": A cryptographic hash of the article URL and its content
      * - "title_content_hash": A cryptographic hash of the article title and its content
      *
-     * @param integer $feedID The numeric identifier of the feed
+     * @param integer $subID The numeric identifier of the feed
      * @param integer $count The number of records to return
      */
-    public function feedMatchLatest(int $feedID, int $count): Db\Result {
+    public function subscriptionMatchLatest(int $subID, int $count): Db\Result {
         return $this->db->prepare(
             "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE subscription = ? ORDER BY modified desc, id desc limit ?",
             'int',
             'int'
-        )->run($feedID, $count);
+        )->run($subID, $count);
     }
 
-    /** Retrieves various identifiers for articles in the given newsfeed which match the input identifiers. The output identifiers are:
+    /** Retrieves various identifiers for articles in the given subscription which match the input identifiers. The output identifiers are:
      *
      * - "id": The database record key for the article
      * - "guid": The (theoretically) unique identifier for the article
@@ -1488,13 +1488,13 @@ class Database {
      * - "url_content_hash": A cryptographic hash of the article URL and its content
      * - "title_content_hash": A cryptographic hash of the article title and its content
      *
-     * @param integer $feedID The numeric identifier of the feed
+     * @param integer $subID The numeric identifier of the feed
      * @param array $ids An array of GUIDs of articles
      * @param array $hashesUT An array of hashes of articles' URL and title
      * @param array $hashesUC An array of hashes of articles' URL and content
      * @param array $hashesTC An array of hashes of articles' title and content
      */
-    public function feedMatchIds(int $feedID, array $ids = [], array $hashesUT = [], array $hashesUC = [], array $hashesTC = []): Db\Result {
+    public function subscriptionMatchIds(int $subID, array $ids = [], array $hashesUT = [], array $hashesUC = [], array $hashesTC = []): Db\Result {
         // compile SQL IN() clauses and necessary type bindings for the four identifier lists
         [$cId, $tId, $vId] = $this->generateIn($ids, "str");
         [$cHashUT, $tHashUT, $vHashUT] = $this->generateIn($hashesUT, "str");
@@ -1504,7 +1504,7 @@ class Database {
         return $this->db->prepareArray(
             "SELECT id, edited, guid, url_title_hash, url_content_hash, title_content_hash FROM arsse_articles WHERE subscription = ? and (guid in($cId) or url_title_hash in($cHashUT) or url_content_hash in($cHashUC) or title_content_hash in($cHashTC))",
             ['int', $tId, $tHashUT, $tHashUC, $tHashTC]
-        )->run($feedID, $vId, $vHashUT, $vHashUC, $vHashTC);
+        )->run($subID, $vId, $vHashUT, $vHashUC, $vHashTC);
     }
 
     /** Lists icons for feeds to which a user is subscribed

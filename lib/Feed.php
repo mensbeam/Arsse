@@ -290,7 +290,7 @@ class Feed {
             return;
         }
         // get as many of the latest articles in the database as there are in the feed
-        $articles = Arsse::$db->feedMatchLatest($feedID, sizeof($items))->getAll();
+        $articles = Arsse::$db->subscriptionMatchLatest($feedID, sizeof($items))->getAll();
         // perform a first pass matching the latest articles against items in the feed
         [$this->newItems, $this->changedItems] = $this->matchItems($items, $articles);
         if (sizeof($this->newItems)) {
@@ -310,7 +310,7 @@ class Feed {
                     $hashesTC[] = $i->titleContentHash;
                 }
             }
-            $articles = Arsse::$db->feedMatchIds($feedID, $ids, $hashesUT, $hashesUC, $hashesTC)->getAll();
+            $articles = Arsse::$db->subscriptionMatchIds($feedID, $ids, $hashesUT, $hashesUC, $hashesTC)->getAll();
             [$this->newItems, $changed] = $this->matchItems($this->newItems, $articles);
             // merge the two change-lists, preserving keys
             $this->changedItems = array_combine(array_merge(array_keys($this->changedItems), array_keys($changed)), array_merge($this->changedItems, $changed));

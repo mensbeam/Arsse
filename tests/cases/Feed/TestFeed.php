@@ -100,10 +100,10 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         parent::setUp();
         self::setConf();
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->feedMatchLatest->thenReturn(new Result([]));
-        \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
-        \Phake::when(Arsse::$db)->feedMatchIds->thenReturn(new Result([]));
-        \Phake::when(Arsse::$db)->feedMatchIds(1, \Phake::ignoreRemaining())->thenReturn(new Result($this->others));
+        \Phake::when(Arsse::$db)->subscriptionMatchLatest->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->subscriptionMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
+        \Phake::when(Arsse::$db)->subscriptionMatchIds->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->subscriptionMatchIds(1, \Phake::ignoreRemaining())->thenReturn(new Result($this->others));
     }
 
     public function testParseAFeed(): void {
@@ -347,8 +347,8 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testMatchLatestArticles(): void {
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->feedMatchLatest(\Phake::anyParameters())->thenReturn(new Result([]));
-        \Phake::when(Arsse::$db)->feedMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
+        \Phake::when(Arsse::$db)->subscriptionMatchLatest(\Phake::anyParameters())->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->subscriptionMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
         $f = new Feed(1, $this->base."Matching/1");
         $this->assertCount(0, $f->newItems);
         $this->assertCount(0, $f->changedItems);

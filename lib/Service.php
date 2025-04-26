@@ -32,7 +32,7 @@ class Service {
         do {
             $this->checkIn();
             static::cleanupPre();
-            $list = Arsse::$db->feedListStale();
+            $list = Arsse::$db->subscriptionListStale();
             if ($list) {
                 $this->drv->queue(...$list);
                 unset($list);

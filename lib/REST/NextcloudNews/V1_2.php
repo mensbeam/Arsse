@@ -425,7 +425,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             return self::error(403, "403");
         }
         // list stale feeds which should be checked for updates
-        $feeds = Arsse::$db->feedListStale();
+        $feeds = Arsse::$db->subscriptionListStale();
         $out = [];
         foreach ($feeds as $feed) {
             // since in our implementation feeds don't belong the users, the 'userId' field will always be an empty string

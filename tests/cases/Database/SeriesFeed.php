@@ -140,19 +140,19 @@ trait SeriesFeed {
 
     //#[CoversMethod(Database::class, "feedMatchLatest")]
     public function testListLatestItems(): void {
-        $this->assertResult($this->matches, Arsse::$db->feedMatchLatest(1, 2));
+        $this->assertResult($this->matches, Arsse::$db->subscriptionMatchLatest(1, 2));
     }
 
     //#[CoversMethod(Database::class, "feedMatchIds")]
     public function testMatchItemsById(): void {
-        $this->assertResult($this->matches, Arsse::$db->feedMatchIds(1, ['804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41']));
+        $this->assertResult($this->matches, Arsse::$db->subscriptionMatchIds(1, ['804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41']));
         foreach ($this->matches as $m) {
             $exp = [$m];
-            $this->assertResult($exp, Arsse::$db->feedMatchIds(1, [], [$m['url_title_hash']]));
-            $this->assertResult($exp, Arsse::$db->feedMatchIds(1, [], [], [$m['url_content_hash']]));
-            $this->assertResult($exp, Arsse::$db->feedMatchIds(1, [], [], [], [$m['title_content_hash']]));
+            $this->assertResult($exp, Arsse::$db->subscriptionMatchIds(1, [], [$m['url_title_hash']]));
+            $this->assertResult($exp, Arsse::$db->subscriptionMatchIds(1, [], [], [$m['url_content_hash']]));
+            $this->assertResult($exp, Arsse::$db->subscriptionMatchIds(1, [], [], [], [$m['title_content_hash']]));
         }
-        $this->assertResult([['id' => 1]], Arsse::$db->feedMatchIds(1, ['e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda'])); // this ID appears in both feed 1 and feed 2; only one result should be returned
+        $this->assertResult([['id' => 1]], Arsse::$db->subscriptionMatchIds(1, ['e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda'])); // this ID appears in both feed 1 and feed 2; only one result should be returned
     }
 
     //#[CoversMethod(Database::class, "subscriptionUpdate")]
@@ -262,10 +262,10 @@ trait SeriesFeed {
 
     //#[CoversMethod(Database::class, "feedListStale")]
     public function testListStaleFeeds(): void {
-        $this->assertEquals([1,3,4, 6], Arsse::$db->feedListStale());
+        $this->assertEquals([1,3,4, 6], Arsse::$db->subscriptionListStale());
         Arsse::$db->subscriptionUpdate(null, 3);
         Arsse::$db->subscriptionUpdate(null, 4);
-        $this->assertEquals([1, 6], Arsse::$db->feedListStale());
+        $this->assertEquals([1, 6], Arsse::$db->subscriptionListStale());
     }
 
     //#[CoversMethod(Database::class, "feedUpdate")]
@@ -325,7 +325,7 @@ trait SeriesFeed {
             'arsse_enclosures'    => ["article", "url", "type"],
             'arsse_categories'    => ["article", "name"],
         ]);
-        Arsse::$db->feedUpdate(4);
+        Arsse::$db->subscriptionUpdate(null, 4);
         $this->compareExpectations(static::$drv, $state);
     }
 }

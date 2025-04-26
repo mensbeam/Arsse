@@ -70,7 +70,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->subscriptionCleanup->thenReturn(true);
         \Phake::when(Arsse::$db)->sessionCleanup->thenReturn(true);
         \Phake::when(Arsse::$db)->articleCleanup->thenReturn(0);
-        \Phake::when(Arsse::$db)->feedListStale->thenReturn([1,2,3]);
+        \Phake::when(Arsse::$db)->subscriptionListStale->thenReturn([1,2,3]);
         // perform the test
         $d = \Phake::mock(\JKingWeb\Arsse\Service\Driver::class);
         $s = new \JKingWeb\Arsse\Test\Service($d);

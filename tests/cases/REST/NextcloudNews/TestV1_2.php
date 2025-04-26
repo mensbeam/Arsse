@@ -666,7 +666,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
                 'userId' => "",
             ],
         ];
-        \Phake::when(Arsse::$db)->feedListStale->thenReturn(self::v(array_column($out, "id")));
+        \Phake::when(Arsse::$db)->subscriptionListStale->thenReturn(self::v(array_column($out, "id")));
         $exp = HTTP::respJson(['feeds' => $out]);
         $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
     }
@@ -675,7 +675,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => false]);
         $exp = self::error(403, "403");
         $this->assertMessage($exp, $this->req("GET", "/feeds/all"));
-        \Phake::verify(Arsse::$db, \Phake::never())->feedListStale(\Phake::anyParameters());
+        \Phake::verify(Arsse::$db, \Phake::never())->subscriptionListStale(\Phake::anyParameters());
     }
 
     #[DataProvider("provideFeedUpdates")]
