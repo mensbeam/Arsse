@@ -40,63 +40,28 @@ namespace JKingWeb\Arsse\Context;
  * @method self addedRanges(array $spec)
  * @method self publishedRange($start, $end)
  * @method self publishedRanges(array $spec)
- * @method self unread(bool $spec)
- * @method self starred(bool $spec)
- * @method self hidden(bool $spec)
- * @method self labelled(bool $spec)
- * @method self annotated(bool $spec)
  */
-class UnionContext extends RootContext implements \ArrayAccess, \Countable, \IteratorAggregate {
-    protected $contexts = [];
-    /** @var ExclusionUnionContext */
-    public $not;
+class ExclusionUnionContext {
+    protected $parent;
+    protected $contexts;
 
-    #[\ReturnTypeWillChange]
-    public function offsetExists($offset) {
-        return isset($this->contexts[$offset]);
+    public function __construct(UnionContext $parent, &$contexts) {
+        $this->parent = $parent;
+        $this->contexts = $contexts;
     }
 
-    #[\ReturnTypeWillChange]
-    public function offsetGet($offset) {
-        return $this->contexts[$offset] ?? null;
-    }
-
-    #[\ReturnTypeWillChange]
-    public function offsetSet($offset, $value) {
-        assert($value instanceof Context, new \Exception("Union contexts may only contain non-exclusion non-union contexts"));
-        if (isset($offset)) {
-            $this->contexts[$offset] = $value;
-        } else {
-            $this->contexts[] = $value;
-        }
-    }
-
-    #[\ReturnTypeWillChange]
-    public function offsetUnset($offset) {
-        unset($this->contexts[$offset]);
-    }
-
-    public function count(): int {
-        return count($this->contexts);
-    }
-
-    public function getIterator(): \Traversable {
-        foreach ($this->contexts as $k => $c) {
-            yield $k => $c;
-        }
-    }
-
-    public function __construct(Context ...$context) {
-        $this->contexts = $context;
-        $this->not = new ExclusionUnionContext($this, $this->contexts);
+    /** @codeCoverageIgnore */
+    public function __destruct() {
+        unset($this->contexts);
+        unset($this->parent);
     }
 
     #[\ReturnTypeWillChange]
     public function __call($name, array $arguments) {
         foreach ($this->contexts as $c) {
-            $c->$name(...$arguments);
+            $c->not->$name(...$arguments);
         }
-        return $this;
+        return $this->parent;
     }
 
     public function __clone() {

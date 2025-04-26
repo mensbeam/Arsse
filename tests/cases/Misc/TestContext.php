@@ -159,7 +159,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testExerciseAUnionContext(): void {
         $c1 = new UnionContext;
         $c2 = new Context;
-        $c3 = new UnionContext;
+        $c3 = new Context;
         $this->assertSame(0, sizeof($c1));
         $c1[] = $c2;
         $c1[2] = $c3;
@@ -177,5 +177,21 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         $exp = [2 => $c3, $c2];
         $this->assertSame($exp, $act);
+    }
+
+    public function testWriteToUnionContext(): void {
+        $c = new UnionContext(new Context, new Context);
+        $c->unread(true)->not->label(5)->articleRange(10, 12);
+        $c1 = $c[0];
+        $c2 = $c[1];
+        $this->assertInstanceOf(Context::class, $c1);
+        $this->assertInstanceOf(Context::class, $c2);
+        $this->assertNotSame($c1, $c2);
+        $this->assertTrue($c1->unread);
+        $this->assertTrue($c2->unread);
+        $this->assertSame(5, $c1->not->label);
+        $this->assertSame(5, $c2->not->label);
+        $this->assertSame([10, 12], $c1->articleRange);
+        $this->assertSame([10, 12], $c2->articleRange);
     }
 }
