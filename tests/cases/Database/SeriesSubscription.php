@@ -13,7 +13,6 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Test\Database;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\Misc\Date;
-use PHPUnit\Framework\Attributes\CoversMethod;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 trait SeriesSubscription {
@@ -673,5 +672,26 @@ trait SeriesSubscription {
         $state['arsse_articles']['rows'][17][1] = 0;
         $state['arsse_articles']['rows'][18][1] = 1;
         $this->compareExpectations(static::$drv, $state);
+    }
+
+    #[DataProvider("provideSubscriptionLookups")]
+    public function testLookUpASubscriptionByUrl(string $url, string $user, int$exp): void {
+        $this->assertSame($exp, Arsse::$db->subscriptionLookup($user, $url));
+    }
+
+    public static function provideSubscriptionLookups(): iterable {
+        return [
+            ["http://example.com/feed2", "john.doe@example.com", 1],
+            ["http://example.com/feed2", "jane.doe@example.com", 2],
+            ["http://example.com/feed3", "john.doe@example.com", 3],
+            ["http://example.com/feed2", "jill.doe@example.com", 4],
+            ["http://example.com/feed2", "jack.doe@example.com", 5],
+            ["http://example.com/feed4", "john.doe@example.com", 6],
+        ];
+    }
+
+    public function testLookUpAMissingSubscriptionByUrl(): void {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->subscriptionLookup("john.doe@example.com", "http://example.com/feed1");
     }
 }

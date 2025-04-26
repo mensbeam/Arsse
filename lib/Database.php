@@ -854,6 +854,20 @@ class Database {
         $this->db->prepare("UPDATE arsse_subscriptions set deleted = 0,  modified = CURRENT_TIMESTAMP where deleted = 1 and owner = ? and id in ($inClause)", "str", $inTypes)->run($user, $inValues);
     }
 
+    /** Retrieves the ID of the subscription with the supplied URL for the given user, if any
+     * 
+     * @param string $user The user whose subscription to look up
+     * @param string $url The URL of the subscription. This should include username and password, where appropriate
+     */
+    public function subscriptionLookup(string $user, string $url): int {
+        $id = $this->db->prepare("SELECT id from arsse_subscriptions where owner = ? and url = ? and deleted = 0", "str", "str")->run($user, $url)->getValue();
+        if (!$id) {
+            throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "subscription", 'id' => $id]);
+        }
+        return (int) $id;
+    }
+
+
     /** Lists a user's subscriptions, returning various data
      *
      * Each record has the following keys:
