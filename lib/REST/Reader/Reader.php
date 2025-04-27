@@ -9,6 +9,9 @@ namespace JKingWeb\Arsse\REST\Reader;
 
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Context\Context;
+use JKingWeb\Arsse\Context\UnionContext;
+use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
@@ -41,7 +44,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/preference/list'        => ["prefsGet",           true,  false, false, false, []],
         '/preference/stream/list' => ["prefsStreamGet",     true,  false, false, false, []],
         '/rename-tag'             => ["tagRename",          false, true,  true,  false, ['s' => V::T_STRING, 't' => V::T_STRING, 'dest' =>V::T_STRING]],
-        '/stream/contents/*'      => ["streamContents",     true,  false, false, true,  ['r' => V::T_STRING, 'n' => V::T_INT, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE]],
+        '/stream/contents'        => ["streamContents",     true,  false, false, true,  ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE]],
+        '/stream/contents/*'      => ["streamContents",     true,  false, false, true,  ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE]],
         '/stream/items/contents'  => ["itemContents",       true,  true,  false, true,  ['i' => V::T_STRING + V::M_ARRAY]],
         '/stream/items/count'     => ["itemCount",          true,  false, false, false, ['s' => V::T_STRING, 'a' => V::T_BOOL]],
         '/stream/items/ids'       => ["itemIds",            true,  false, false, false, ['s' => V::T_STRING, 'n' => V::T_INT, 'includeAllDirectStreamIds' => V::T_BOOL, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE]],
@@ -265,6 +269,67 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return "tag:google.com,2005:reader/item/".str_pad(dechex($itemId), 16, "0", \STR_PAD_LEFT);
     }
 
+    /** Converts a stream identifier into a database context
+     * 
+     * Because feed streams are identified by URL this procedure my require
+     * database activity, but should nevertheless be fast and safe
+     * 
+     * A null return value indicates a stream which will always return no articles
+     * 
+     * @return Context|UnionContext|null
+     */
+    protected function streamContext(?string $stream): ?RootContext {
+        $stream = $stream ?? "";
+        // most contexts will not be union contexts, so we'll assume the common case
+        $c = new Context;
+        if ($stream === "") {
+            // NOTE: BazQux and FreshRSS both interpret absence of a stream as
+            //   the "reading list" stream (all articles) in at least some
+            //   circumstances. We apply this interpretation universally and
+            //   leave it to the individual functions to determine whether the
+            //   reading list is a valid target
+            return $c;
+        } elseif (preg_match('<^user/[^/]+/label/(.+)>', $stream, $m)) {
+            return $c->tagName($m[1]);
+        } elseif (preg_match('<^user/[^/]+/state/com.google/(.+)>', $stream, $m)) {
+            switch ($m[1]) {
+                case "read":
+                    return $c->unread(false);
+                case "kept-unread":
+                    return $c->unread(true);
+                case "broadcast":
+                case "broadcast-fiends":
+                    return null;
+                case "reading-list":
+                    return $c;
+                case "starred":
+                    return $c->starred(true);
+                default:
+                    return $c->labelName($m[1]);
+            }
+        } elseif (preg_match('<^feed/(.+)>', $stream, $m)) {
+            // if no subscription is found this will throw an exception
+            return $c->subscription(Arsse::$db->subscriptionLookup(Arsse::$user->id, $m[1]));
+        } elseif (preg_match('<^splice/(.+)>', $stream, $m)) {
+            // this requires a union context
+            $u = new UnionContext();
+            foreach (explode("|", $stream) as $s) {
+                $cc = $this->streamContext($s);
+                if (!$cc) {
+                    // invalid context, which invalidates the entire splice
+                    return null;
+                } elseif ($cc == $c) {
+                    // the reading list is all articles; we don't need a union
+                    //   context if we're just selecting everything anyway
+                    return $c;
+                }
+                $u[] = $cc;
+            }
+            return $u;
+        }
+        throw new \Exception("TODO: Turn this into some proper exception");
+    }
+
     /** Authenticates the user
      * 
      * As with the rest of The Arsse, pre-authentication with Basic
@@ -364,7 +429,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         $tags = [];
         // process each subscription, keeping a basic summary for tags
         foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $sub) {
-            $date = $sub['article_latest'];
+            $date = $sub['article_modified'];
             $unread = (int) $sub['unread'];
             $out[] = [
                 'id'                      => "feed/".$sub['url'],
@@ -402,6 +467,27 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         ];
         // return the whole list
         return self::respond($format, $out);
+    }
+
+    /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#stream-items-count */
+    protected function itemCount(string $target, array $query, array $body, string $format): ResponseInterface {
+        $out = "";
+        // convert the stream ID to a context
+        $c = $this->streamContext($query['s']);
+        try {
+            $tr = Arsse::$db->begin();
+            // get the count of articles matched by the context
+            $out .= Arsse::$db->articleCount(Arsse::$user->id, $c);
+            // if the most recent date is requested as well, jump through some hoops to get it
+            if ($query['a']) {
+                $c->limit(1);
+                $date = Arsse::$db->articleList(Arsse::$user->id, $c, ["modified_date"], ["modified_date desc"])->getValue();
+                $out."#".Date::transform($date, "F j, Y", "sql");
+            }
+        } catch (ExceptionInput $e) {
+            // TODO: What do we do about errors?
+        }
+        return HTTP::respText($out);
     }
 
     protected static function respond(string $format, array $data, int $status = 200, array $headers = []): ResponseInterface {
