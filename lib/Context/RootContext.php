@@ -7,9 +7,8 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\Context;
 
-abstract class RootContext {
+abstract class RootContext extends AbstractContext {
     use CommonProperties;
-    use CommonMethods; 
 
     /** @var ExclusionContext */
     public $not;

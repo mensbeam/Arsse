@@ -7,9 +7,7 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\Context;
 
-class ExclusionUnionContext {
-    use CommonMethods;
-
+class ExclusionUnionContext extends AbstractContext {
     protected $parent;
     protected $contexts;
 

@@ -10,7 +10,7 @@ namespace JKingWeb\Arsse\Context;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
-trait CommonMethods {
+abstract class AbstractContext {
     protected function cleanIdArray(array $spec, bool $allowZero = false): array {
         $spec = array_values($spec);
         for ($a = 0; $a < sizeof($spec); $a++) {
