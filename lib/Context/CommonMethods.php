@@ -7,43 +7,10 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\Context;
 
-use JKingWeb\Arsse\Misc\ValueInfo;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\ValueInfo;
 
-trait ExclusionMembers {
-    public $folder = null;
-    public $folders = [];
-    public $folderShallow = null;
-    public $foldersShallow = [];
-    public $tag = null;
-    public $tags = [];
-    public $tagName = null;
-    public $tagNames = [];
-    public $subscription = null;
-    public $subscriptions = [];
-    public $edition = null;
-    public $editions = [];
-    public $article = null;
-    public $articles = [];
-    public $label = null;
-    public $labels = [];
-    public $labelName = null;
-    public $labelNames = [];
-    public $annotationTerms = [];
-    public $searchTerms = [];
-    public $titleTerms = [];
-    public $authorTerms = [];
-    public $articleRange = [null, null];
-    public $editionRange = [null, null];
-    public $modifiedRange = [null, null];
-    public $modifiedRanges = [];
-    public $markedRange = [null, null];
-    public $markedRanges = [];
-    public $addedRange = [null, null];
-    public $addedRanges = [];
-    public $publishedRange = [null, null];
-    public $publishedRanges = [];
-
+trait CommonMethods {
     protected function cleanIdArray(array $spec, bool $allowZero = false): array {
         $spec = array_values($spec);
         for ($a = 0; $a < sizeof($spec); $a++) {
@@ -294,5 +261,40 @@ trait ExclusionMembers {
             $spec = $this->cleanDateRangeArray($spec);
         }
         return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function unread(?bool $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function starred(?bool $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function hidden(?bool $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function labelled(?bool $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function annotated(?bool $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    protected function act(string $prop, int $set, $value) {
+        if ($set) {
+            if (is_null($value)) {
+                unset($this->props[$prop]);
+                $this->$prop = (new \ReflectionClass($this))->getDefaultProperties()[$prop];
+            } else {
+                $this->props[$prop] = true;
+                $this->$prop = $value;
+            }
+            return $this->parent ?? $this;
+        } else {
+            return isset($this->props[$prop]);
+        }
     }
 }

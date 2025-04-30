@@ -7,8 +7,9 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\Context;
 
-class ExclusionContext extends AbstractContext {
-    use ExclusionMembers;
+class ExclusionContext {
+    use CommonProperties;
+    use CommonMethods;
 
     public function __construct(?Context $parent = null) {
         $this->parent = $parent;
@@ -27,5 +28,25 @@ class ExclusionContext extends AbstractContext {
     /** @codeCoverageIgnore */
     public function __destruct() {
         unset($this->parent);
+    }
+
+    public function unread(?bool $spec = null) {
+        return $this->parent->unread(...isset($spec) ? [!$spec] : func_get_args());
+    }
+
+    public function starred(?bool $spec = null) {
+        return $this->parent->starred(...isset($spec) ? [!$spec] : func_get_args());
+    }
+
+    public function hidden(?bool $spec = null) {
+        return $this->parent->hidden(...isset($spec) ? [!$spec] : func_get_args());
+    }
+
+    public function labelled(?bool $spec = null) {
+        return $this->parent->labelled(...isset($spec) ? [!$spec] : func_get_args());
+    }
+
+    public function annotated(?bool $spec = null) {
+        return $this->parent->annotated(...isset($spec) ? [!$spec] : func_get_args());
     }
 }

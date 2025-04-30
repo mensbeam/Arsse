@@ -1800,7 +1800,7 @@ class Database {
                 }
             }
             // handle the exclusionary version
-            if (method_exists($context->not, $m) && $context->not->$m()) {
+            if (property_exists($context->not, $m) && method_exists($context->not, $m) && $context->not->$m()) {
                 if ($op === "between") {
                     // option is a range
                     if ($context->not->$m[0] === null) {
@@ -1930,7 +1930,7 @@ class Database {
      * If an empty column list is supplied, a count of articles is returned instead
      *
      * @param string $user The user whose articles are to be listed
-     * @param RootContext $context The search context
+     * @param Context|UnionContext $context The search context
      * @param array $fields The columns to return in the result set, any of: id, edition, url, title, author, content, guid, fingerprint, folder, subscription, feed, starred, unread, note, published_date, edited_date, modified_date, marked_date, subscription_title, media_url, media_type
      * @param array $sort The columns to sort the result by eg. "edition desc" in decreasing order of importance
      */
@@ -1976,7 +1976,7 @@ class Database {
     /** Returns a count of articles which match the given query context
      *
      * @param string $user The user whose articles are to be counted
-     * @param RootContext $context The search context
+     * @param Context|UnionContext $context The search context
      */
     public function articleCount(string $user, ?RootContext $context = null): int {
         $context = $context ?? new Context;
@@ -2463,7 +2463,7 @@ class Database {
      *
      * @param string $user The owner of the label
      * @param integer|string $id The numeric identifier or name of the label
-     * @param RootContext $context The query context matching the desired articles
+     * @param Context|UnionContext $context The query context matching the desired articles
      * @param int $mode Whether to add (ASSOC_ADD), remove (ASSOC_REMOVE), or replace with (ASSOC_REPLACE) the matching associations
      * @param boolean $byName Whether to interpret the $id parameter as the label's name (true) or identifier (false)
      */

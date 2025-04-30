@@ -26,11 +26,11 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testSetContextOptions(string $method, array $input, $output, bool $not): void {
         $parent = new Context;
         $c = ($not) ? $parent->not : $parent;
-        $default = (new \ReflectionClass($c))->getDefaultProperties()[$method];
+        $default = (new \ReflectionClass($c))->getDefaultProperties()[$method] ?? null;
         $this->assertFalse($c->$method(), "Context method did not initially return false");
         if (in_array($method, $this->ranges)) {
             $this->assertEquals([null, null], $c->$method, "Context property is not initially a two-member falsy array");
-        } else {
+        } elseif (property_exists($c, $method)) {
             $this->assertFalse((bool) $c->$method, "Context property is not initially falsy");
         }
         $this->assertSame($parent, $c->$method(...$input), "Context method did not return the root after setting");
@@ -39,7 +39,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             if (is_array($default)) {
                 array_walk_recursive($c->$method, function(&$v, $k) {
                     if ($v !== null) {
-                        $this->assertInstanceOf(\DateTimeImmutable::class, $v, "Context property contains an non-normalized date");
+                        $this->assertInstanceOf(\DateTimeImmutable::class, $v, "Context property contains a non-normalized date");
                     }
                     $v = ValueInfo::normalize($v, ValueInfo::T_STRING, null, "iso8601");
                 });
@@ -51,7 +51,11 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
                 $this->assertTime($c->$method, $output, "Context property did not return the expected results after setting");
             }
         } else {
-            $this->assertSame($c->$method, $output, "Context property did not return the expected results after setting");
+            if (property_exists($c, $method)) {
+                $this->assertSame($c->$method, $output, "Context property did not return the expected results after setting");
+            } else {
+                $this->assertSame($parent->$method, $output, "Context property did not return the expected results after setting");
+            }
         }
         // clear the context option
         $c->$method(...array_fill(0, sizeof($input), null));
@@ -77,14 +81,14 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'unread'           => [[true],                                           true],
             'starred'          => [[true],                                           true],
             'hidden'           => [[true],                                           true],
+            'labelled'         => [[true],                                           true],
+            'annotated'        => [[true],                                           true],
             'editions'         => [[[1,2]],                                          [1,2]],
             'articles'         => [[[1,2]],                                          [1,2]],
             'label'            => [[2112],                                           2112],
             'labels'           => [[[2112, 1984]],                                   [2112, 1984]],
             'labelName'        => [["Rush"],                                         "Rush"],
             'labelNames'       => [[["Rush", "Orwell"]],                             ["Rush", "Orwell"]],
-            'labelled'         => [[true],                                           true],
-            'annotated'        => [[true],                                           true],
             'searchTerms'      => [[["foo", "bar"]],                                 ["foo", "bar"]],
             'annotationTerms'  => [[["foo", "bar"]],                                 ["foo", "bar"]],
             'titleTerms'       => [[["foo", "bar"]],                                 ["foo", "bar"]],
@@ -96,10 +100,12 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'articleRange'     => [[1, 100],                                         [1, 100]],
             'editionRange'     => [[1, 100],                                         [1, 100]],
         ];
-        foreach ($tests as $k => $t) {
-            yield $k => array_merge([$k], $t, [false]);
-            if (method_exists(ExclusionContext::class, $k)) {
-                yield "$k (not)" => array_merge([$k], $t, [true]);
+        foreach ($tests as $k => [$input, $output]) {
+            yield $k => [$k, $input, $output, false];
+            if (property_exists(ExclusionContext::class, $k)) {
+                yield "$k (not)" => [$k, $input, $output, true];
+            } elseif (method_exists(ExclusionContext::class, $k)) {
+                yield "$k (not)" => [$k, $input, !$output, true];
             }
         }
     }
@@ -181,7 +187,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testWriteToUnionContext(): void {
         $c = new UnionContext(new Context, new Context);
-        $c->unread(true)->not->label(5)->articleRange(10, 12);
+        $c->unread(true)->not->label(5)->articleRange(10, 12)->not->editionRange(20, 22)->not->hidden(false);
         $c1 = $c[0];
         $c2 = $c[1];
         $this->assertInstanceOf(Context::class, $c1);
@@ -193,5 +199,9 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(5, $c2->not->label);
         $this->assertSame([10, 12], $c1->articleRange);
         $this->assertSame([10, 12], $c2->articleRange);
+        $this->assertSame([20, 22], $c1->not->editionRange);
+        $this->assertSame([20, 22], $c2->not->editionRange);
+        $this->assertTrue($c1->hidden);
+        $this->assertTrue($c2->hidden);
     }
 }

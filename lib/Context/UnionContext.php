@@ -7,49 +7,8 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\Context;
 
-/**
- * @method self folder(int $spec)
- * @method self folders(array $spec)
- * @method self folderShallow(int $spec)
- * @method self foldersShallow(array $spec)
- * @method self tag(int $spec)
- * @method self tags(array $spec)
- * @method self tagName(string $spec)
- * @method self tagNames(array $spec)
- * @method self subscription(int $spec)
- * @method self subscriptions(array $spec)
- * @method self edition(int $spec)
- * @method self article(int $spec)
- * @method self editions(array $spec)
- * @method self articles(array $spec)
- * @method self label(int $spec)
- * @method self labels(array $spec)
- * @method self labelName(string $spec)
- * @method self labelNames(array $spec)
- * @method self annotationTerms(array $spec)
- * @method self searchTerms(array $spec)
- * @method self titleTerms(array $spec)
- * @method self authorTerms(array $spec)
- * @method self articleRange(int $start, int $end)
- * @method self editionRange(int $start, int $end)
- * @method self modifiedRange($start, $end)
- * @method self modifiedRanges(array $spec)
- * @method self markedRange($start, $end)
- * @method self markedRanges(array $spec)
- * @method self addedRange($start, $end)
- * @method self addedRanges(array $spec)
- * @method self publishedRange($start, $end)
- * @method self publishedRanges(array $spec)
- * @method self unread(bool $spec)
- * @method self starred(bool $spec)
- * @method self hidden(bool $spec)
- * @method self labelled(bool $spec)
- * @method self annotated(bool $spec)
- */
 class UnionContext extends RootContext implements \ArrayAccess, \Countable, \IteratorAggregate {
     protected $contexts = [];
-    /** @var ExclusionUnionContext */
-    public $not;
 
     #[\ReturnTypeWillChange]
     public function offsetExists($offset) {
@@ -91,15 +50,18 @@ class UnionContext extends RootContext implements \ArrayAccess, \Countable, \Ite
         $this->not = new ExclusionUnionContext($this, $this->contexts);
     }
 
-    #[\ReturnTypeWillChange]
-    public function __call($name, array $arguments) {
-        foreach ($this->contexts as $c) {
-            $c->$name(...$arguments);
-        }
-        return $this;
-    }
-
     public function __clone() {
         throw new \Exception("Union contexts cannot be cloned.");
+    }
+
+    protected function act(string $prop, int $set, $value) {
+        if ($set) {
+            foreach ($this->contexts as $c) {
+                $c->act($prop, $set, $value);
+            }
+            return $this;
+        } else {
+            return false;
+        }
     }
 }

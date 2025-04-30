@@ -8,11 +8,11 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\Context;
 
 class Context extends RootContext {
-    use BooleanMembers;
-    use ExclusionMembers;
-
-    /** @var ExclusionContext */
-    public $not;
+    public $unread = null;
+    public $starred = null;
+    public $hidden = null;
+    public $labelled = null;
+    public $annotated = null;
 
     public function __construct() {
         $this->not = new ExclusionContext($this);
