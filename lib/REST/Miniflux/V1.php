@@ -22,7 +22,6 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\URL;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
-use JKingWeb\Arsse\REST\Exception;
 use JKingWeb\Arsse\Rule\Rule;
 use JKingWeb\Arsse\User\ExceptionConflict;
 use JKingWeb\Arsse\User\Exception as UserException;
@@ -430,9 +429,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             return $this->$func(...$args);
             // @codeCoverageIgnoreStart
-        } catch (Exception $e) {
-            // if there was a REST exception return 400
-            return self::respError($e, 400);
         } catch (AbstractException $e) {
             // if there was any other Arsse exception return 500
             return self::respError($e, 500);

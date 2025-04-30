@@ -15,7 +15,6 @@ use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\Misc\HTTP;
-use JKingWeb\Arsse\REST\Exception;
 use MensBeam\Mime\MimeType;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -152,9 +151,6 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $path = explode("/", ltrim($target, "/"));
             return $this->$func($path, $data);
             // @codeCoverageIgnoreStart
-        } catch (Exception $e) {
-            // if there was a REST exception return 400
-            return self::error(400, $e);
         } catch (AbstractException $e) {
             // if there was any other Arsse exception return 500
             return self::error(500, $e);
