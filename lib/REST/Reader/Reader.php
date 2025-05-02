@@ -9,14 +9,15 @@ namespace JKingWeb\Arsse\REST\Reader;
 
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Context\AbstractContext;
 use JKingWeb\Arsse\Context\Context;
-use JKingWeb\Arsse\Context\UnionContext;
 use JKingWeb\Arsse\Context\RootContext;
+use JKingWeb\Arsse\Context\UnionContext;
 use JKingWeb\Arsse\Db\ExceptionInput;
+use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\HTTP;
-use JKingWeb\Arsse\REST\Exception;
 use MensBeam\Mime\MimeType;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -60,6 +61,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/unread-count'           => ["countsGet",          true,  false, false, false, []],
         '/user-info'              => ["userGet",            true,  false, false, false, []],
     ];
+    protected const CONTINUATION_PARAMS = ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE];
     protected const OUTPUT_TYPES = [
         "application/json",
         "application/xml",
@@ -94,7 +96,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         [$func, $params, $reqT, $atomAllowed] = $func;
         // parse body and query arguments (the body is not parsed for OPML import, only extracted)
         $bodyMode = $method === "POST" ? ($func !== "subscriptionImport" ? self::BODY_PARSE : self::BODY_READ) : self::BODY_IGNORE;
-        [$format, $query, $body] = $this->inputParse($req, $params, $bodyMode);
+        [$format, $query, $body, $token] = $this->parseInput($req, $params, $bodyMode);
         // perform content negotiation if a format is not specified in the query
         $format = $format ?? self::FORMAT_MAP[MimeType::negotiate(self::OUTPUT_TYPES, $req->getHeaderLine("Accept")) ?? "application/xml"];
         $format = ($format === "atom" && !$atomAllowed) ? "xml" : $format;
@@ -102,9 +104,6 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             return $this->$func($target, $query, $body, $format);
             // @codeCoverageIgnoreStart
-        } catch (Exception $e) {
-            // if there was a REST exception return 400
-            return self::respError($e, 400);
         } catch (AbstractException $e) {
             // if there was any other Arsse exception return 500
             return self::respError($e, 500);
@@ -172,19 +171,59 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      *   set to null or an empty array, as appropriate
      * - The entity body, parsed the same as teh query unless requested otherwise
      */
-    protected function inputParse(ServerRequestInterface $req, array $allowed, int $bodyMode): array {
+    protected function parseInput(ServerRequestInterface $req, array $allowed, int $bodyMode): array {
         $format = null;
+        $token = null;
         // fill an array with all allowed keys
         foreach ($allowed as $k => $t) {
             $outG[$k] = ($t >= V::M_ARRAY) ? [] : null;
         }
         // parse the query
-        foreach (explode("&", parse_url($req->getRequestTarget(), \PHP_URL_QUERY) ?? "") as $q) {
+        $outG = $this->parseQuery(parse_url($req->getRequestTarget(), \PHP_URL_QUERY) ?? "", $allowed, true, false);
+        $format = $outG['output'];
+        unset($outG['output']);
+        // handle the body
+        if ($bodyMode === self::BODY_IGNORE) {
+            // if we don't care about the body, don't even read it
+            $outP = [];
+        } else {
+            // otherwise read it
+            $body = (string) $req->getBody();
+            if ($bodyMode === self::BODY_READ) {
+                // but return it as-is if so requested (e.g. for OPML import)
+                $outP = $body;
+            } else {
+                $outP = $this->parseQuery($body, $allowed, false, true);
+                $token = $outP['T'];
+                unset($outP['T']);
+            }
+        }
+        return [$format, $outG, $outP, $token];
+    }
+
+    protected function parseQuery(string $query, array $allowed, bool $allowFormat, bool $allowToken): array {
+        $out = [];
+        // fill an array with all allowed keys
+        foreach ($allowed as $k => $t) {
+            $out[$k] = ($t >= V::M_ARRAY) ? [] : null;
+        }
+        if ($allowFormat) {
+            $out['output'] = null;
+        }
+        if ($allowToken) {
+            $out['T'] = null;
+        }
+        // parse the string
+        foreach (explode("&", $query) as $q) {
             [$k, $v] = array_pad(explode("=", $q, 2), 2, "");
             $v = urldecode($v);
-            if ($k === "output" && in_array($v, self::FORMAT_MAP)) {
+            if ($k === "output" && $allowFormat && in_array($v, self::FORMAT_MAP)) {
                 // handle the "output" parameter which may dictate the format of our output
-                $format = $v;
+                $out[$k] = $v;
+                continue;
+            } elseif ($k === "T" && $allowToken) {
+                // handle POST tokens
+                $out[$k] = $v;
                 continue;
             } elseif (!isset($allowed[$k])) {
                 // the parameter is not allowed for this call, so can be ignored
@@ -196,55 +235,15 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $t = $allowed[$k] & ~V::M_ARRAY;
             $a = $allowed[$k] >= V::M_ARRAY;
             if ($a) {
-                $outG[$k][] = V::normalize($v, $t + V::M_DROP, "unix");
+                $out[$k][] = V::normalize($v, $t + V::M_DROP, "unix");
             } else {
                 // NOTE: The last value is kept in case of duplicates; this is
-                //   what FreshRSS does because it's what PHP does
-                $outG[$k] = V::normalize($v, $t + V::M_DROP, "unix");
+                //   what FreshRSS does because it's what PHP does with the
+                //   $_GET and $_POST superglobals
+                $out[$k] = V::normalize($v, $t + V::M_DROP, "unix");
             }
         }
-        if ($bodyMode === self::BODY_IGNORE) {
-            // if we don't care about the body, don't even read it
-            $outP = [];
-        } else {
-            // otherwise read it
-            $body = (string) $req->getBody();
-            if ($bodyMode === self::BODY_READ) {
-                // but return it as-is if so requested (e.g. for OPML import)
-                $outP = $body;
-            } else {
-                // otherwise parse it similar to the query
-                foreach ($allowed as $k => $t) {
-                    $outP[$k] = ($t >= V::M_ARRAY) ? [] : null;
-                }
-                $outP['T'] = null; // POST token
-                foreach (explode("&", $body) as $q) {
-                    [$k, $v] = array_pad(explode("=", $q, 2), 2, "");
-                    $v = urldecode($v);
-                    if ($k === "T") {
-                        // handle POST tokens
-                        $outP[$k] = $v;
-                        continue;
-                    } elseif (!isset($allowed[$k])) {
-                        // the parameter is not allowed for this call, so can be ignored
-                        continue;
-                    } elseif ($v === "") {
-                        // if the value is empty, ignore it
-                        continue;
-                    }
-                    $t = $allowed[$k] & ~V::M_ARRAY;
-                    $a = $allowed[$k] >= V::M_ARRAY;
-                    if ($a) {
-                        $outG[$k][] = V::normalize($v, $t + V::M_DROP, "unix");
-                    } else {
-                        // NOTE: The last value is kept in case of duplicates; this is
-                        //   what FreshRSS does because it's what PHP does
-                        $outG[$k] = V::normalize($v, $t + V::M_DROP, "unix");
-                    }
-                }
-            }
-        }
-        return [$format, $outG, $outP];
+        return $out;
     }
 
     /** Converts an item ID (which could be a plain integer or a tag URN) into an internal database ID
@@ -269,6 +268,15 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return "tag:google.com,2005:reader/item/".str_pad(dechex($itemId), 16, "0", \STR_PAD_LEFT);
     }
 
+    /** Computes the page size within bounds based on what was requested by the client */
+    protected function pageSize(?int $s): int {
+        // NOTE: The page size defaults to 20 in BazQux despite being a
+        //   required parameter in other implementations; on the other hand
+        //   BazQux has a higher limit of 50k, but we'll use the more common
+        //   upper bound of 10k since there's no harm in doing so
+        return min(max($s, 0) ?: 20, 10000);
+    }
+
     /** Converts a stream identifier into a database context
      * 
      * Because feed streams are identified by URL this procedure my require
@@ -276,18 +284,27 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * 
      * A null return value indicates a stream which will always return no articles
      * 
-     * @return Context|UnionContext|null
+     * @param string $stream The stream identifier
+     * @param ?AbstractContext $c An existing context to apply the stream to. This may be any kind of context, but if one is supplied, splice streams are forbidden
+     * @return Context|UnionContext
      */
-    protected function streamContext(?string $stream): ?RootContext {
+    protected function streamContext(?string $stream, ?AbstractContext $c = null): ?AbstractContext {
         $stream = $stream ?? "";
+        // We only allow unions for the 's' paramter; anything else would be
+        //   too complicated to compute with our current infrastructure
+        $unionAllowed = !$c;
         // most contexts will not be union contexts, so we'll assume the common case
-        $c = new Context;
+        $c = $c ?? new Context;
         if ($stream === "") {
             // NOTE: BazQux and FreshRSS both interpret absence of a stream as
             //   the "reading list" stream (all articles) in at least some
             //   circumstances. We apply this interpretation universally and
             //   leave it to the individual functions to determine whether the
             //   reading list is a valid target
+            if (!$c instanceof RootContext) {
+                // excluding everything is an empty set
+                throw new EmptySetException;
+            }
             return $c;
         } elseif (preg_match('<^user/[^/]+/label/(.+)>', $stream, $m)) {
             return $c->tagName($m[1]);
@@ -299,8 +316,16 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                     return $c->unread(true);
                 case "broadcast":
                 case "broadcast-fiends":
-                    return null;
+                    if (!$c instanceof RootContext) {
+                        // excluding an empty set is a no-op
+                        return $c;
+                    }
+                    throw new EmptySetException;
                 case "reading-list":
+                    if (!$c instanceof RootContext) {
+                        // excluding everything is an empty set
+                        throw new EmptySetException;
+                    }
                     return $c;
                 case "starred":
                     return $c->starred(true);
@@ -311,23 +336,17 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             // if no subscription is found this will throw an exception
             return $c->subscription(Arsse::$db->subscriptionLookup(Arsse::$user->id, $m[1]));
         } elseif (preg_match('<^splice/(.+)>', $stream, $m)) {
+            if (!$unionAllowed) {
+                throw new Exception("InvalidSplice");
+            }
             // this requires a union context
             $u = new UnionContext();
             foreach (explode("|", $stream) as $s) {
-                $cc = $this->streamContext($s);
-                if (!$cc) {
-                    // invalid context, which invalidates the entire splice
-                    return null;
-                } elseif ($cc == $c) {
-                    // the reading list is all articles; we don't need a union
-                    //   context if we're just selecting everything anyway
-                    return $c;
-                }
-                $u[] = $cc;
+                $u[] = $this->streamContext($s);
             }
             return $u;
         }
-        throw new \Exception("TODO: Turn this into some proper exception");
+        throw new Exception("InvalidStream");
     }
 
     /** Authenticates the user
@@ -488,6 +507,102 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             // TODO: What do we do about errors?
         }
         return HTTP::respText($out);
+    }
+
+    /** 
+     * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#stream-items-ids
+     * @see https://github.com/bazqux/bazqux-api?tab=readme-ov-file#item-ids
+     * @see https://github.com/mihaip/google-reader-api/blob/master/wiki/ApiStreamItemsIds.wiki */
+    protected function itemIds(string $target, array $query, array $body, string $format): ResponseInterface {
+        $out = [];
+        $latest = null;
+        $tr = Arsse::$db->begin();
+        foreach ($this->articleQuery($query, ["id", 'edition', "modified_date", "subscription_url"]) as $i) {
+            if ($query['includeAllDirectStreamIds']) {
+                $streams = array_merge(["feed/".$i['subscription_url']], array_map(function($v) {
+                    return "user/-/state/com.google/$v";
+                }, Arsse::$db->articleLabelsGet(Arsse::$user->id, $i['id'], true)));
+            } else {
+                $streams = [];
+            }
+            $out[] = [
+                'id' => (int) $i['id'],
+                'timestampUsec' => ((int) V::normalize($i['modified_date'], V::T_DATE, "sql"))."000000",
+                'directStreamIds' => $streams,
+            ];
+            $latest = max($latest, (int) $i['edition']);
+        }
+        $out = ['itemRefs' => $out];
+        if (sizeof($out['itemRefs']) === $this->pageSize($query['n'])) {
+            // there are probably more items, so we construct a continuation string
+            $out['continuation'] = $this->computeContinuation($query, $latest);
+        } 
+        return self::respond($format, $out);
+    }
+
+    protected function articleQuery(array &$query, array $columns): Result {
+        $asc = $query['r'] !== "o";
+        // parse the continuation string, if any
+        if ($query['c']) {
+            if (!$ct = @base64_decode($query['c'], true)) {
+                throw new Exception("InvalidContinuation");
+            }
+            // replace the query data with the continuation data; a user
+            //   might modify parts of the query to be in conflict with the
+            //   continuation, so we simply take whatever is inside the
+            //   continuation as authoritative; this ensures that constructing
+            //   a new string for the next page later is accurate
+            $query = $this->parseQuery($ct, self::CONTINUATION_PARAMS, false, false);
+        }
+        $c = $this->streamContext($query['s'] ?? "");
+        // streams can be refined by adding an AND condition with 'it' 
+        //   and/or an AND NOT condition with 'xt'
+        if ($query['it']) {
+            $this->streamContext($query['it'], $c);
+        }
+        if ($query['xt']) {
+            $this->streamContext($query['it'], $c->not);
+        }
+        // fairly typical time-based constraits can also be applied
+        $c->modifiedRange($query['ot'], $query['nt']);
+        // the 'i' parameter is only valid in continuations and is our page anchor
+        $c->editionRange($asc ? $query['i'] : null, $asc ? null : $query['i']);
+        // pagination is always applied
+        $c->limit($this->pageSize($query['n']));
+        // sorting by edition gives us a simple, chronological way of having
+        //   stable pagination
+        $sort = $asc ? "edition" : "edition desc";
+        // perform the query
+        return Arsse::$db->articleList(Arsse::$user->id, $c, $columns, [$sort]);
+    }
+
+    protected function computeContinuation(array $query, int $anchor): string {
+        // blank out parameters which are defaults or not necessary
+        if ($query['r'] !== "o") {
+            $query['r'] = null;
+        }
+        if ($query['n'] === 20 || $query['n'] < 1) {
+            $query['n'] = null;
+        }
+        unset($query['c'], $query['i']);
+        // either increment or decrement our anchor depending on sort order;
+        //   this modification has to be made somewhere (context ranges are
+        //   inclusive), so we make it here
+        if ($query['r']) {
+            $anchor--;
+        } else {
+            $anchor++;
+        }
+        // strip any null values
+        $query = array_filter($query, function($v) {
+            return isset($v);
+        });
+        // sort by key for consistency
+        ksort($query);
+        // add our anchor
+        $query['i'] = $anchor;
+        // return the string as base64
+        return base64_encode(implode("&", $query));
     }
 
     protected static function respond(string $format, array $data, int $status = 200, array $headers = []): ResponseInterface {

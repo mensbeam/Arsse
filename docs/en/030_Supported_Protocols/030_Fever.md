@@ -28,7 +28,7 @@ The Fever protocol is incomplete, unusual, _and_ a product of proprietary softwa
 
 - Because of Fever's unusual and insecure authentication scheme, a Fever-specific password [must be created](/en/Using_The_Arsse/Managing_Users) before a user can communicate via the Fever protocol
 - The Fever protocol does not allow for adding or modifying feeds. Another protocol or OPML importing must be used to manage feeds
-- Unlike other protocols supported by The Arsse, Fever uses "groups" (more commonly known as tags or labels) instead of folders to organize feeds. Currently [OPML importing](/en/Using_The_Arsse/Importing_and_Exporting) is the only means of managing groups
+- Unlike most other protocols supported by The Arsse, Fever uses "groups" (more commonly known as tags or labels) instead of folders to organize feeds. Fever cannot manage groups itself, so the Google Reader protocol or [OPML importing](/en/Using_The_Arsse/Importing_and_Exporting) must be used instead
 
 # Other notes
 
@@ -41,4 +41,4 @@ Fever was not designed with HTTP authentication in mind, and few clients respond
 
 # Interaction with Folders
 
-Unlike other protocols supported by The Arsse, Fever uses "groups" (more commonly known as tags or labels) to organize newsfeeds. These are fully supported and are exposed as categories in OPML import and export. They are treated separately from folders.
+Unlike most other protocols supported by The Arsse, Fever uses "groups" (more commonly known as tags or labels) to organize newsfeeds. These are fully supported and are exposed as categories in OPML import and export. They are treated separately from folders.
