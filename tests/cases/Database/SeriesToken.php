@@ -88,6 +88,12 @@ trait SeriesToken {
         Arsse::$db->tokenLookup("some.class", "80fa94c1a11f11e78667001e673b2560");
     }
 
+    //#[CoversMethod(Database::class, "tokenLookup")]
+    public function testLookUpATokenOfTheWrongUser(): void {
+        $this->assertException("subjectMissing", "Db", "ExceptionInput");
+        Arsse::$db->tokenLookup("fever.login", "80fa94c1a11f11e78667001e673b2560", "john.doe@example.com");
+    }
+
     //#[CoversMethod(Database::class, "tokenCreate")]
     public function testCreateAToken(): void {
         $user = "jane.doe@example.com";

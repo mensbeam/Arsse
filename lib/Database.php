@@ -499,9 +499,14 @@ class Database {
         return (bool) $out;
     }
 
-    /** Look up data associated with a token */
-    public function tokenLookup(string $class, string $id): array {
-        $out = $this->db->prepare("SELECT id,class,\"user\",created,expires,data from arsse_tokens where class = ? and id = ? and (expires is null or expires > CURRENT_TIMESTAMP)", "str", "str")->run($class, $id)->getRow();
+    /** Look up data associated with a token
+     * 
+     * @param string $class The type of token
+     * @param string $id The token ID
+     * @param ?string $user The user to whom the token belongs, if relevant. This parameter is useful for e.g. privilege tokens as opposed to login tokens
+     */
+    public function tokenLookup(string $class, string $id, ?string $user = null): array {
+        $out = $this->db->prepare("SELECT id,class,\"user\",created,expires,data from arsse_tokens where class = ? and id = ? and \"user\" = coalesce(?, \"user\") and (expires is null or expires > CURRENT_TIMESTAMP)", "str", "str", "str")->run($class, $id, $user)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "token", 'id' => $id]);
         }
