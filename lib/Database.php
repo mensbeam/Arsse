@@ -2647,7 +2647,7 @@ class Database {
 
     /** Deletes a tag from the database
      *
-     * Any subscriptions associated with the tag remains untouched
+     * Any subscriptions associated with the tag remain untouched
      *
      * @param string $user The owner of the tag to remove
      * @param integer|string $id The numeric identifier or name of the tag
