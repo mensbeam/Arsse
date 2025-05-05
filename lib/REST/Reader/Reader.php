@@ -28,6 +28,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const BODY_IGNORE = 0;
     protected const BODY_READ = 1;
     protected const BODY_PARSE= 2;
+    protected const LABEL_PATTERN = "/^user\/[^\/]+\/label\/(.+)/";
+    protected const STATE_PATTERN = "/^user\/[^\/]+\/state\/com\.google\/(.+)/";
     /** The list of URL matches for calls
      * 
      * An asterisk in a URL is a stand-in for any stream ID. Resources may
@@ -57,11 +59,21 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/subscription/list'      => ["subscriptionList",   true,  false, false, false, []],
         '/subscription/quickadd'  => ["subscriptionAdd",    false, true,  true,  false, ['quickadd' => V::T_STRING]],
         '/tag/list'               => ["tagList",            true,  false, false, false, []],
-        '/token'                  => ["tokenGet",           true,  false, false, false, []],
+        '/token'                  => ["tokenCreate",        true,  false, false, false, []],
         '/unread-count'           => ["countsGet",          true,  false, false, false, []],
         '/user-info'              => ["userGet",            true,  false, false, false, []],
     ];
     protected const CONTINUATION_PARAMS = ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE];
+    /** A list of state streams which we do not support and will therefore return an empty set when queried */
+    protected const UNSUPPORTED_STATES = [
+        "broadcast",
+        "broadcast-fiends",
+        "broadcast-friends-comments", // The Old Reader seems to support this
+        "created", // BazQux suggests this existed, but does not itself support it
+        "like", // The Old Reader seems to support this
+    ];
+    /** A list of reserved state names which cannot be used as an article tag */
+    protected const RESERVED_STATES = ["read", "kept-unread", "starred", "reading-list"] + self::UNSUPPORTED_STATES;
     protected const OUTPUT_TYPES = [
         "application/json",
         "application/xml",
@@ -94,12 +106,23 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             return $func;
         }
         [$func, $params, $reqT, $atomAllowed] = $func;
-        // parse body and query arguments (the body is not parsed for OPML import, only extracted)
+        // parse body and query arguments (the body is not parsed for OPML import, only read from the request object)
         $bodyMode = $method === "POST" ? ($func !== "subscriptionImport" ? self::BODY_PARSE : self::BODY_READ) : self::BODY_IGNORE;
         [$format, $query, $body, $token] = $this->parseInput($req, $params, $bodyMode);
         // perform content negotiation if a format is not specified in the query
         $format = $format ?? self::FORMAT_MAP[MimeType::negotiate(self::OUTPUT_TYPES, $req->getHeaderLine("Accept")) ?? "application/xml"];
         $format = ($format === "atom" && !$atomAllowed) ? "xml" : $format;
+        // check the POST token, if appropriate
+        if ($reqT && Arsse::$conf->userSessionEnforced) {
+            if (!isset($token)) {
+                self::respError("TokenRequired", 400);
+            }
+            try {
+                Arsse::$db->tokenLookup("reader.post", $token, Arsse::$user->id);
+            } catch (ExceptionInput $e) {
+                return $this->challenge(self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"]));
+            }
+        }
         // handle the request
         try {
             return $this->$func($target, $query, $body, $format);
@@ -306,21 +329,22 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 throw new EmptySetException;
             }
             return $c;
-        } elseif (preg_match('<^user/[^/]+/label/(.+)>', $stream, $m)) {
+        } elseif (preg_match(self::LABEL_PATTERN, $stream, $m)) {
             return $c->tagName($m[1]);
-        } elseif (preg_match('<^user/[^/]+/state/com.google/(.+)>', $stream, $m)) {
+        } elseif (preg_match(self::STATE_PATTERN, $stream, $m)) {
+            if (in_array($m[1], self::UNSUPPORTED_STATES)) {
+                if (!$c instanceof RootContext) {
+                    // excluding an empty set is a no-op
+                    return $c;
+                }
+                // unsupported states will always be an empty set
+                throw new EmptySetException;
+            }
             switch ($m[1]) {
                 case "read":
                     return $c->unread(false);
                 case "kept-unread":
                     return $c->unread(true);
-                case "broadcast":
-                case "broadcast-fiends":
-                    if (!$c instanceof RootContext) {
-                        // excluding an empty set is a no-op
-                        return $c;
-                    }
-                    throw new EmptySetException;
                 case "reading-list":
                     if (!$c instanceof RootContext) {
                         // excluding everything is an empty set
@@ -384,6 +408,13 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         return false;
     }
+
+    protected function tokenCreate(string $target, array $query, array $body, string $format): ResponseInterface {
+        // We create a token with a 30-minute expiry; this is typical for
+        //   other Reader implementations and seems to be what the original did
+        return HTTP::respText(Arsse::$db->tokenCreate(Arsse::$user->id, "reader.post", null, $this->now()->add(new \DateInterval("PT30M"))));
+    }
+
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#user-info */
     protected function userGet(string $target, array $query, array $body, string $format): ResponseInterface {
         $user = Arsse::$user->id;
@@ -437,6 +468,93 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function prefsStreamGet(string $target, array $query, array $body, string $format): ResponseInterface {
         return self::respond($format, ['streamprefs' => new \stdClass]);
     }
+
+    /** Deletes a feed label or article tag without deleting the feeds/articles
+     *  it is associated with
+     * 
+     * FeedHQ is unclear about whether it treats feed labels and article tags
+     * (apparently a FeedHQ extension) as separate entities. We try to
+     * untangle this by accepting either labels or tags when a stream ID is
+     * specified with the 's' parameter, and assuming a label when the 't'
+     * parameter is specified. Hopefully this is in line with what clients
+     * expect, assuming any clients for FeedHQ even still exist
+     */
+    protected function tagDisable(string $target, array $query, array $body, string $format): ResponseInterface {
+        try {
+            if (preg_match(self::LABEL_PATTERN, $body['s'] ?? "", $m)) {
+                Arsse::$db->tagRemove(Arsse::$user->id, $m[1], true);
+            } elseif (preg_match(self::STATE_PATTERN, $body['s'] ?? "", $m)) {
+                // the built-in states have special meaning to the server or client and cannot be disabled
+                if (in_array($m[1], self::RESERVED_STATES)) {
+                    return self::respError(["ReservedState", 'state' => $body['s'], 'operation' => "disable-tag"]);
+                }
+                Arsse::$db->labelRemove(Arsse::$user->id, $m[1], true);
+            } elseif (isset($body['t'])) {
+                Arsse::$db->tagRemove(Arsse::$user->id, $body['t'], true);
+            } elseif (!isset($body['s']) && !isset($body['t'])) {
+                return self::respError(["ParameterRequired", "s"]);
+            } else {
+                // the $body['t'] case here is unreachable, but we'll cover it in case this changes
+                return self::respError(["InvalidStream", $body['s'] ?? "user/-/label/".$body['t']]);
+            }
+        } catch (ExceptionInput $e) {
+            return self::respError($e);
+        }
+        return HTTP::respText("OK");
+    }
+
+    /** Renames a feed label or article tag
+     * 
+     * Unlike with the disable operation, FeedHQ only operates on feed labels
+     * here and not article tags. It takes very little effort to do both,
+     * however, so we also allow renaming article tags if they are explicitly
+     * specified, in the same manner as the disable operation.
+     */
+    protected function tagRename(string $target, array $query, array $body, string $format): ResponseInterface {
+        // check that the destination name is at least set; we'll check if it
+        //   conforms to format requirements later
+        if (!isset($body['dest'])) {
+            return self::respError(["ParameterRequired", "dest"]);
+        }
+        try {
+            if (preg_match(self::LABEL_PATTERN, $body['s'] ?? "", $m)) {
+                // check that the destination is also a label
+                if (!preg_match(self::LABEL_PATTERN, $body['dest'], $d)) {
+                    return self::respError(["InvalidStream", $body['dest']]);
+                }
+                Arsse::$db->tagPropertiesSet(Arsse::$user->id, $m[1], ['name' => $d[1]], true);
+            } elseif (preg_match(self::STATE_PATTERN, $body['s'] ?? "", $m)) {
+                // the built-in states have special meaning to the server or client and cannot be renamed
+                if (in_array($m[1], self::RESERVED_STATES)) {
+                    return self::respError(["ReservedState", 'state' => $body['s'], 'operation' => "rename-tag"]);
+                }
+                // check that the destination is also a state
+                if (!preg_match(self::STATE_PATTERN, $body['dest'], $d)) {
+                    return self::respError(["InvalidStream", $body['dest']]);
+                }
+                // the built-in states have special meaning to the server or client and cannot be used as targets
+                if (in_array($d[1], self::RESERVED_STATES)) {
+                    return self::respError(["ReservedState", 'state' => $body['dest'], 'operation' => "rename-tag"]);
+                }
+                Arsse::$db->labelPropertiesSet(Arsse::$user->id, $m[1], ['name' => $d[1]], true);
+            } elseif (isset($body['t'])) {
+                // check that the destination is also a label
+                if (!preg_match(self::LABEL_PATTERN, $body['dest'], $d)) {
+                    return self::respError(["InvalidStream", $body['dest']]);
+                }
+                Arsse::$db->tagPropertiesSet(Arsse::$user->id, $body['t'], ['name' => $d[1]], true);
+            } elseif (!isset($body['s']) && !isset($body['t'])) {
+                return self::respError(["ParameterRequired", "s"]);
+            } else {
+                // the $body['t'] case here is unreachable, but we'll cover it in case this changes
+                return self::respError(["InvalidStream", $body['s'] ?? "user/-/label/".$body['t']]);
+            }
+        } catch (ExceptionInput $e) {
+            return self::respError($e);
+        }
+        return HTTP::respText("OK");
+    }
+
     
     /** @see https://github.com/feedhq/feedhq/blob/65f4f04b4e81f4911e30fa4d4014feae4e172e0d/feedhq/reader/views.py#L284 */
     protected function countsGet(string $target, array $query, array $body, string $format): ResponseInterface {

@@ -46,6 +46,14 @@ return [
     'API.NCNv1.Error.ParseError'                                           => 'The provided entity body could not be successfully parsed as JSON.',
 
     'API.Reader.Error.401'                                                 => 'Unauthorized!',
+    'API.Reader.Error.TokenRequired'                                       => 'A POST token is required to perform this operation.',
+    'API.Reader.Error.ReservedState'                                       =>
+        'The state stream "{state}" is reserved and cannot be {operation, select,
+            disable-tag {disabled}
+            rename-tag {renamed}
+            other {used here}
+        }.',
+        'API.Reader.Error.InvalidStream'                                   => 'The supplied stream ID "{0}" is not valid.',
 
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',
@@ -78,18 +86,19 @@ return [
     'Exception.JKingWeb/Arsse/Exception.constantUnknown'                   => 'Supplied constant value ({0}) is unknown or invalid in the context in which it was used',
     // indicates programming error
     'Exception.JKingWeb/Arsse/Exception.arrayEmpty'                        => 'Supplied array "{0}" is empty, but should have at least one element',
-    'Exception.JKingWeb/Arsse/ExceptionType.strictFailure'                 => 'Supplied value could not be normalized to {0, select,
-        1 {null}
-        2 {boolean}
-        3 {integer}
-        4 {float}
-        5 {datetime}
-        6 {string}
-        7 {array}
-        8 {DateInterval}
-        other {requested type {0}}
-     }',
-     // indicates programming error
+    'Exception.JKingWeb/Arsse/ExceptionType.strictFailure'                 =>
+        'Supplied value could not be normalized to {0, select,
+            1 {null}
+            2 {boolean}
+            3 {integer}
+            4 {float}
+            5 {datetime}
+            6 {string}
+            7 {array}
+            8 {DateInterval}
+            other {requested type {0}}
+        }',
+    // indicates programming error
     'Exception.JKingWeb/Arsse/ExceptionType.typeUnknown'                   => 'Normalization type {0} is  not implemented',
     'Exception.JKingWeb/Arsse/Exception.extMissing'                        =>
         'The "{first}" PHP extension {total, plural, offset:1
@@ -109,7 +118,7 @@ return [
     'Exception.JKingWeb/Arsse/Conf/Exception.fileUncreatable'              => 'Insufficient permissions to write new configuration file "{0}"',
     'Exception.JKingWeb/Arsse/Conf/Exception.fileUnwritable'               => 'Insufficient permissions to overwrite configuration file "{0}"',
     'Exception.JKingWeb/Arsse/Conf/Exception.fileCorrupt'                  => 'Configuration file "{0}" is corrupt or does not conform to expected format',
-    'Exception.JKingWeb/Arsse/Conf/Exception.typeMismatch'                 => 
+    'Exception.JKingWeb/Arsse/Conf/Exception.typeMismatch'                 =>
         'Configuration parameter "{param}" in file "{file}" must be {type, select,
             integer {an integral number}
             string {a character string}
