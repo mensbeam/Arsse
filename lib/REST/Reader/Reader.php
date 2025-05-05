@@ -15,6 +15,7 @@ use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Context\UnionContext;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Result;
+use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\HTTP;
@@ -30,6 +31,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const BODY_PARSE= 2;
     protected const LABEL_PATTERN = "/^user\/[^\/]+\/label\/(.+)/";
     protected const STATE_PATTERN = "/^user\/[^\/]+\/state\/com\.google\/(.+)/";
+    protected const FEED_PATTERN = "/^feed\/(.+)/";
     /** The list of URL matches for calls
      * 
      * An asterisk in a URL is a stand-in for any stream ID. Resources may
@@ -356,7 +358,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 default:
                     return $c->labelName($m[1]);
             }
-        } elseif (preg_match('<^feed/(.+)>', $stream, $m)) {
+        } elseif (preg_match(self::FEED_PATTERN, $stream, $m)) {
             // if no subscription is found this will throw an exception
             return $c->subscription(Arsse::$db->subscriptionLookup(Arsse::$user->id, $m[1]));
         } elseif (preg_match('<^splice/(.+)>', $stream, $m)) {
@@ -478,6 +480,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * specified with the 's' parameter, and assuming a label when the 't'
      * parameter is specified. Hopefully this is in line with what clients
      * expect, assuming any clients for FeedHQ even still exist
+     * 
+     * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#disable-tag
      */
     protected function tagDisable(string $target, array $query, array $body, string $format): ResponseInterface {
         try {
@@ -509,6 +513,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * here and not article tags. It takes very little effort to do both,
      * however, so we also allow renaming article tags if they are explicitly
      * specified, in the same manner as the disable operation.
+     * 
+     * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#rename-tag
      */
     protected function tagRename(string $target, array $query, array $body, string $format): ResponseInterface {
         // check that the destination name is at least set; we'll check if it
@@ -555,7 +561,49 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return HTTP::respText("OK");
     }
 
-    
+    /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#subscribed */
+    protected function subscriptionValid(string $target, array $query, array $body, string $format): ResponseInterface {
+        if (!isset($query['s'])) {
+            return self::respError(["ParameterRequired", "s"]);
+        } elseif (!preg_match(self::FEED_PATTERN, $query['s'], $m)) {
+            return self::respError(["InvalidStream", $query['s']]);
+        }
+        try {
+            Arsse::$db->subscriptionLookup(Arsse::$user->id, $m[1]);
+            return HTTP::respText("true");
+        } catch (ExceptionInput $e) {
+            return HTTP::respText("false");
+        }
+    }
+
+    /** @see https://github.com/theoldreader/api?tab=readme-ov-file#adding-subscription */
+    protected function subscriptionAdd(string $target, array $query, array $body, string $format): ResponseInterface {
+        if (!isset($body['quickadd'])) {
+            return self::respError(["ParameterRequired", "quickadd"]);
+        } elseif (preg_match(self::FEED_PATTERN, $body['quickadd'], $m)) {
+            $url = $m[1];
+        } else {
+            $url = $body['quickadd'];
+        }
+        try {
+            $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, $url, true);
+            // get the effective feed URL in case of redirects
+            $data = Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, $id);
+        } catch (FeedException|ExceptionInput $e) {
+            // NOTE: This is how at least FreshRSS and The Old Reader respond in error cases
+            return $this->respond($format, [
+                'numResults' => 0,
+                'query' => $url,
+                'error' => $e->getMessage(),
+            ], 400);
+        }
+        return $this->respond($format, [
+            'numResults' => 1,
+            'query' => $url,
+            'streamId' => "feed/".$data['url'],
+        ]);
+    }
+
     /** @see https://github.com/feedhq/feedhq/blob/65f4f04b4e81f4911e30fa4d4014feae4e172e0d/feedhq/reader/views.py#L284 */
     protected function countsGet(string $target, array $query, array $body, string $format): ResponseInterface {
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
