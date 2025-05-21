@@ -749,12 +749,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/JKingweb/picoFeed-1.git",
-                "reference": "82d5aedc4c08817d39b93f226e0bb5062bf36678"
+                "reference": "2a81faf6da98ff577438c713357817df884012fc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/JKingweb/picoFeed-1/zipball/82d5aedc4c08817d39b93f226e0bb5062bf36678",
-                "reference": "82d5aedc4c08817d39b93f226e0bb5062bf36678",
+                "url": "https://api.github.com/repos/JKingweb/picoFeed-1/zipball/2a81faf6da98ff577438c713357817df884012fc",
+                "reference": "2a81faf6da98ff577438c713357817df884012fc",
                 "shasum": ""
             },
             "require": {
@@ -805,7 +805,7 @@
             "support": {
                 "source": "https://github.com/JKingweb/picoFeed-1/tree/arsse"
             },
-            "time": "2025-03-28T22:19:39+00:00"
+            "time": "2025-05-21T13:50:31+00:00"
         },
         {
             "name": "psr/http-client",
