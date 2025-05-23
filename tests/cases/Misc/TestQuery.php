@@ -83,7 +83,7 @@ class TestQuery extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testComplexQuery(): void {
-        $q = (new query("SELECT *, ? as const from table", "datetime", 1))
+        $q = (new Query("SELECT *, ? as const from table", "datetime", 1))
             ->setWhereNot("b = ?", "bool", 2)
             ->setGroup("col1", "col2")
             ->setWhere("a = ?", "str", 3)
@@ -101,15 +101,10 @@ class TestQuery extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("a = ? AND b = c AND c = ?", (string) $f);
         $this->assertSame(["str", "int"], $f->getTypes());
         $this->assertSame(["ook", 42], $f->getValues());
-        $q->setWhereGroup($f);
-        $f->setWhereRestrictive(false);
-        $this->assertSame("a = ? OR b = c OR c = ?", (string) $f);
-        $q->setWhereGroup($f);
+        $q->setWhereGroup($f, true);
+        $this->assertSame("a = ? AND b = c AND c = ?", (string) $f);
+        $q->setWhereGroup($f, false);
         $this->assertSame("SELECT *, ? as const from table WHERE (a = ? AND b = c AND c = ?) AND (a = ? OR b = c OR c = ?)", $q->getQuery());
-        $this->assertSame(["datetime", "str", "int", "str", "int"], $q->getTypes());
-        $this->assertSame([1, "ook", 42, "ook", 42], $q->getValues());
-        $q->setWhereRestrictive(false);
-        $this->assertSame("SELECT *, ? as const from table WHERE (a = ? AND b = c AND c = ?) OR (a = ? OR b = c OR c = ?)", $q->getQuery());
         $this->assertSame(["datetime", "str", "int", "str", "int"], $q->getTypes());
         $this->assertSame([1, "ook", 42, "ook", 42], $q->getValues());
     }

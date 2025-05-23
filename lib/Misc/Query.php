@@ -71,7 +71,7 @@ class Query extends QueryFilter {
         $out .= $this->qBody;
         // add any WHERE terms
         if (sizeof($this->qWhere) || sizeof($this->qWhereNot)) {
-            $out .= " WHERE ".$this->buildWhereBody();
+            $out .= " WHERE ".$this->buildWhereBody(true);
         }
         // add any GROUP BY terms
         if (sizeof($this->group)) {

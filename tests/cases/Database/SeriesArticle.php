@@ -11,8 +11,6 @@ namespace JKingWeb\Arsse\TestCase\Database;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Context\Context;
-use JKingWeb\Arsse\Context\UnionContext;
-use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -390,7 +388,7 @@ trait SeriesArticle {
     //#[CoversMethod(Database::class, "articleColumns")]
     //#[CoversMethod(Database::class, "articleFilter")]
     #[DataProvider("provideContextMatches")]
-    public function testListArticlesCheckingContext(RootContext $c, array $exp): void {
+    public function testListArticlesCheckingContext(Context $c, array $exp): void {
         $ids = array_column($ids = Arsse::$db->articleList("john.doe@example.com", $c, ["id"], ["id"])->getAll(), "id");
         $ids = array_map(function($v) {
             return (int) $v;
@@ -525,7 +523,7 @@ trait SeriesArticle {
             'Not published in 1810 or 1815'                              => [(new Context)->not->publishedRanges([["1810-01-01T00:00:00Z", "1810-12-31T23:59:59Z"], ["1815-01-01T00:00:00Z", "1815-12-31T23:59:59Z"]]), [1,3,5,7,19]],
             'Published prior to 1810 or since 1815'                      => [(new Context)->publishedRanges([[null, "1809-12-31T23:59:59Z"], ["1815-01-01T00:00:00Z", null]]), [1,3,5,7,19]],
             'Not published prior to 1810 or since 1815'                  => [(new Context)->not->publishedRanges([[null, "1809-12-31T23:59:59Z"], ["1815-01-01T00:00:00Z", null]]), [2,4,6,8,20]],
-            'Either read or hidden'                                      => [(new UnionContext((new Context)->unread(false), (new Context)->hidden(true))), [1, 6, 19]],
+            'Either read or hidden'                                      => [(new Context)->orGroups([(new Context)->unread(false)->hidden(true)]), [1, 6, 19]],
         ];
     }
 

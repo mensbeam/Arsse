@@ -7,12 +7,24 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\Context;
 
-class Context extends RootContext {
+class Context extends AbstractContext {
+    /** @var ExclusionContext */
+    public $not;
+    public $limit = 0;
+    public $offset = 0;
     public $unread = null;
     public $starred = null;
     public $hidden = null;
     public $labelled = null;
     public $annotated = null;
+
+    public function limit(?int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function offset(?int $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
 
     public function __construct() {
         $this->not = new ExclusionContext($this);

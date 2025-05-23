@@ -16,7 +16,7 @@ class QueryFilter {
     protected $vWhereNot = []; // WHERE NOT clause binding values
     protected $filterRestrictive = true; // Whether to glue WHERE conditions with OR (false) or AND (true)
 
-    public function setWhere(string $where, $types = null, $values = null): self {
+    public function setWhere(string $where, $types = null, $values = null): static {
         $this->qWhere[] = $where;
         if (!is_null($types)) {
             $this->tWhere[] = $types ?? [];
@@ -25,7 +25,7 @@ class QueryFilter {
         return $this;
     }
 
-    public function setWhereNot(string $where, $types = null, $values = null): self {
+    public function setWhereNot(string $where, $types = null, $values = null): static {
         $this->qWhereNot[] = $where;
         if (!is_null($types)) {
             $this->tWhereNot[] = $types;
@@ -34,15 +34,17 @@ class QueryFilter {
         return $this;
     }
 
-    public function setWhereGroup(self $filter): self {
-        $this->qWhere[] = "(".$filter->buildWhereBody().")";
+    public function setWhereGroup(self $filter, bool $restrictive): static {
+        $this->qWhere[] = "(".$filter->buildWhereBody($restrictive).")";
         $this->tWhere[] = $filter->getWhereTypes();
         $this->vWhere[] = $filter->getWhereValues();
         return $this;
     }
 
-    public function setWhereRestrictive(bool $restrictive): self {
-        $this->filterRestrictive = $restrictive;
+    public function setWhereNotGroup(self $filter, bool $restrictive): static {
+        $this->qWhereNot[] = "(".$filter->buildWhereBody($restrictive).")";
+        $this->tWhereNot[] = $filter->getWhereTypes();
+        $this->vWhereNot[] = $filter->getWhereValues();
         return $this;
     }
 
@@ -62,8 +64,8 @@ class QueryFilter {
         return $this->getWhereValues();
     }
 
-    protected function buildWhereBody(): string {
-        $glue = $this->filterRestrictive ? " AND " : " OR ";
+    protected function buildWhereBody(bool $restrictive): string {
+        $glue = $restrictive ? " AND " : " OR ";
         $where = implode($glue, $this->qWhere);
         $whereNot = implode(" OR ", $this->qWhereNot);
         $whereNot = strlen($whereNot) ? "NOT ($whereNot)" : "";
@@ -71,6 +73,6 @@ class QueryFilter {
     }
 
     public function __toString() {
-        return $this->buildWhereBody();
+        return $this->buildWhereBody(true);
     }
 }

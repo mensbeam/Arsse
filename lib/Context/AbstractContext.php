@@ -11,6 +11,44 @@ use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 
 abstract class AbstractContext {
+    protected $parent = null;
+    protected $props = [];
+
+    public $folder = null;
+    public $folders = [];
+    public $folderShallow = null;
+    public $foldersShallow = [];
+    public $tag = null;
+    public $tags = [];
+    public $tagName = null;
+    public $tagNames = [];
+    public $subscription = null;
+    public $subscriptions = [];
+    public $edition = null;
+    public $editions = [];
+    public $article = null;
+    public $articles = [];
+    public $label = null;
+    public $labels = [];
+    public $labelName = null;
+    public $labelNames = [];
+    public $annotationTerms = [];
+    public $searchTerms = [];
+    public $titleTerms = [];
+    public $authorTerms = [];
+    public $articleRange = [null, null];
+    public $editionRange = [null, null];
+    public $andGroups = [];
+    public $orGroups = [];
+    public $modifiedRange = [null, null];
+    public $markedRange = [null, null];
+    public $addedRange = [null, null];
+    public $publishedRange = [null, null];
+    public $modifiedRanges = [];
+    public $markedRanges = [];
+    public $addedRanges = [];
+    public $publishedRanges = [];
+
     protected function cleanIdArray(array $spec, bool $allowZero = false): array {
         $spec = array_values($spec);
         for ($a = 0; $a < sizeof($spec); $a++) {
@@ -196,6 +234,14 @@ abstract class AbstractContext {
         } else {
             $spec = [$start, $end];
         }
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function andGroups(?array $spec = null) {
+        return $this->act(__FUNCTION__, func_num_args(), $spec);
+    }
+
+    public function orGroups(?array $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 

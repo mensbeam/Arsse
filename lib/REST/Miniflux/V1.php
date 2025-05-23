@@ -13,8 +13,6 @@ use JKingWeb\Arsse\ExceptionType;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Context\Context;
-use JKingWeb\Arsse\Context\UnionContext;
-use JKingWeb\Arsse\Context\RootContext;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\ImportExport\Exception as ImportException;
@@ -1243,7 +1241,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         return HTTP::respJson($this->transformIcon($icon));
     }
 
-    protected function computeContext(array $query, Context $c): RootContext {
+    protected function computeContext(array $query, Context $c): Context {
         $c->limit($query['limit'] ?? self::DEFAULT_ENTRY_LIMIT) // NOTE: This does not honour user preferences
             ->offset($query['offset'])
             ->starred($query['starred'])
@@ -1262,17 +1260,13 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         $status = array_unique($query['status']);
         sort($status);
         if ($status === ["read", "removed"]) {
-            $c1 = $c;
-            $c2 = clone $c;
-            $c = new UnionContext($c1->unread(false), $c2->hidden(true));
+            $c->orGroups([(new Context)->unread(false)->hidden(true)]);
         } elseif ($status === ["read", "unread"]) {
             $c->hidden(false);
         } elseif ($status === ["read"]) {
             $c->hidden(false)->unread(false);
         } elseif ($status === ["removed", "unread"]) {
-            $c1 = $c;
-            $c2 = clone $c;
-            $c = new UnionContext($c1->unread(true), $c2->hidden(true));
+            $c->orGroups([(new Context)->unread(true)->hidden(true)]);
         } elseif ($status === ["removed"]) {
             $c->hidden(true);
         } elseif ($status === ["unread"]) {

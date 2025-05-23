@@ -9,8 +9,6 @@ namespace JKingWeb\Arsse\TestCase\REST\Miniflux;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Context\Context;
-use JKingWeb\Arsse\Context\RootContext;
-use JKingWeb\Arsse\Context\UnionContext;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Misc\HTTP;
@@ -838,7 +836,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     #[DataProvider("provideEntryQueries")]
-    public function testGetEntries(string $url, ?RootContext $c, ?array $order, $out, bool $count, ResponseInterface $exp): void {
+    public function testGetEntries(string $url, ?Context $c, ?array $order, $out, bool $count, ResponseInterface $exp): void {
         \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
         \Phake::when(Arsse::$db)->articleCount->thenReturn(2112);
         \Phake::when(Arsse::$db)->articleCategoriesGet->thenReturnCallback(function($user, $id) {
@@ -900,9 +898,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ["/entries?status=read",                               (clone $c)->unread(false)->hidden(false),                              $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
             ["/entries?status=removed",                            (clone $c)->hidden(true),                                              $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
             ["/entries?status=unread&status=read",                 (clone $c)->hidden(false),                                             $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
-            ["/entries?status=unread&status=removed",              new UnionContext((clone $c)->unread(true), (clone $c)->hidden(true)),  $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
-            ["/entries?status=removed&status=read",                new UnionContext((clone $c)->unread(false), (clone $c)->hidden(true)), $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
-            ["/entries?status=removed&status=read&status=removed", new UnionContext((clone $c)->unread(false), (clone $c)->hidden(true)), $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?status=unread&status=removed",              (clone $c)->orGroups([(new Context)->unread(true)->hidden(true)]),     $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?status=removed&status=read",                (clone $c)->orGroups([(new Context)->unread(false)->hidden(true)]),    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
+            ["/entries?status=removed&status=read&status=removed", (clone $c)->orGroups([(new Context)->unread(false)->hidden(true)]),    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
             ["/entries?status=removed&status=read&status=unread",  $c,                                                                    $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
             ["/entries?starred=true",                              (clone $c)->starred(true),                                             $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],
             ["/entries?starred=false",                             (clone $c)->starred(false),                                            $o,                        self::ENTRIES,                   false, HTTP::respJson(['total' => sizeof($entriesOut), 'entries' => $entriesOut])],

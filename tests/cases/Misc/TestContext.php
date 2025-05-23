@@ -9,7 +9,6 @@ namespace JKingWeb\Arsse\TestCase\Misc;
 
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Context\ExclusionContext;
-use JKingWeb\Arsse\Context\UnionContext;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -17,7 +16,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 #[CoversClass(\JKingWeb\Arsse\Context\Context::class)]
 #[CoversClass(\JKingWeb\Arsse\Context\ExclusionContext::class)]
-#[CoversClass(\JKingWeb\Arsse\Context\UnionContext::class)]
 class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     protected $ranges = ['modifiedRange', 'markedRange', 'publishedRange', 'addedRange', 'articleRange', 'editionRange'];
     protected $times = ['modifiedRange', 'markedRange', 'publishedRange', 'addedRange'];
@@ -160,48 +158,5 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertNotSame($c1->not, $c2->not);
         $this->assertSame($c1, $c1->not->article(null));
         $this->assertSame($c2, $c2->not->article(null));
-    }
-
-    public function testExerciseAUnionContext(): void {
-        $c1 = new UnionContext;
-        $c2 = new Context;
-        $c3 = new Context;
-        $this->assertSame(0, sizeof($c1));
-        $c1[] = $c2;
-        $c1[2] = $c3;
-        $this->assertSame(2, sizeof($c1));
-        $this->assertSame($c2, $c1[0]);
-        $this->assertSame($c3, $c1[2]);
-        $this->assertSame(null, $c1[1]);
-        unset($c1[0]);
-        $this->assertFalse(isset($c1[0]));
-        $this->assertTrue(isset($c1[2]));
-        $c1[] = $c2;
-        $act = [];
-        foreach ($c1 as $k => $v) {
-            $act[$k] = $v;
-        }
-        $exp = [2 => $c3, $c2];
-        $this->assertSame($exp, $act);
-    }
-
-    public function testWriteToUnionContext(): void {
-        $c = new UnionContext(new Context, new Context);
-        $c->unread(true)->not->label(5)->articleRange(10, 12)->not->editionRange(20, 22)->not->hidden(false);
-        $c1 = $c[0];
-        $c2 = $c[1];
-        $this->assertInstanceOf(Context::class, $c1);
-        $this->assertInstanceOf(Context::class, $c2);
-        $this->assertNotSame($c1, $c2);
-        $this->assertTrue($c1->unread);
-        $this->assertTrue($c2->unread);
-        $this->assertSame(5, $c1->not->label);
-        $this->assertSame(5, $c2->not->label);
-        $this->assertSame([10, 12], $c1->articleRange);
-        $this->assertSame([10, 12], $c2->articleRange);
-        $this->assertSame([20, 22], $c1->not->editionRange);
-        $this->assertSame([20, 22], $c2->not->editionRange);
-        $this->assertTrue($c1->hidden);
-        $this->assertTrue($c2->hidden);
     }
 }
