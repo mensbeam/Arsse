@@ -11,8 +11,7 @@ use JKingWeb\Arsse\AbstractException;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Context\AbstractContext;
 use JKingWeb\Arsse\Context\Context;
-use JKingWeb\Arsse\Context\RootContext;
-use JKingWeb\Arsse\Context\UnionContext;
+use JKingWeb\Arsse\Context\ExclusionContext;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
@@ -65,6 +64,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/unread-count'           => ["countsGet",          true,  false, false, false, []],
         '/user-info'              => ["userGet",            true,  false, false, false, []],
     ];
+    /** The parameters encoded in a continuation string, with their types */
     protected const CONTINUATION_PARAMS = ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE];
     /** A list of state streams which we do not support and will therefore return an empty set when queried */
     protected const UNSUPPORTED_STATES = [
@@ -278,11 +278,19 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function itemIdDecode($itemId): int {
         if (is_int($itemId)) {
             return $itemId;
-        } elseif (is_string($itemId) && preg_match('/^tag:google.com,2005:reader\/item\/([0-9a-fA-F]{16})$/', $itemId, $m)) {
-            return hexdec($m[1]);
-        } else {
-            throw new \Exception("STUB");
+        } elseif (is_string($itemId) && preg_match('/^[0-9]+$/', $itemId)) {
+            return (int) $itemId;
+        } elseif (is_string($itemId) && preg_match('/^tag:google.com,2005:reader\/item\/([0-7][0-9a-fA-F]{15})$/', $itemId, $m)) {
+            // NOTE: Reader IDs are signed, but because the database will
+            //   never use negative IDs, we can safely reject negative IDs and
+            //   save ourselves some complexity in dealing with signed values
+            $out = hexdec($m[1]);
+            if ($out) {
+                // zero is also an invalid database ID, so only return if the value is not zero
+                return $out;
+            }
         }
+        throw new Exception("InvalidItemId", $itemId);
     }
 
     /** Converts an internal database item ID into a Reader tag URN
@@ -302,6 +310,11 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return min(max($s, 0) ?: 20, 10000);
     }
 
+    /** Creates a sort ID, which is an eight-nybble hexdecimal string */
+    protected function makeSortId(int $id): string {
+        return str_pad(dechex($id), 8, "0", \STR_PAD_LEFT);
+    }
+
     /** Converts a stream identifier into a database context
      * 
      * Because feed streams are identified by URL this procedure my require
@@ -311,14 +324,10 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * 
      * @param string $stream The stream identifier
      * @param ?AbstractContext $c An existing context to apply the stream to. This may be any kind of context, but if one is supplied, splice streams are forbidden
-     * @return Context|UnionContext
+     * @return Context
      */
     protected function streamContext(?string $stream, ?AbstractContext $c = null): ?AbstractContext {
         $stream = $stream ?? "";
-        // We only allow unions for the 's' paramter; anything else would be
-        //   too complicated to compute with our current infrastructure
-        $unionAllowed = !$c;
-        // most contexts will not be union contexts, so we'll assume the common case
         $c = $c ?? new Context;
         if ($stream === "") {
             // NOTE: BazQux and FreshRSS both interpret absence of a stream as
@@ -326,29 +335,24 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             //   circumstances. We apply this interpretation universally and
             //   leave it to the individual functions to determine whether the
             //   reading list is a valid target
-            if (!$c instanceof RootContext) {
+            if ($c instanceof ExclusionContext) {
                 // excluding everything is an empty set
                 throw new EmptySetException;
             }
             return $c;
         } elseif (preg_match(self::LABEL_PATTERN, $stream, $m)) {
-            return $c->tagName($m[1]);
+            // Reader labels can be applied to either feeds or articles, so we must select for both
+            $g = $c->orGroups;
+            $g[] = (new Context)->tagName($m[1])->labelName($m[1]);
+            return $c->orGroups($g);
         } elseif (preg_match(self::STATE_PATTERN, $stream, $m)) {
-            if (in_array($m[1], self::UNSUPPORTED_STATES)) {
-                if (!$c instanceof RootContext) {
-                    // excluding an empty set is a no-op
-                    return $c;
-                }
-                // unsupported states will always be an empty set
-                throw new EmptySetException;
-            }
             switch ($m[1]) {
                 case "read":
                     return $c->unread(false);
                 case "kept-unread":
                     return $c->unread(true);
                 case "reading-list":
-                    if (!$c instanceof RootContext) {
+                    if ($c instanceof ExclusionContext) {
                         // excluding everything is an empty set
                         throw new EmptySetException;
                     }
@@ -356,23 +360,30 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 case "starred":
                     return $c->starred(true);
                 default:
-                    return $c->labelName($m[1]);
+                    if (in_array($m[1], self::UNSUPPORTED_STATES)) {
+                        if ($c instanceof ExclusionContext) {
+                            // excluding an empty set is a no-op
+                            return $c;
+                        }
+                        // unsupported states will always be an empty set
+                        throw new EmptySetException;
+                    }
+                    throw new Exception("InvalidStream", $stream);
             }
         } elseif (preg_match(self::FEED_PATTERN, $stream, $m)) {
             // if no subscription is found this will throw an exception
             return $c->subscription(Arsse::$db->subscriptionLookup(Arsse::$user->id, $m[1]));
         } elseif (preg_match('<^splice/(.+)>', $stream, $m)) {
-            if (!$unionAllowed) {
-                throw new Exception("InvalidSplice");
-            }
-            // this requires a union context
-            $u = new UnionContext();
+            // splice streams are a union of multiple streams
+            $u = new Context;
             foreach (explode("|", $stream) as $s) {
-                $u[] = $this->streamContext($s);
+                $u = $this->streamContext($s, $u);
             }
-            return $u;
+            $g = $c->orGroups;
+            $g[] = $u;
+            return $c->orGroups($g);
         }
-        throw new Exception("InvalidStream");
+        throw new Exception("InvalidStream", $stream);
     }
 
     /** Authenticates the user
@@ -471,92 +482,83 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return self::respond($format, ['streamprefs' => new \stdClass]);
     }
 
-    /** Deletes a feed label or article tag without deleting the feeds/articles
+    /** Deletes a feed/article tag/label without deleting the feeds/articles
      *  it is associated with
-     * 
-     * FeedHQ is unclear about whether it treats feed labels and article tags
-     * (apparently a FeedHQ extension) as separate entities. We try to
-     * untangle this by accepting either labels or tags when a stream ID is
-     * specified with the 's' parameter, and assuming a label when the 't'
-     * parameter is specified. Hopefully this is in line with what clients
-     * expect, assuming any clients for FeedHQ even still exist
      * 
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#disable-tag
      */
     protected function tagDisable(string $target, array $query, array $body, string $format): ResponseInterface {
+        $name = "";
+        if (preg_match(self::LABEL_PATTERN, $body['s'] ?? "", $m)) {
+            $name = $m[1];
+        } elseif (isset($body['t'])) {
+            $name = $body['t'];
+        } elseif (!isset($body['s']) && !isset($body['t'])) {
+            return self::respError(["ParameterRequiredOneOfTwo", "s", "t"]);
+        } else {
+            // the $body['t'] case here is unreachable, but we'll cover it in case this changes
+            return self::respError(["InvalidStream", $body['s'] ?? "user/-/label/".$body['t']]);
+        }
+        $success = true;
+        // first try removing the article label with the name, which is more
+        //   likely to fail because they are apt to be used less frequently
         try {
-            if (preg_match(self::LABEL_PATTERN, $body['s'] ?? "", $m)) {
-                Arsse::$db->tagRemove(Arsse::$user->id, $m[1], true);
-            } elseif (preg_match(self::STATE_PATTERN, $body['s'] ?? "", $m)) {
-                // the built-in states have special meaning to the server or client and cannot be disabled
-                if (in_array($m[1], self::RESERVED_STATES)) {
-                    return self::respError(["ReservedState", 'state' => $body['s'], 'operation' => "disable-tag"]);
-                }
-                Arsse::$db->labelRemove(Arsse::$user->id, $m[1], true);
-            } elseif (isset($body['t'])) {
-                Arsse::$db->tagRemove(Arsse::$user->id, $body['t'], true);
-            } elseif (!isset($body['s']) && !isset($body['t'])) {
-                return self::respError(["ParameterRequired", "s"]);
-            } else {
-                // the $body['t'] case here is unreachable, but we'll cover it in case this changes
-                return self::respError(["InvalidStream", $body['s'] ?? "user/-/label/".$body['t']]);
-            }
+            Arsse::$db->labelRemove(Arsse::$user->id, $name, true);
         } catch (ExceptionInput $e) {
-            return self::respError($e);
+            // merely make note of failure; only if feed tag removal also fails
+            //   is this actually an error
+            $success = false;
+        }
+        try {
+            Arsse::$db->tagRemove(Arsse::$user->id, $name, true);
+        } catch (ExceptionInput $e) {
+            // report an error if removing the article label also failed
+            if (!$success) {
+                return self::respError($e);
+            }
         }
         return HTTP::respText("OK");
     }
 
-    /** Renames a feed label or article tag
-     * 
-     * Unlike with the disable operation, FeedHQ only operates on feed labels
-     * here and not article tags. It takes very little effort to do both,
-     * however, so we also allow renaming article tags if they are explicitly
-     * specified, in the same manner as the disable operation.
+    /** Renames a feed/article tag/label
      * 
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#rename-tag
      */
     protected function tagRename(string $target, array $query, array $body, string $format): ResponseInterface {
-        // check that the destination name is at least set; we'll check if it
-        //   conforms to format requirements later
+        $old = "";
+        $new = "";
         if (!isset($body['dest'])) {
             return self::respError(["ParameterRequired", "dest"]);
+        } elseif (preg_match(self::LABEL_PATTERN, $body['dest'], $d)) {
+            $new = $d[1];
+        } else {
+            return self::respError(["InvalidStream", $body['dest']]);
+        }
+        if (!isset($body['s']) && !isset($body['t'])) {
+            return self::respError(["ParameterRequiredOneOfTwo", "s", "t"]);
+        } elseif (isset($body['s']) && preg_match(self::LABEL_PATTERN, $body['s'], $d)) {
+            $old = $d[1];
+        } elseif (isset($body['t'])) {
+            $old = $body['t'];
+        } else {
+            return self::respError(["InvalidStream", $body['s']]);
+        }
+        // we must rename both the feed tag and article label; it is not an error if only one fails
+        $success = true;
+        try {
+            Arsse::$db->labelPropertiesSet(Arsse::$user->id, $old, ['name' => $new], true);
+        } catch (ExceptionInput $e) {
+            // merely make note of failure; only if feed tag renaming also
+            //   fails is this actually an error
+            $success = false;
         }
         try {
-            if (preg_match(self::LABEL_PATTERN, $body['s'] ?? "", $m)) {
-                // check that the destination is also a label
-                if (!preg_match(self::LABEL_PATTERN, $body['dest'], $d)) {
-                    return self::respError(["InvalidStream", $body['dest']]);
-                }
-                Arsse::$db->tagPropertiesSet(Arsse::$user->id, $m[1], ['name' => $d[1]], true);
-            } elseif (preg_match(self::STATE_PATTERN, $body['s'] ?? "", $m)) {
-                // the built-in states have special meaning to the server or client and cannot be renamed
-                if (in_array($m[1], self::RESERVED_STATES)) {
-                    return self::respError(["ReservedState", 'state' => $body['s'], 'operation' => "rename-tag"]);
-                }
-                // check that the destination is also a state
-                if (!preg_match(self::STATE_PATTERN, $body['dest'], $d)) {
-                    return self::respError(["InvalidStream", $body['dest']]);
-                }
-                // the built-in states have special meaning to the server or client and cannot be used as targets
-                if (in_array($d[1], self::RESERVED_STATES)) {
-                    return self::respError(["ReservedState", 'state' => $body['dest'], 'operation' => "rename-tag"]);
-                }
-                Arsse::$db->labelPropertiesSet(Arsse::$user->id, $m[1], ['name' => $d[1]], true);
-            } elseif (isset($body['t'])) {
-                // check that the destination is also a label
-                if (!preg_match(self::LABEL_PATTERN, $body['dest'], $d)) {
-                    return self::respError(["InvalidStream", $body['dest']]);
-                }
-                Arsse::$db->tagPropertiesSet(Arsse::$user->id, $body['t'], ['name' => $d[1]], true);
-            } elseif (!isset($body['s']) && !isset($body['t'])) {
-                return self::respError(["ParameterRequired", "s"]);
-            } else {
-                // the $body['t'] case here is unreachable, but we'll cover it in case this changes
-                return self::respError(["InvalidStream", $body['s'] ?? "user/-/label/".$body['t']]);
-            }
+            Arsse::$db->tagPropertiesSet(Arsse::$user->id, $old, ['name' => $new], true);
         } catch (ExceptionInput $e) {
-            return self::respError($e);
+            // report an error if renaming the article label also failed
+            if (!$success) {
+                return self::respError($e);
+            }
         }
         return HTTP::respText("OK");
     }
@@ -692,7 +694,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $streams = [];
             }
             $out[] = [
-                'id' => (int) $i['id'],
+                'id' => $this->itemIdEncode((int) $i['id']),
                 'timestampUsec' => ((int) V::normalize($i['modified_date'], V::T_DATE, "sql"))."000000",
                 'directStreamIds' => $streams,
             ];

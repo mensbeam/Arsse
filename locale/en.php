@@ -53,7 +53,9 @@ return [
             rename-tag {renamed}
             other {used here}
         }.',
-        'API.Reader.Error.InvalidStream'                                   => 'The supplied stream ID "{0}" is not valid.',
+    'API.Reader.Error.InvalidStream'                                       => 'The supplied stream ID "{0}" is not valid.',
+    'API.Reader.Error.ParameterRequired'                                   => 'This operation requires the "{0}" parameter.',
+    'API.Reader.Error.ParameterRequiredOneOfTwo'                           => 'This operation requires either the "{0}" or the "{1}" parameter.',
 
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',

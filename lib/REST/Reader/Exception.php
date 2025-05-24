@@ -7,5 +7,7 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\REST\Reader;
 
-class Exception extends \Exception {
+use JKingWeb\Arsse\AbstractException;
+
+class Exception extends AbstractException {
 }

@@ -124,7 +124,7 @@ abstract class AbstractException extends \Exception {
 
     public function __construct(string $msgID = "", $vars = null, ?\Throwable $e = null) {
         $this->symbol = $msgID;
-        $this->params = $vars ?? [];
+        $this->params = (array) ($vars ?? []);
         if ($msgID === "") {
             $msg = "Exception.unknown";
             $code = 10000;

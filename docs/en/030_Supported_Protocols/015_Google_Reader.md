@@ -20,7 +20,7 @@ TODO
 # Feature notes
 
 - The common `r` sorting parameter supports the values `n` (ascending chronological) and `o` (descending chronological). The `a` and `c` values are ignored
-- Splice streams (which appear to be a FeedHQ extension) are supported for the `s` parameter, but not the `xt` or `it` parameters.
+- Splice streams (which appear to be a FeedHQ extension) are supported for all stream-related parameters.
 
 # Interaction with Folders
 
