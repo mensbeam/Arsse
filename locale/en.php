@@ -48,6 +48,7 @@ return [
     'API.Reader.Error.401'                                                 => 'Unauthorized!',
     'API.Reader.Error.TokenRequired'                                       => 'A POST token is required to perform this operation.',
     'API.Reader.Error.InvalidStream'                                       => 'The supplied stream ID "{0}" is not valid.',
+    'API.Reader.Error.InvalidTimestampMicro'                               => 'The supplied timestamp "{0}" is not valid. It must be at least seven digits.',
     'API.Reader.Error.ParameterRequired'                                   => 'This operation requires the "{0}" parameter.',
     'API.Reader.Error.ParameterRequiredOneOfTwo'                           => 'This operation requires either the "{0}" or the "{1}" parameter.',
 

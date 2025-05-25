@@ -639,6 +639,27 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return HTTP::respText("OK");
     }
 
+    protected function streamMark(string $target, array $query, array $body, string $format): ResponseInterface {
+        if (!isset($body['s'])) {
+            return self::respError(["ParameterRequired", "s"]);
+        }
+        $c = $this->streamContext($body['s']);
+        if (isset($body['ts'])) {
+            // the timestamp must be at least seven digits (the last six digits are discarded)
+            preg_match('/^(\d+)\d{6}$/', $body['ts'], $m);
+            if (!$m) {
+                return self::respError(["InvalidTimestampMicro", $body['ts']]);
+            }
+            $c->modifiedRange(null, (int) $m[1]);
+        }
+        try {
+            Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
+        } catch (ExceptionInput $e) {
+            return self::respError($e);
+        }
+        return HTTP::respText("OK");
+    }
+
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#subscribed */
     protected function subscriptionValid(string $target, array $query, array $body, string $format): ResponseInterface {
         if (!isset($query['s'])) {
