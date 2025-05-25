@@ -12,6 +12,7 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Context\AbstractContext;
 use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Context\ExclusionContext;
+use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
@@ -559,6 +560,81 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (!$success) {
                 return self::respError($e);
             }
+        }
+        return HTTP::respText("OK");
+    }
+
+    /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#tag-list */
+    protected function tagList(string $target, array $query, array $body, string $format): ResponseInterface {
+        // tags in Reader map to both feed tags and article labels, so we have to get the set of both
+        $tags = array_unique(array_merge(
+            array_column(iterator_to_array(Arsse::$db->tagList(Arsse::$user->id, false)), "name"),
+            array_column(iterator_to_array(Arsse::$db->labelList(Arsse::$user->id, false)), "name"),
+        ));
+        $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
+        $sortId = 0;
+        // start with the special starred state
+        $out = [
+            ['id' => "user/{$meta['num']}/state/com.google/starred", "sortid" => $this->makeSortId($sortId++)],
+        ];
+        // add all the feed tags (what Reader calls labels) which have associations to feeds
+        foreach ($tags as $t) {
+            $out[] = ['id' => "user/{$meta['num']}/label/$t", "sortid" => $this->makeSortId($sortId++)];
+        }
+        return $this->respond($format, ['tags' => $out]);
+    }
+
+    /** 
+     * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#edit-tag
+     * @see https://github.com/bazqux/bazqux-api?tab=readme-ov-file#tagging-items
+     * @see https://raw.githubusercontent.com/mihaip/google-reader-api/refs/heads/master/wiki/ApiEditTags.wiki */
+    protected function tagEdit(string $target, array $query, array $body, string $format): ResponseInterface {
+        if (!$body['i']) {
+            return self::respError(["ParameterRequired", "i"]);
+        } else if (!$body['a'] && !$body['r']) {
+            return self::respError(["ParameterRequiredOneOfTwo", "a", "r"]);
+        }
+        $c = new Context;
+        // add the items to the context; 
+        $c->articles(array_map(function($v) {
+            return $this->itemIdDecode($v);
+        }, $body['i']));
+        try {
+            $tr = Arsse::$db->begin();
+            // get the list of currently extant labels so we know when we need to add one
+            $labels = array_column(iterator_to_array(Arsse::$db->labelList(Arsse::$user->id, true)), "id", "name");
+            // apply each state or label in the order they appear, additions first
+            foreach (['a' => $body['a'], 'r' => $body['r']] as $op => $set) {
+                foreach ($set as $s) {
+                    if (preg_match(self::LABEL_PATTERN, $s, $m)) {
+                        $name = $m[1];
+                        // add the specified label if it doesn't exist
+                        if (!isset($labels[$name]) && $op === "a") {
+                            $labels[$name] = Arsse::$db->labelAdd(Arsse::$user->id, ['name' => $name]);
+                        }
+                        Arsse::$db->labelArticlesSet(Arsse::$user->id, $m[1], $c, $op === "a" ? Database::ASSOC_ADD : Database::ASSOC_REMOVE);
+                    } elseif (preg_match(self::STATE_PATTERN, $s, $m)) {
+                        $state = $m[1];
+                        if ($state === "read") {
+                            Arsse::$db->articleMark(Arsse::$user->id, ['read' => $op === "a" ? true : false], $c);
+                        } elseif ($state === "kept-unread") {
+                            Arsse::$db->articleMark(Arsse::$user->id, ['read' => $op === "a" ? false : true], $c);
+                        } elseif ($state === "starred") {
+                            Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $op === "a" ? true : false], $c);
+                        } elseif (in_array($state, self::RESERVED_STATES)) {
+                            // other known states are a no-op
+                            continue;
+                        } else {
+                            throw new Exception("InvalidStream", $s);
+                        }
+                    } else {
+                        throw new Exception("InvalidStream", $s);
+                    }
+                }
+            }
+            $tr->commit();
+        } catch (ExceptionInput $e) {
+            return self::respError($e, 400);
         }
         return HTTP::respText("OK");
     }

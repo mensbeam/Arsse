@@ -2007,7 +2007,7 @@ class Database {
      * - "note":    A string containing a freeform plain-text note for the article
      *
      * @param string $user The user who owns the articles to be modified
-     * @param array $data An associative array of properties to modify. Anything not specified will remain unchanged
+     * @param array $data An associative array of properties to modify, one or more of 'read', 'starred', 'hidden', or 'note'. Anything not specified will remain unchanged
      * @param Context $context The query context to match articles against
      * @param bool $updateTimestamp Whether to also update the timestamp. This should only be false if a mark is changed as a result of an automated action not taken by the user
      */
