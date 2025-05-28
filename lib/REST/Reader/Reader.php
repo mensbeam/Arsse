@@ -703,6 +703,93 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         ]);
     }
 
+    
+    /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#subscription-edit */
+    protected function subscriptionEdit(string $target, array $query, array $body, string $format): ResponseInterface {
+        // check required parameters
+        if (!isset($body['ac'])) {
+            return self::respError(["ParameterRequired", "ac"]);
+        } elseif (!in_array($body['ac'], ["subscribed", "unsubscribe", "edit"])) {
+            return self::respError(["InvalidValue", "ac", $body['ac']]);
+        } elseif (!isset($body['s'])) {
+            return self::respError(["ParameterRequired", "s"]);
+        } 
+        if (preg_match(self::FEED_PATTERN, $body['s'], $m)) {
+            $url = $m[1];
+        } else {
+            return self::respError(["InvalidValue", "s", $body['s']]);
+        }
+        // perform whichever operation is requested
+        if ($body['ac'] === "subscribe") {
+            if (!isset($body['t'])) {
+                return self::respError(["ParameterRequired", "t"]);
+            }
+            $id = Arsse::$db->subscriptionReserve(Arsse::$user->id, $url, true);
+            // start a transaction for the rest of the process so any errors simply roll back everything
+            $tr = Arsse::$db->begin();
+            Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $id, ['title' => $body['t']], true);
+            if ($body['a']) {
+                // if we're to add tags to the subscription, ensure the tags
+                //   exist first; Reader doesn't treat tags/labels as distinct
+                //   objects like we do, so we must transparently manage the
+                //   objects behind the scenes
+                $existing = array_column(iterator_to_array(Arsse::$db->tagList(Arsse::$user->id, true)), "id", "name");
+                foreach ($body['a'] as $t) {
+                    if (preg_match(self::LABEL_PATTERN, $t, $m)) {
+                        $name = $m[1];
+                    } else {
+                        return self::respError(["InvalidValue", "a", $t]);
+                    }
+                    if (!isset($existing[$name])) {
+                        $existing[$name] = Arsse::$db->tagAdd(Arsse::$user->id, ['name' => $name]);
+                    }
+                    Arsse::$db->tagSubscriptionsSet(Arsse::$user->id, $existing[$name], [$id]);
+                }
+            }
+            Arsse::$db->subscriptionReveal(Arsse::$user->id, $id);
+            $tr->commit();
+        } elseif ($body['ac'] === "unsubscribe") {
+            $tr = Arsse::$db->begin();
+            $id = Arsse::$db->subscriptionLookup(Arsse::$user->id, $url);
+            Arsse::$db->subscriptionRemove(Arsse::$user->id, $id);
+            $tr->commit();
+        } elseif ($body['ac'] === "edit") {
+            $tr = Arsse::$db->begin();
+            $id = Arsse::$db->subscriptionLookup(Arsse::$user->id, $url);
+            if (isset($body['t'])) {
+                Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $id, ['title' => $body['t']]);
+            }
+            if ($body['a']) {
+                $existing = array_column(iterator_to_array(Arsse::$db->tagList(Arsse::$user->id, true)), "id", "name");
+                foreach ($body['a'] as $t) {
+                    if (preg_match(self::LABEL_PATTERN, $t, $m)) {
+                        $name = $m[1];
+                    } else {
+                        return self::respError(["InvalidValue", "a", $t]);
+                    }
+                    if (!isset($existing[$name])) {
+                        $existing[$name] = Arsse::$db->tagAdd(Arsse::$user->id, ['name' => $name]);
+                    }
+                    Arsse::$db->tagSubscriptionsSet(Arsse::$user->id, $existing[$name], [$id]);
+                }
+            }
+            foreach ($body['r'] as $t) {
+                if (preg_match(self::LABEL_PATTERN, $t, $m)) {
+                    $name = $m[1];
+                } else {
+                    return self::respError(["InvalidValue", "r", $t]);
+                }
+                try {
+                    Arsse::$db->tagSubscriptionsSet(Arsse::$user->id, $name, [$id], Database::ASSOC_REMOVE, true);
+                } catch (ExceptionInput $e) {
+                    // ignore errors
+                }
+            }
+            $tr->commit();
+        }
+        return HTTP::respText("OK");
+    }
+
     /** @see https://github.com/feedhq/feedhq/blob/65f4f04b4e81f4911e30fa4d4014feae4e172e0d/feedhq/reader/views.py#L284 */
     protected function countsGet(string $target, array $query, array $body, string $format): ResponseInterface {
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
