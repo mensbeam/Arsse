@@ -16,6 +16,7 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
+use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\HTTP;
@@ -788,6 +789,22 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $tr->commit();
         }
         return HTTP::respText("OK");
+    }
+
+    protected function subscriptionImport(string $target, array $query, string $body, string $format): ResponseInterface {
+        $oldCount = sizeof(iterator_to_array(Arsse::$db->subscriptionList(Arsse::$user->id)));
+        Arsse::$obj->get(OPML::class)->import(Arsse::$user->id, $body);
+        $newCount = sizeof(iterator_to_array(Arsse::$db->subscriptionList(Arsse::$user->id)));
+        $diff = $newCount - $oldCount;
+        return HTTP::respText("OK: $diff");
+    }
+
+    protected function subscriptionExport(string $target, array $query, array $body, string $format): ResponseInterface {
+        // NOTE: Our OPML import/export functionality is the same regardless of
+        //   exposed protocol. Feeds will be nested into folders as defined in
+        //   other protocols, and labels set in this protocols will be exported
+        //   as tags, with commas silently dropped due to OPML limitations
+        return HTTP::respText(Arsse::$obj->get(OPML::class)->export(Arsse::$user->id), 200, ['Content-Type' => "application/xml"]);
     }
 
     /** @see https://github.com/feedhq/feedhq/blob/65f4f04b4e81f4911e30fa4d4014feae4e172e0d/feedhq/reader/views.py#L284 */
