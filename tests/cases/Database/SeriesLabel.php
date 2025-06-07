@@ -566,4 +566,41 @@ trait SeriesLabel {
         $state['arsse_label_members']['rows'][2][2] = 0;
         $this->compareExpectations(static::$drv, $state);
     }
+
+    public function testSummarizeLabels(): void {
+        $act = Arsse::$db->labelSummarize("john.doe@example.com");
+        $exp = [
+            [
+                'id' => 1,
+                'name' => 'Interesting',
+                'article' => 1,
+            ],
+            [
+                'id' => 1,
+                'name' => 'Interesting',
+                'article' => 19,
+            ],
+            [
+                'id' => 2,
+                'name' => 'Fascinating',
+                'article' => 1,
+            ],
+            [
+                'id' => 2,
+                'name' => 'Fascinating',
+                'article' => 5,
+            ],
+            [
+                'id' => 2,
+                'name' => 'Fascinating',
+                'article' => 8,
+            ],
+            [
+                'id' => 2,
+                'name' => 'Fascinating',
+                'article' => 20,
+            ],
+        ];
+        $this->assertResult($exp, $act);
+    }
 }

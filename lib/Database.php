@@ -2341,6 +2341,31 @@ class Database {
         )->run($user, $user, !$includeEmpty);
     }
 
+    /** Lists the associations between all labels and articles
+     *
+     * The following keys are included in each record:
+     *
+     * - "id": The label's numeric identifier
+     * - "name" The label's textual name
+     * - "article": The numeric identifier of the associated article
+     *
+     * @param string $user The user whose labels are to be listed
+     */
+    public function labelSummarize(string $user): Db\Result {
+        return $this->db->prepareArray(
+            "SELECT
+                arsse_labels.id as id,
+                arsse_labels.name as name,
+                arsse_label_members.article as article
+            FROM arsse_label_members
+                join arsse_labels on arsse_labels.id = arsse_label_members.label
+                join arsse_articles on arsse_articles.id = arsse_label_members.article
+                join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription and arsse_subscriptions.owner = ? and arsse_subscriptions.deleted = 0
+            WHERE arsse_labels.owner = ? and assigned = 1",
+            ["str", "str"]
+        )->run($user, $user);
+    }
+
     /** Deletes a label from the database
      *
      * Any articles associated with the label remains untouched
@@ -2633,8 +2658,8 @@ class Database {
      *
      * The following keys are included in each record:
      *
-     * - "tag_id": The tag's numeric identifier
-     * - "tag_name" The tag's textual name
+     * - "id": The tag's numeric identifier
+     * - "name" The tag's textual name
      * - "subscription": The numeric identifier of the associated subscription
      *
      * @param string $user The user whose tags are to be listed
