@@ -661,6 +661,42 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return HTTP::respText("OK");
     }
 
+    /** 
+     * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#subscription-list
+     * @see https://www.inoreader.com/developers/subscription-list
+     */
+    protected function subscriptionList(string $target, array $query, array $body, string $format): ResponseInterface {
+        $out = [];
+        $sort = 0;
+        // retrieve the user number
+        $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
+        // get the tag list of each subscription
+        $tags = [];
+        foreach (Arsse::$db->tagSummarize(Arsse::$user->id) as $t) {
+            if (!isset($tags[$t['subscription']])) {
+                $tags[$t['subscription']] = [];
+            }
+            $tags[$t['subscription']][] = $t['name'];
+        }
+        foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $f) {
+            // NOTE: FreshRSS omits firstitemmsec, and FeedHQ seems to populate it with nonsense, so we feel confident in omitting it
+            $out[] = [
+                'title' => $f['title'],
+                'htmlUrl' => $f['source'],
+                'sortid' => $this->makeSortId(++$sort),
+                'id' => "feed/{$f['url']}",
+                'categories' => array_map(function($t) use ($meta) {
+                    return [
+                        'id' => "user/{$meta['num']}/$t",
+                        'label' => $t,
+                    ];
+                }, $tags[$f['id']] ?? []),
+                'iconUrl' => $f['icon_url'] ?? "", // this appears to be a common extension
+            ];
+        }
+        return $this->respond($format, ['subscriptions' => $out]);
+    }
+    
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#subscribed */
     protected function subscriptionValid(string $target, array $query, array $body, string $format): ResponseInterface {
         if (!isset($query['s'])) {
@@ -832,6 +868,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $ts = max($ts, $date);
         }
         // aggregate information on tags
+        // FIXME: this does not include article labels
         foreach (Arsse::$db->tagSummarize(Arsse::$user->id) as $tag) {
             if (!isset($tags[$tag['name']])) {
                 $tags[$tag['name']] = ['count' => 0, 'ts' => null];
@@ -886,11 +923,31 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         $out = [];
         $latest = null;
         $tr = Arsse::$db->begin();
-        foreach ($this->articleQuery($query, ["id", 'edition', "modified_date", "subscription_url"]) as $i) {
+        $labels = ['article' => [], 'feed' => []];
+        // gather up the labels and tags which may be associated with articles
+        foreach (Arsse::$db->labelSummarize(Arsse::$user->id) as $assoc) {
+            if (!isset($labels['article'][$assoc['article']])) {
+                $labels['article'][$assoc['article']] = [];
+            }
+            $labels['article'][$assoc['article']][] = $assoc['name'];
+        }
+        foreach (Arsse::$db->tagSummarize(Arsse::$user->id) as $assoc) {
+            if (!isset($labels['feed'][$assoc['subscription']])) {
+                $labels['feed'][$assoc['subscription']] = [];
+            }
+            $labels['feed'][$assoc['subscription']][] = $assoc['name'];
+        }
+        // produce the output
+        foreach (Arsse::$db->articleList(Arsse::$user->id, $this->articleContext($query), ["id", 'edition', "modified_date", "subscription", "subscription_url"]) as $i) {
             if ($query['includeAllDirectStreamIds']) {
+                // NOTE: No two implementations seem to quite agree on what
+                //   this parameter does; FreshRSS doesn't even implement it
+                //   at all, so we'll do what FeedHQ does and just present an
+                //   empty array if it is not true
+                $streams = array_unique(array_merge($labels['article'][$i['id']] ?? [], $labels['feed'][$i['subscription']] ?? []));
                 $streams = array_merge(["feed/".$i['subscription_url']], array_map(function($v) {
-                    return "user/-/state/com.google/$v";
-                }, Arsse::$db->articleLabelsGet(Arsse::$user->id, $i['id'], true)));
+                    return "user/-/label/$v";
+                }, $streams));
             } else {
                 $streams = [];
             }
@@ -909,7 +966,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return self::respond($format, $out);
     }
 
-    protected function articleQuery(array &$query, array $columns): Result {
+    protected function articleContext(array &$query): Context {
         $asc = $query['r'] !== "o";
         // parse the continuation string, if any
         if ($query['c']) {
@@ -930,7 +987,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $this->streamContext($query['it'], $c);
         }
         if ($query['xt']) {
-            $this->streamContext($query['it'], $c->not);
+            $this->streamContext($query['xt'], $c->not);
         }
         // fairly typical time-based constraits can also be applied
         $c->modifiedRange($query['ot'], $query['nt']);
@@ -938,11 +995,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         $c->editionRange($asc ? $query['i'] : null, $asc ? null : $query['i']);
         // pagination is always applied
         $c->limit($this->pageSize($query['n']));
-        // sorting by edition gives us a simple, chronological way of having
-        //   stable pagination
-        $sort = $asc ? "edition" : "edition desc";
-        // perform the query
-        return Arsse::$db->articleList(Arsse::$user->id, $c, $columns, [$sort]);
+        // return the context
+        return $c;
     }
 
     protected function computeContinuation(array $query, int $anchor): string {
