@@ -923,34 +923,15 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         $out = [];
         $latest = null;
         $tr = Arsse::$db->begin();
-        $labels = ['article' => [], 'feed' => []];
-        // gather up the labels and tags which may be associated with articles
-        foreach (Arsse::$db->labelSummarize(Arsse::$user->id) as $assoc) {
-            if (!isset($labels['article'][$assoc['article']])) {
-                $labels['article'][$assoc['article']] = [];
-            }
-            $labels['article'][$assoc['article']][] = $assoc['name'];
-        }
-        foreach (Arsse::$db->tagSummarize(Arsse::$user->id) as $assoc) {
-            if (!isset($labels['feed'][$assoc['subscription']])) {
-                $labels['feed'][$assoc['subscription']] = [];
-            }
-            $labels['feed'][$assoc['subscription']][] = $assoc['name'];
-        }
+        $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
+        $labels = $this->getAllLabels();
         // produce the output
-        foreach (Arsse::$db->articleList(Arsse::$user->id, $this->articleContext($query), ["id", 'edition', "modified_date", "subscription", "subscription_url"]) as $i) {
-            if ($query['includeAllDirectStreamIds']) {
-                // NOTE: No two implementations seem to quite agree on what
-                //   this parameter does; FreshRSS doesn't even implement it
-                //   at all, so we'll do what FeedHQ does and just present an
-                //   empty array if it is not true
-                $streams = array_unique(array_merge($labels['article'][$i['id']] ?? [], $labels['feed'][$i['subscription']] ?? []));
-                $streams = array_merge(["feed/".$i['subscription_url']], array_map(function($v) {
-                    return "user/-/label/$v";
-                }, $streams));
-            } else {
-                $streams = [];
-            }
+        foreach (Arsse::$db->articleList(Arsse::$user->id, $this->articleContext($query), ["id", 'edition', "modified_date", "subscription", "subscription_url", "unread", "starred"], ["edition desc"]) as $i) {
+            // NOTE: No two implementations seem to quite agree on what
+            //   this parameter does; FreshRSS doesn't even implement it
+            //   at all, so we'll do what FeedHQ does and just present an
+            //   empty array if it is not true
+            $streams = ($query['includeAllDirectStreamIds'] ?? true) ? $this->itemStreams($i, $labels, $meta['num']) : [];
             $out[] = [
                 'id' => $this->itemIdEncode((int) $i['id']),
                 'timestampUsec' => ((int) V::normalize($i['modified_date'], V::T_DATE, "sql"))."000000",
@@ -964,6 +945,39 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out['continuation'] = $this->computeContinuation($query, $latest);
         } 
         return self::respond($format, $out);
+    }
+
+    protected function getAllLabels(): array {
+        $labels = ['article' => [], 'feed' => []];
+        foreach (Arsse::$db->labelSummarize(Arsse::$user->id) as $assoc) {
+            if (!isset($labels['article'][$assoc['article']])) {
+                $labels['article'][$assoc['article']] = [];
+            }
+            $labels['article'][$assoc['article']][] = $assoc['name'];
+        }
+        foreach (Arsse::$db->tagSummarize(Arsse::$user->id) as $assoc) {
+            if (!isset($labels['feed'][$assoc['subscription']])) {
+                $labels['feed'][$assoc['subscription']] = [];
+            }
+            $labels['feed'][$assoc['subscription']][] = $assoc['name'];
+        }
+        return $labels;
+    }
+
+    protected function itemStreams(array $item, array $labels, int $uid): array {
+        assert(isset($item['id'], $item['subscription'], $item['subscription_url'], $item['unread'], $item['starred']), new \Exception("Supplied article is missing a required column"));
+        $streams = [
+            "feed/".$item['subscription_url'],
+            "user/-/state/com.google/reading-list",
+            $item['unread'] ? "user/-/state/com.google/kept-unread" : "user/-/state/com.google/read",
+        ];
+        if ($item['starred']) {
+            $streams[] = "user/-/state/com.google/starred";
+        }
+        $streams = array_merge($streams, array_map(function($v) use ($uid) {
+            return "user/$uid/label/$v";
+        }, array_unique(array_merge($labels['article'][$item['id']] ?? [], $labels['feed'][$item['subscription']] ?? []))));
+        return $streams;
     }
 
     protected function articleContext(array &$query): Context {
