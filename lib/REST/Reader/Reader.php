@@ -922,11 +922,12 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function itemIds(string $target, array $query, array $body, string $format): ResponseInterface {
         $out = [];
         $latest = null;
+        $context = $this->articleContext($query);
         $tr = Arsse::$db->begin();
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
         $labels = $this->getAllLabels();
         // produce the output
-        foreach (Arsse::$db->articleList(Arsse::$user->id, $this->articleContext($query), ["id", 'edition', "modified_date", "subscription", "subscription_url", "unread", "starred"], ["edition desc"]) as $i) {
+        foreach (Arsse::$db->articleList(Arsse::$user->id, $context, ["id", 'edition', "modified_date", "subscription", "subscription_url", "unread", "starred"], ["edition desc"]) as $i) {
             // NOTE: No two implementations seem to quite agree on what
             //   this parameter does; FreshRSS doesn't even implement it
             //   at all, so we'll do what FeedHQ does and just present an
