@@ -67,7 +67,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/user-info'              => ["userGet",            true,  false, false, false, []],
     ];
     /** The parameters encoded in a continuation string, with their types */
-    protected const CONTINUATION_PARAMS = ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE];
+    protected const CONTINUATION_PARAMS = ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE, 'includeAllDirectStreamIds' => V::T_BOOL];
     /** A list of state streams which we do not support and will therefore return an empty set when queried */
     protected const UNSUPPORTED_STATES = [
         "broadcast",
@@ -784,12 +784,10 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 }
             }
             Arsse::$db->subscriptionReveal(Arsse::$user->id, $id);
-            $tr->commit();
         } elseif ($body['ac'] === "unsubscribe") {
             $tr = Arsse::$db->begin();
             $id = Arsse::$db->subscriptionLookup(Arsse::$user->id, $url);
             Arsse::$db->subscriptionRemove(Arsse::$user->id, $id);
-            $tr->commit();
         } elseif ($body['ac'] === "edit") {
             $tr = Arsse::$db->begin();
             $id = Arsse::$db->subscriptionLookup(Arsse::$user->id, $url);
@@ -822,8 +820,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                     // ignore errors
                 }
             }
-            $tr->commit();
         }
+        $tr->commit();
         return HTTP::respText("OK");
     }
 
@@ -953,11 +951,20 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#stream-contents */
     protected function itemContents(string $target, array $query, array $body, string $format): ResponseInterface {
         $out = [];
-        // TODO: check target for stream ID and use 's' otherwise
+        // look for a stream ID in the URL
+        $stream = substr($target, strlen("/stream/contents/"));
+        if (strlen($stream)) {
+            // if there is a stream ID in the URL, stuff its decoded version into the query
+            $query['s'] = urldecode($stream);
+        }
+        // prepare pre-requisites for the query
         $context = $this->articleContext($query);
         $tr = Arsse::$db->begin();
-        $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
-        $labels = $this->getAllLabels();
+        if ($query['includeAllDirectStreamIds'] ?? true) {
+            $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
+            $labels = $this->getAllLabels();
+        }
+        // loop through the articles
         foreach (Arsse::$db->articleList(Arsse::$user->id, $context, [
             "id",
             'edition',
