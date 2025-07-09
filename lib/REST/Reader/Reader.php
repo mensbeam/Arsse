@@ -950,15 +950,35 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#stream-items-contents
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#stream-contents */
     protected function itemContents(string $target, array $query, array $body, string $format): ResponseInterface {
-        $out = [];
+        // determine the list of articles
+        if ($body['i']) {
+            $articles = $body['i'];
+        } elseif ($query['i']) {
+            $articles = $query['i'];
+        } else {
+            return self::respError(["ParameterRequired", "i"]);
+        }
+        // fetch the articles
+        $context = (new Context())->articles($articles);
+        return self::respond($format, $this->articleFetch($context, $query, false));
+    }
+
+    /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#stream-contents */
+    protected function streamContents(string $target, array $query, array $body, string $format): ResponseInterface {
         // look for a stream ID in the URL
         $stream = substr($target, strlen("/stream/contents/"));
         if (strlen($stream)) {
             // if there is a stream ID in the URL, stuff its decoded version into the query
             $query['s'] = urldecode($stream);
         }
-        // prepare pre-requisites for the query
+        // fetch the articles
         $context = $this->articleContext($query);
+        return self::respond($format, $this->articleFetch($context, $query, true));
+    }
+
+    protected function articleFetch(Context $context, array $query, bool $allowContinuation): array {
+        $latest = null;
+        $out = [];
         $tr = Arsse::$db->begin();
         if ($query['includeAllDirectStreamIds'] ?? true) {
             $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
@@ -1016,13 +1036,19 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'htmlUrl'  => $i['subscription_url'],
                 ],
             ];
+            // note the largest edition ID for continuation computation
+            $latest = max($latest, (int) $i['edition']);
         }
         $out = [
             'id'      => "user/-/state/com.google/reading-list", // NOTE: FreshRSS uses the reading list stream ID for any stream; this avoids a bunch of pointless complexity, so we do the same
             'updated' => (int) $this->now(),
             'items'   => $out
         ];
-        return self::respond($format, $out);
+        if ($allowContinuation && sizeof($out['items']) === $this->pageSize($query['n'])) {
+            // there are probably more items, so we construct a continuation string
+            $out['continuation'] = $this->computeContinuation($query, $latest);
+        }
+        return $out;
     }
 
     protected function getAllLabels(): array {
