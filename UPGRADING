@@ -11,7 +11,16 @@ usually prudent:
   `composer install -o --no-dev`
 
 
-Upgrading from 0.11.0 to 0.12.0
+UUpgrading from 0.12.0 to 0.13.0
+=============================
+
+- Web server configuration has changed to accommodate Google Reader; the
+  following URL paths are affected:
+    - /api/greader.php/
+  You may need to restart your Web server for changes to take effect
+
+
+pgrading from 0.11.0 to 0.12.0
 ===============================
 
 - The database schema has changed from rev7 to rev8; if upgrading the database
