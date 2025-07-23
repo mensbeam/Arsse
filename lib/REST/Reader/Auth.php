@@ -25,7 +25,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         $target = $req->getRequestTarget();
         // ensure the URL is correct; the full path is already stripped by the global handler, so we should have no path remaining
-        if (parse_url($target, \PHP_URL_PATH) !== "") {
+        if (parse_url($target, \PHP_URL_PATH) !== null) {
             return HTTP::respEmpty(404);
         }
         // get the login data, preferring POST data

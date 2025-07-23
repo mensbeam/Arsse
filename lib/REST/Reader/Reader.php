@@ -102,7 +102,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // try to authenticate
         if ($this->authenticate($req)) {
-            return $this->challenge(self::respError("401", 401));
+            return $this->challenge(self::respError("401", 400));
         }
         // determine which handler to call
         $func = $this->chooseCall($target, $method);
@@ -124,7 +124,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             try {
                 Arsse::$db->tokenLookup("reader.post", $token, Arsse::$user->id);
             } catch (ExceptionInput $e) {
-                return $this->challenge(self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"]));
+                return $this->challenge(self::respError("401", 400, ['X-Reader-Google-Bad-Token' => "true"]));
             }
         }
         // handle the request
