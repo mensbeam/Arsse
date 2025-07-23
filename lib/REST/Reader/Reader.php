@@ -689,6 +689,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'htmlUrl' => $f['source'],
                 'sortid' => $this->makeSortId(++$sort),
                 'id' => "feed/{$f['url']}",
+                'url' => $f['url'], // NOTE: This appears to be a FreshRSS extension and is expected by Newsflash
                 'categories' => array_map(function($t) use ($meta) {
                     return [
                         'id' => "user/{$meta['num']}/$t",
