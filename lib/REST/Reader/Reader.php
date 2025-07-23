@@ -1046,7 +1046,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         $out = [
             'id'      => "user/-/state/com.google/reading-list", // NOTE: FreshRSS uses the reading list stream ID for any stream; this avoids a bunch of pointless complexity, so we do the same
-            'updated' => (int) $this->now(),
+            'updated' => Date::transform($this->now(), "unix"),
             'items'   => $out
         ];
         if ($allowContinuation && sizeof($out['items']) === $this->pageSize($query['n'])) {
