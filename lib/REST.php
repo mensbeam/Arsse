@@ -74,7 +74,7 @@ class REST {
         'freshrss-auth' => [ // User authentication for FreshRSS
             'match' => '/api/greader.php/accounts/ClientLogin',
             'strip' => '/api/greader.php/accounts/ClientLogin',
-            'class' => REST\Reader\Reader::class,
+            'class' => REST\Reader\Auth::class,
         ],
         // Other candidates:
         // Microsub             https://indieweb.org/Microsub
