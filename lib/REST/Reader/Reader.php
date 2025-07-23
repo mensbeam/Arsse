@@ -41,6 +41,9 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * 
      * The list of allowed parameters excludes "T" and "output", which are
      * handled specially when input is parsed.
+     * 
+     * NOTE: The /stream/contents route ought not to allow POST, but the
+     * Newsflash client requires this in order to function.
     */
     protected const CALLS = [         // Handler method     GET    POST   T req  Atom   Allowed params
         '/disable-tag'            => ["tagDisable",         false, true,  true,  false, ['s' => V::T_STRING, 't' => V::T_STRING]],
@@ -50,8 +53,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/preference/list'        => ["prefsGet",           true,  false, false, false, []],
         '/preference/stream/list' => ["prefsStreamGet",     true,  false, false, false, []],
         '/rename-tag'             => ["tagRename",          false, true,  true,  false, ['s' => V::T_STRING, 't' => V::T_STRING, 'dest' =>V::T_STRING]],
-        '/stream/contents'        => ["streamContents",     true,  false, false, true,  ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE, 'includeAllDirectStreamIds' => V::T_BOOL]],
-        '/stream/contents/*'      => ["streamContents",     true,  false, false, true,  ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE, 'includeAllDirectStreamIds' => V::T_BOOL]],
+        '/stream/contents'        => ["streamContents",     true,  true,  false, true,  ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE, 'includeAllDirectStreamIds' => V::T_BOOL]],
+        '/stream/contents/*'      => ["streamContents",     true,  true,  false, true,  ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE, 'includeAllDirectStreamIds' => V::T_BOOL]],
         '/stream/items/contents'  => ["itemContents",       true,  true,  false, true,  ['i' => V::T_STRING + V::M_ARRAY, 'includeAllDirectStreamIds' => V::T_BOOL]],
         '/stream/items/count'     => ["itemCount",          true,  false, false, false, ['s' => V::T_STRING, 'a' => V::T_BOOL]],
         '/stream/items/ids'       => ["itemIds",            true,  false, false, false, ['s' => V::T_STRING, 'n' => V::T_INT, 'includeAllDirectStreamIds' => V::T_BOOL, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE]],
@@ -1111,7 +1114,9 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         // fairly typical time-based constraits can also be applied
         $c->modifiedRange($query['ot'], $query['nt']);
         // the 'i' parameter is only valid in continuations and is our page anchor
-        $c->editionRange($asc ? $query['i'] : null, $asc ? null : $query['i']);
+        if (isset($query['i'])) {
+            $c->editionRange($asc ? $query['i'] : null, $asc ? null : $query['i']);
+        }
         // pagination is always applied
         $c->limit($this->pageSize($query['n']));
         // return the context
