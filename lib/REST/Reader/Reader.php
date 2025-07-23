@@ -1146,16 +1146,24 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         } else {
             $anchor++;
         }
-        // strip any null values
-        $query = array_filter($query, function($v) {
-            return isset($v);
-        });
         // sort by key for consistency
         ksort($query);
         // add our anchor
         $query['i'] = $anchor;
-        // return the string as base64
-        return base64_encode(implode("&", $query));
+        // turn the array back into a url-encoded string and return it base64
+        $out = [];
+        foreach ($query as $k => $v) {
+            if ($v === null) {
+                // nulls are unnecessary
+                continue;
+            } elseif ($v instanceof \DateTimeInterface) {
+                // dates must be converted back into integers
+                $v = Date::transform($v, "unix");
+            }
+            $v = urlencode($v);
+            $out[] = "$k=$v";
+        }
+        return base64_encode(implode("&", $out));
     }
 
     protected static function respond(string $format, array $data, int $status = 200, array $headers = []): ResponseInterface {
