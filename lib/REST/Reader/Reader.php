@@ -33,6 +33,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const LABEL_PATTERN = "/^user\/[^\/]+\/label\/(.+)/";
     protected const STATE_PATTERN = "/^user\/[^\/]+\/state\/com\.google\/(.+)/";
     protected const FEED_PATTERN = "/^feed\/(.+)/";
+    /** The list of all known parameters. Their meanings can differ between calls, so they are not documentaed here */
+    protected const ALLOWED = ["s", "t", "i", "a", "r", "ts", "dest", "n", "c", "xt", "it", "ot", "nt", "ac", "quickadd", "includeAllDirectStreamIds"];
     /** The list of URL matches for calls
      * 
      * An asterisk in a URL is a stand-in for any stream ID. Resources may
@@ -232,16 +234,19 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function parseQuery(string $query, array $allowed, bool $allowFormat, bool $allowToken): array {
-        $out = [];
         // fill an array with all allowed keys
-        foreach ($allowed as $k => $t) {
-            $out[$k] = ($t >= V::M_ARRAY) ? [] : null;
-        }
+        $out = array_fill_keys(self::ALLOWED, null);
         if ($allowFormat) {
             $out['output'] = null;
         }
         if ($allowToken) {
             $out['T'] = null;
+        }
+        // ensure any array-type parameters (this differs by call) are arrays
+        foreach ($allowed as $k => $t) {
+            if ($t >= V::M_ARRAY) {
+                $out[$k] = [];
+            }
         }
         // parse the string
         foreach (explode("&", $query) as $q) {
@@ -938,7 +943,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             // prepare the entry
             $out[] = [
                 'id' => $this->itemIdEncode((int) $i['id']),
-                'timestampUsec' => ((int) V::normalize($i['modified_date'], V::T_DATE, "sql"))."000000",
+                'timestampUsec' => Date::transform($i['modified_date'], "unix", "sql")."000000",
                 'directStreamIds' => $streams,
             ];
             $latest = max($latest, (int) $i['edition']);
