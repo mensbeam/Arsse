@@ -928,13 +928,15 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * @see https://github.com/bazqux/bazqux-api?tab=readme-ov-file#item-ids
      * @see https://github.com/mihaip/google-reader-api/blob/master/wiki/ApiStreamItemsIds.wiki */
     protected function itemIds(string $target, array $query, array $body, string $format): ResponseInterface {
+        $asc = $query['r'] !== "o";
+        $sort = $asc ? ["edition"] : ["edition desc"];
         $out = [];
         $latest = null;
         $context = $this->articleContext($query);
         $tr = Arsse::$db->begin();
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
         $labels = $this->getAllLabels();
-        foreach (Arsse::$db->articleList(Arsse::$user->id, $context, ["id", 'edition', "modified_date", "subscription", "subscription_url", "unread", "starred"], ["edition desc"]) as $i) {
+        foreach (Arsse::$db->articleList(Arsse::$user->id, $context, ["id", 'edition', "modified_date", "subscription", "subscription_url", "unread", "starred"], $sort) as $i) {
             // NOTE: No two implementations seem to quite agree on what
             //   this parameter does; FreshRSS doesn't even implement it
             //   at all, so we'll do what FeedHQ does and just present an
@@ -946,7 +948,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'timestampUsec' => Date::transform($i['modified_date'], "unix", "sql")."000000",
                 'directStreamIds' => $streams,
             ];
-            $latest = max($latest, (int) $i['edition']);
+            $latest = $asc ? max($latest, (int) $i['edition']) : min($latest, (int) $i['edition']);
         }
         $out = ['itemRefs' => $out];
         if (sizeof($out['itemRefs']) === $this->pageSize($query['n'])) {
@@ -987,6 +989,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function articleFetch(Context $context, array $query, bool $allowContinuation): array {
+        $asc = $query['r'] !== "o";
+        $sort = $asc ? ["edition"] : ["edition desc"];
         $latest = null;
         $out = [];
         $tr = Arsse::$db->begin();
@@ -1012,7 +1016,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             "content",
             "media_url",
             "media_type",
-        ], ["edition desc"]) as $i) {
+        ], $sort) as $i) {
             // NOTE: This parameter is not implemented by either FreshRSS or
             //   FeedHQ, but it is present in at least Inoreader, so there's
             //   no harm in having it
@@ -1047,7 +1051,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 ],
             ];
             // note the largest edition ID for continuation computation
-            $latest = max($latest, (int) $i['edition']);
+            $latest = $asc ? max($latest, (int) $i['edition']) : min($latest, (int) $i['edition']);
         }
         $out = [
             'id'      => "user/-/state/com.google/reading-list", // NOTE: FreshRSS uses the reading list stream ID for any stream; this avoids a bunch of pointless complexity, so we do the same
