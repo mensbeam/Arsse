@@ -1160,7 +1160,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // dates must be converted back into integers
                 $v = Date::transform($v, "unix");
             }
-            $v = urlencode($v);
+            $v = urlencode((string) $v);
             $out[] = "$k=$v";
         }
         return base64_encode(implode("&", $out));
