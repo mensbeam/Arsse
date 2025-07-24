@@ -72,7 +72,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/user-info'              => ["userGet",            true,  false, false, false, []],
     ];
     /** The parameters encoded in a continuation string, with their types */
-    protected const CONTINUATION_PARAMS = ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE, 'includeAllDirectStreamIds' => V::T_BOOL];
+    protected const CONTINUATION_PARAMS = ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE, 'i' => V::T_INT, 'includeAllDirectStreamIds' => V::T_BOOL];
     /** A list of state streams which we do not support and will therefore return an empty set when queried */
     protected const UNSUPPORTED_STATES = [
         "broadcast",
