@@ -124,12 +124,12 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         // check the POST token, if appropriate
         if ($reqT && Arsse::$conf->userSessionEnforced) {
             if (!isset($token)) {
-                self::respError("TokenRequired", 400);
+                return self::respError("TokenRequired", 400);
             }
             try {
                 Arsse::$db->tokenLookup("reader.post", $token, Arsse::$user->id);
             } catch (ExceptionInput $e) {
-                return $this->challenge(self::respError("401", 400, ['X-Reader-Google-Bad-Token' => "true"]));
+                return self::respError("401", 400, ['X-Reader-Google-Bad-Token' => "true"]);
             }
         }
         // handle the request
@@ -601,7 +601,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function tagEdit(string $target, array $query, array $body, string $format): ResponseInterface {
         if (!$body['i']) {
             return self::respError(["ParameterRequired", "i"]);
-        } else if (!$body['a'] && !$body['r']) {
+        } elseif (!$body['a'] && !$body['r']) {
             return self::respError(["ParameterRequiredOneOfTwo", "a", "r"]);
         }
         $c = new Context;
