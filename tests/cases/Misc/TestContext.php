@@ -61,6 +61,8 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public static function provideContextOptions(): iterable {
+        $and = (new Context)->article(1);
+        $or = (new Context)->article(2);
         $tests = [
             'limit'            => [[10],                                             10],
             'offset'           => [[5],                                              5],
@@ -97,6 +99,8 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'addedRange'       => [["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"], ["2020-03-06T22:08:03Z", "2022-12-31T06:33:12Z"]],
             'articleRange'     => [[1, 100],                                         [1, 100]],
             'editionRange'     => [[1, 100],                                         [1, 100]],
+            'andGroups'        => [[[$and]],                                         [$and]],
+            'orGroups'        => [[[$or]],                                          [$or]],
         ];
         foreach ($tests as $k => [$input, $output]) {
             yield $k => [$k, $input, $output, false];

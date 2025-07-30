@@ -108,4 +108,19 @@ class TestQuery extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(["datetime", "str", "int", "str", "int"], $q->getTypes());
         $this->assertSame([1, "ook", 42, "ook", 42], $q->getValues());
     }
+
+    public function testNestedNegativeWhereConditions(): void {
+        $q = new Query("SELECT *, ? as const from table", "datetime", 1);
+        $f = new QueryFilter;
+        $f->setWhere("a = ?", "str", "ook")->setWhere("b = c")->setWhere("c = ?", "int", 42);
+        $this->assertSame("a = ? AND b = c AND c = ?", (string) $f);
+        $this->assertSame(["str", "int"], $f->getTypes());
+        $this->assertSame(["ook", 42], $f->getValues());
+        $q->setWhereNotGroup($f, true);
+        $this->assertSame("a = ? AND b = c AND c = ?", (string) $f);
+        $q->setWhereNotGroup($f, false);
+        $this->assertSame("SELECT *, ? as const from table WHERE NOT ((a = ? AND b = c AND c = ?) OR (a = ? OR b = c OR c = ?))", $q->getQuery());
+        $this->assertSame(["datetime", "str", "int", "str", "int"], $q->getTypes());
+        $this->assertSame([1, "ook", 42, "ook", 42], $q->getValues());
+    }
 }

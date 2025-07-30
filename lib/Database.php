@@ -1930,7 +1930,7 @@ class Database {
             }
             // handle the exclusionary version
             if ($context->not->$m()) {
-                foreach ($context->$m as $c) {
+                foreach ($context->not->$m as $c) {
                     $q->setWhereNotGroup($this->articleFilter($c), $restrictive);
                 }
             }

@@ -524,6 +524,7 @@ trait SeriesArticle {
             'Published prior to 1810 or since 1815'                      => [(new Context)->publishedRanges([[null, "1809-12-31T23:59:59Z"], ["1815-01-01T00:00:00Z", null]]), [1,3,5,7,19]],
             'Not published prior to 1810 or since 1815'                  => [(new Context)->not->publishedRanges([[null, "1809-12-31T23:59:59Z"], ["1815-01-01T00:00:00Z", null]]), [2,4,6,8,20]],
             'Either read or hidden'                                      => [(new Context)->orGroups([(new Context)->unread(false)->hidden(true)]), [1, 6, 19]],
+            'Not both labelled and in folder 1 tree'                     => [(new Context)->not->andGroups([(new Context)->labelled(true)->folder(1)]), [1, 2, 3, 4, 6, 7, 19, 20]],
         ];
     }
 
