@@ -65,7 +65,7 @@ class Conf {
     public $userDriver = "internal";
     /** @var boolean Whether users are already authenticated by the Web server before the application is executed */
     public $userPreAuth = false;
-    /** @var boolean Whether to require successful HTTP authentication before processing API-level authentication for protocols which have any. Normally the Tiny Tiny RSS relies on its own session-token authentication scheme, for example */
+    /** @var boolean Whether to require successful HTTP authentication before processing API-level authentication for protocols which have any. Normally the Tiny Tiny RSS protocol relies on its own session-token authentication scheme, for example */
     public $userHTTPAuthRequired = false;
     /** @var integer Desired length of temporary user passwords */
     public $userTempPasswordLength = 20;

@@ -123,6 +123,9 @@
       <file>cases/REST/Miniflux/PDO/TestV1.php</file>
       <file>cases/REST/Miniflux/PDO/TestToken.php</file>
     </testsuite>
+    <testsuite name="Reader">
+      <file>cases/REST/Reader/TestAuth.php</file>
+    </testsuite>
     <testsuite name="NCNv1">
       <file>cases/REST/NextcloudNews/TestVersions.php</file>
       <file>cases/REST/NextcloudNews/TestV1_2.php</file>

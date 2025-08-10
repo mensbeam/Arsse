@@ -25,24 +25,27 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         $target = $req->getRequestTarget();
         // ensure the URL is correct; the full path is already stripped by the global handler, so we should have no path remaining
-        if (parse_url($target, \PHP_URL_PATH) !== null) {
+        if ((parse_url($target, \PHP_URL_PATH) ?? "") !== "") {
             return HTTP::respEmpty(404);
         }
-        // get the login data, preferring POST data
-        parse_str((string) $req->getBody(), $data);
-        if (!$data) {
-            parse_str(parse_url($target, \PHP_URL_QUERY), $data);
+        // issue an HTTP Basic authentication challenge if we require it (this is our own extension)
+        if (Arsse::$conf->userHTTPAuthRequired && $req->getAttribute("authenticated", false)) {
+            return $this->challenge(HTTP::respEmpty(401));
         }
+        // get the login data, preferring GET data; which FreshRSS prefers
+        //   depends on PHP configuration, for which the default is GET first
+        parse_str((string) $req->getBody(), $body);
+        parse_str((string) parse_url($target, \PHP_URL_QUERY), $query);
+        $user = $query['Email'] ?? $body['Email'] ?? "";
+        $pass = $query['Passwd'] ?? $body['Passwd'] ?? "";
         // attempt to authenticate the user
-        $user = $data['Email'] ?? "";
-        $pass = $data['Passwd'] ?? "";
         if (Arsse::$user->auth($user, $pass)) {
             // successful authentication creates a long-lived token which can be used to authenticate other requests
             $token = Arsse::$db->tokenCreate($user, "reader.login", null, $this->now()->add(new \DateInterval("P7D")));
             return HTTP::respText("SID=$token\nLSID=$token\nAuth=$token");
         } else {
             // NOTE: FreshRSS uses a different error response, but this seems to be what all other Reader implementations do
-            return $this->challenge(HTTP::respText("Error=BadAuthentication", 401));
+            return HTTP::respText("Error=BadAuthentication", 401);
         }
     }
 }
