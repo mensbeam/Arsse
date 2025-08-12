@@ -27,6 +27,8 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         // ensure the URL is correct; the full path is already stripped by the global handler, so we should have no path remaining
         if ((parse_url($target, \PHP_URL_PATH) ?? "") !== "") {
             return HTTP::respEmpty(404);
+        } elseif (!in_array($req->getMethod(), ["GET", "POST"])) {
+            return HTTP::respEmpty(405);
         }
         // issue an HTTP Basic authentication challenge if we require it (this is our own extension)
         if (Arsse::$conf->userHTTPAuthRequired && $req->getAttribute("authenticated", false)) {
@@ -44,8 +46,12 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
             $token = Arsse::$db->tokenCreate($user, "reader.login", null, $this->now()->add(new \DateInterval("P7D")));
             return HTTP::respText("SID=$token\nLSID=$token\nAuth=$token");
         } else {
-            // NOTE: FreshRSS uses a different error response, but this seems to be what all other Reader implementations do
-            return HTTP::respText("Error=BadAuthentication", 401);
+            // NOTE: FreshRSS uses a different error response, but this seems
+            //   to be what all other Reader implementations do. Additionally,
+            //   at least some clients (e.g. Newsflash) treat a 401 response
+            //   as a request for HTTP Basic authentication, so we respond
+            //   with 400 instead
+            return HTTP::respText("Error=BadAuthentication", 400);
         }
     }
 }
