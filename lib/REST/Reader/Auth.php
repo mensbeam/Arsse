@@ -31,8 +31,8 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
             return HTTP::respEmpty(405);
         }
         // issue an HTTP Basic authentication challenge if we require it (this is our own extension)
-        if (Arsse::$conf->userHTTPAuthRequired && $req->getAttribute("authenticated", false)) {
-            return $this->challenge(HTTP::respEmpty(401));
+        if ($this->shouldChallenge($req)) {
+            return HTTP::respEmpty(401);
         }
         // get the login data, preferring GET data; which FreshRSS prefers
         //   depends on PHP configuration, for which the default is GET first

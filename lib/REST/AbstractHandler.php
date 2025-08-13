@@ -20,6 +20,18 @@ abstract class AbstractHandler implements Handler {
         return Arsse::$obj->get(\DateTimeImmutable::class)->setTimezone(new \DateTimeZone("UTC"));
     }
 
+    protected function shouldChallenge(ServerRequestInterface $req): bool {
+        if ($req->getAttribute("authenticationFailed", false)) {
+            return true;
+        } elseif (Arsse::$conf->userHTTPAuthRequired || Arsse::$conf->userPreAuth) {
+            if ($req->getAttribute("authenticated", false)) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
     protected function isAdmin(): bool {
         return (bool) Arsse::$user->propertiesGet(Arsse::$user->id)['admin'];
     }

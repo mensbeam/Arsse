@@ -124,7 +124,7 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
                 if ($req->getAttribute("authenticated", false)) {
                     // if HTTP authentication was successfully used, set the expected user ID
                     Arsse::$user->id = $req->getAttribute("authenticatedUser");
-                } elseif (Arsse::$conf->userHTTPAuthRequired || Arsse::$conf->userPreAuth || $req->getAttribute("authenticationFailed", false)) {
+                } elseif ($this->shouldChallenge($req)) {
                     // otherwise if HTTP authentication failed or is required, deny access at the HTTP level
                     return HTTP::respEmpty(401);
                 }

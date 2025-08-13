@@ -76,4 +76,25 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
             ["PUT",  "ClientLogin",                      "Email=ook&Passwd=eek", null,           false, HTTP::respEmpty(405)],
         ];
     }
+
+    #[DataProvider("provideBasicAuthentications")]
+    public function testExerciseBasicAuthentication(bool $httpReq, bool $authTried, bool $authPassed, ResponseInterface $exp): void {
+        Arsse::$conf->userHTTPAuthRequired = $httpReq;
+        $user = $authTried ? ($authPassed ? "ook" : "") : null;
+        $r = $this->serverRequest("GET", "/api/greader.php/accounts/ClientLogin", "/api/greader.php/accounts/ClientLogin", [], [], "Email=ook&Passwd=eek", "application/x-www-form-urlencoded", [], $user);
+        $act = $this->h->dispatch($r);
+        $this->assertMessage($exp, $act);
+    }
+
+    public static function provideBasicAuthentications(): iterable {
+        $token = "12345";
+        return [
+            [false, false, false, HTTP::respText("SID=$token\nLSID=$token\nAuth=$token")],
+            [false, true,  false, HTTP::respEmpty(401)],
+            [false, true,  true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token")],
+            [true,  false, false, HTTP::respEmpty(401)],
+            [true,  true,  false, HTTP::respEmpty(401)],
+            [true,  true,  true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token")],
+        ];
+    }
 }

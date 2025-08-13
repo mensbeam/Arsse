@@ -13,22 +13,7 @@ use Psr\Http\Message\ResponseInterface;
 
 trait Common {
     protected function challenge(ResponseInterface $res): ResponseInterface {
-        $useBasic = true;
-        $useReader = true;
-        if (!isset(Arsse::$user->id) && Arsse::$conf->userHTTPAuthRequired) {
-            // don't present protocol-level authentication of HTTP-level authentication is required and missing
-            $useReader = false;
-        } elseif (isset(Arsse::$user->id)) {
-            // don't present HTTP-level authentication if it has already been passed successfully
-            $useBasic = false;
-        }
-        if ($useReader) {
-            $res = $res->withAddedHeader("WWW-Authenticate", "GoogleLogin");
-        }
-        if ($useBasic) {
-            $res = HTTP::challenge($res);
-        }
-        return $res;
+        return $res->withAddedHeader("WWW-Authenticate", "GoogleLogin");
     }
 
     public static function respError($message, int $status = 400, array $headers = []): ResponseInterface {
