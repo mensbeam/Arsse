@@ -12,8 +12,19 @@ use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\ResponseInterface;
 
 trait Common {
+    /** Performs a GoogleLogin and possibly an HTTP Basic challenge
+     * 
+     * When this function is called mandatory HTTP authentication has already
+     * been checked, so GoogleLogin is always a viable means of authentication
+     * and it's only other schemes which might or might not also be acceptable
+     * depending on configuration.
+     */
     protected function challenge(ResponseInterface $res): ResponseInterface {
-        return $res->withAddedHeader("WWW-Authenticate", "GoogleLogin");
+        $res = $res->withAddedHeader("WWW-Authenticate", "GoogleLogin");
+        if (!Arsse::$conf->userSessionEnforced) {
+            $res = HTTP::challenge($res);
+        }
+        return $res;
     }
 
     public static function respError($message, int $status = 400, array $headers = []): ResponseInterface {

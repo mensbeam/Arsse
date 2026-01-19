@@ -105,8 +105,10 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($method === "OPTIONS") {
             return $this->handleHttpOptions($target);
         }
-        // try to authenticate
-        if (!$this->authenticate($req)) {
+        // check authentication
+        if ($this->shouldChallenge($req)) {
+            return self::respError("401", 401);
+        } elseif (!$this->authenticate($req)) {
             return $this->challenge(self::respError("401", 400));
         }
         // determine which handler to call
@@ -409,10 +411,6 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($req->getAttribute("authenticated", false)) {
             // if HTTP authentication was successfully used, set the expected user ID
             Arsse::$user->id = $req->getAttribute("authenticatedUser");
-            return true;
-        } elseif (Arsse::$conf->userHTTPAuthRequired || Arsse::$conf->userPreAuth || $req->getAttribute("authenticationFailed", false)) {
-            // otherwise if HTTP authentication failed or is required, deny access at the HTTP level
-            return false;
         }
         if (isset(Arsse::$user->id) && !Arsse::$conf->userSessionEnforced) {
             // if sessions are not enforced don't even check the login token

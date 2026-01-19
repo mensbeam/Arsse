@@ -125,6 +125,7 @@
     </testsuite>
     <testsuite name="Reader">
       <file>cases/REST/Reader/TestAuth.php</file>
+      <file>cases/REST/Reader/TestReader.php</file>
     </testsuite>
     <testsuite name="NCNv1">
       <file>cases/REST/NextcloudNews/TestVersions.php</file>

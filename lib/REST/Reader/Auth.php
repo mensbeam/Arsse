@@ -13,8 +13,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
-    use Common;
-
     public function __construct() {
     }
 
