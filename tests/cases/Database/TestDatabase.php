@@ -36,7 +36,9 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
 
     protected function invoke(string $method, ...$arg) {
         $m = new \ReflectionMethod($this->db, $method);
-        $m->setAccessible(true);
+        if (version_compare(\PHP_VERSION, "8.1.0") < 0) {
+            $m->setAccessible(true);
+        }
         return $m->invoke($this->db, ...$arg);
     }
 

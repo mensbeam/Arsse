@@ -132,7 +132,7 @@ class OPML extends AbstractImportExport {
         }
         // insert each folder into its parent node; for the root folder the parent is the document root node
         foreach ($folders as $id => $el) {
-            $parent = $folders[$parents[$id]] ?? $document->documentElement;
+            $parent = $folders[$parents[$id] ?? ""] ?? $document->documentElement;
             $parent->appendChild($el);
         }
         // create a DOM node for each subscription and insert them directly into their folder DOM node

@@ -112,7 +112,9 @@ OPML_EXPORT_SERIALIZATION;
         // make the ImportExport::parse() method visible
         $parser = new OPML;
         $parseFunc = new \ReflectionMethod($parser, "parse");
-        $parseFunc->setAccessible(true);
+        if (version_compare(\PHP_VERSION, "8.1.0") < 0) {
+            $parseFunc->setAccessible(true);
+        }
         if ($exp instanceof \Exception) {
             $this->assertException($exp);
             $parseFunc->invoke($parser, $data, $flat);

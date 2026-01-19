@@ -69,7 +69,7 @@ class Driver extends \JKingWeb\Arsse\Db\AbstractDriver {
         $this->exec("PRAGMA foreign_keys = yes");
         // use a case-insensitive Unicode collation sequence
         $this->collator = new \Collator("@kf=false");
-        $m = ($this->db instanceof \PDO) ? "sqliteCreateCollation" : "createCollation";
+        $m = ($this->db instanceof \PDO && !$this->db instanceof \Pdo\Sqlite) ? "sqliteCreateCollation" : "createCollation";
         $this->db->$m("nocase", [$this->collator, "compare"]);
     }
 

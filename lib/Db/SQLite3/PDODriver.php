@@ -14,14 +14,19 @@ class PDODriver extends AbstractPDODriver {
     protected $db;
 
     public static function requirementsMet(): bool {
-        return class_exists("PDO") && in_array("sqlite", \PDO::getAvailableDrivers());
+        return class_exists(\Pdo\Sqlite::class) || (class_exists("PDO") && in_array("sqlite", \PDO::getAvailableDrivers()));
     }
 
     protected function makeConnection(string $file, string $key): void {
-        $this->db = new \PDO("sqlite:".$file, "", "", [
+        $options = [
             \PDO::ATTR_ERRMODE           => \PDO::ERRMODE_EXCEPTION,
             \PDO::ATTR_STRINGIFY_FETCHES => true,
-        ]);
+        ];
+        if (class_exists(\Pdo\Sqlite::class)) {
+            $this->db = new \Pdo\Sqlite("sqlite:".$file, "", "", $options);
+        } else {
+            $this->db = new \PDO("sqlite:".$file, "", "", $options);
+        }
     }
 
     public function __destruct() {
