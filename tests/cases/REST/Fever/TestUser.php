@@ -27,18 +27,18 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         self::setConf();
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->auth->thenReturn(true);
+        \Phake::when(Arsse::$user)->auth(\Phake::anyParameters())->thenReturn(true);
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
+        \Phake::when(Arsse::$db)->begin(\Phake::anyParameters())->thenReturn(\Phake::mock(Transaction::class));
         // instantiate the handler
         $this->h = new FeverUser;
     }
 
     #[DataProvider("providePasswordCreations")]
     public function testRegisterAUserPassword(string $user, ?string $password, $exp): void {
-        \Phake::when(Arsse::$user)->generatePassword->thenReturn("RANDOM_PASSWORD");
-        \Phake::when(Arsse::$db)->tokenCreate->thenReturnCallback(function($user, $class, $id = null) {
+        \Phake::when(Arsse::$user)->generatePassword(\Phake::anyParameters())->thenReturn("RANDOM_PASSWORD");
+        \Phake::when(Arsse::$db)->tokenCreate(\Phake::anyParameters())->thenReturnCallback(function($user, $class, $id = null) {
             return $id ?? "RANDOM_TOKEN";
         });
         \Phake::when(Arsse::$db)->tokenCreate("john.doe@example.org", $this->anything(), $this->anything())->thenThrow(new UserException("doesNotExist"));
@@ -67,17 +67,17 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testUnregisterAUser(): void {
-        \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(3);
+        \Phake::when(Arsse::$db)->tokenRevoke(\Phake::anyParameters())->thenReturn(3);
         $this->assertTrue($this->h->unregister("jane.doe@example.com"));
         \Phake::verify(Arsse::$db)->tokenRevoke("jane.doe@example.com", "fever.login");
-        \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(0);
+        \Phake::when(Arsse::$db)->tokenRevoke(\Phake::anyParameters())->thenReturn(0);
         $this->assertFalse($this->h->unregister("john.doe@example.com"));
         \Phake::verify(Arsse::$db)->tokenRevoke("john.doe@example.com", "fever.login");
     }
 
     #[DataProvider("provideUserAuthenticationRequests")]
     public function testAuthenticateAUserName(string $user, string $password, bool $exp): void {
-        \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("constraintViolation"));
+        \Phake::when(Arsse::$db)->tokenLookup(\Phake::anyParameters())->thenThrow(new ExceptionInput("constraintViolation"));
         \Phake::when(Arsse::$db)->tokenLookup("fever.login", md5("jane.doe@example.com:secret"))->thenReturn(['user' => "jane.doe@example.com"]);
         \Phake::when(Arsse::$db)->tokenLookup("fever.login", md5("john.doe@example.com:superman"))->thenReturn(['user' => "john.doe@example.com"]);
         $this->assertSame($exp, $this->h->authenticate($user, $password));

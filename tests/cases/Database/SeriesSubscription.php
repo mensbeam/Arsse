@@ -234,8 +234,8 @@ trait SeriesSubscription {
         $url = "http://example.org/feed5";
         $id = $this->nextID("arsse_subscriptions");
         Arsse::$db = \Phake::partialMock(Database::class, static::$drv);
-        \Phake::when(Arsse::$db)->subscriptionUpdate->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionUpdate(\Phake::anyParameters())->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(\Phake::anyParameters())->thenReturn(true);
         try {
             $this->assertSame($id, Arsse::$db->subscriptionAdd($this->user, $url, false, ['order_type' => 2]));
         } finally {
@@ -251,8 +251,8 @@ trait SeriesSubscription {
         $url = "http://example.org/feed5";
         $id = $this->nextID("arsse_subscriptions");
         Arsse::$db = \Phake::partialMock(Database::class, static::$drv);
-        \Phake::when(Arsse::$db)->subscriptionUpdate->thenThrow(new FeedException("", ['url' => $url], $this->mockGuzzleException(ClientException::class, "", 404)));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionUpdate(\Phake::anyParameters())->thenThrow(new FeedException("", ['url' => $url], $this->mockGuzzleException(ClientException::class, "", 404)));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(\Phake::anyParameters())->thenReturn(true);
         $this->assertException("invalidUrl", "Feed");
         try {
             Arsse::$db->subscriptionAdd($this->user, $url, false, ['order_type' => 2]);

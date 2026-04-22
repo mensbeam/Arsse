@@ -159,15 +159,15 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         self::setConf();
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->auth->thenReturn(true);
+        \Phake::when(Arsse::$user)->auth(\Phake::anyParameters())->thenReturn(true);
         Arsse::$user->id = $this->userId;
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
-        \Phake::when(Arsse::$db)->tokenLookup->thenReturn(['user' => "john.doe@example.com"]);
+        \Phake::when(Arsse::$db)->begin(\Phake::anyParameters())->thenReturn(\Phake::mock(Transaction::class));
+        \Phake::when(Arsse::$db)->tokenLookup(\Phake::anyParameters())->thenReturn(['user' => "john.doe@example.com"]);
         // instantiate the handler as a partial mock to simplify testing
         $this->hMock = \Phake::partialMock(API::class);
-        \Phake::when($this->hMock)->baseResponse->thenReturn([]);
+        \Phake::when($this->hMock)->baseResponse(\Phake::anyParameters())->thenReturn([]);
     }
 
     #[DataProvider("provideTokenAuthenticationRequests")]
@@ -177,13 +177,13 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             'userSessionEnforced'  => $tokenEnforced,
         ], true);
         Arsse::$user->id = null;
-        \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->tokenLookup(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
         \Phake::when(Arsse::$db)->tokenLookup("fever.login", "validtoken")->thenReturn(['user' => "jane.doe@example.com"]);
         // test only the authentication process
-        \Phake::when($this->hMock)->baseResponse->thenReturnCallback(function(bool $authenticated) {
+        \Phake::when($this->hMock)->baseResponse(\Phake::anyParameters())->thenReturnCallback(function(bool $authenticated) {
             return ['auth' => (int) $authenticated];
         });
-        \Phake::when($this->hMock)->processRequest->thenReturnCallback(function($out, $G, $P) {
+        \Phake::when($this->hMock)->processRequest(\Phake::anyParameters())->thenReturnCallback(function($out, $G, $P) {
             return $out;
         });
         $this->assertMessage($exp, $this->req($dataGet, $dataPost, "POST", null, "", $httpUser));
@@ -297,7 +297,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testListItems(string $url, Context $c, bool $desc): void {
         $fields = ["id", "subscription", "title", "author", "content", "url", "starred", "unread", "published_date"];
         $order = [$desc ? "id desc" : "id"];
-        \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->articles['db']));
+        \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result($this->articles['db']));
         \Phake::when(Arsse::$db)->articleCount($this->userId, (new Context)->hidden(false))->thenReturn(1024);
         $exp = HTTP::respJson([
             'items'       => $this->articles['rest'],
@@ -346,7 +346,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
         \Phake::when(Arsse::$db)->articleList($this->userId, (new Context)->starred(true)->hidden(false))->thenReturn(new Result($saved));
         \Phake::when(Arsse::$db)->articleList($this->userId, (new Context)->unread(true)->hidden(false))->thenReturn(new Result($unread));
-        \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
+        \Phake::when(Arsse::$db)->articleMark(\Phake::anyParameters())->thenReturn(0);
         \Phake::when(Arsse::$db)->articleMark($this->userId, $this->anything(), (new Context)->article(2112))->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
         $exp = HTTP::respJson($out);
         $this->assertMessage($exp, $this->req("api", $post));
@@ -363,7 +363,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $unread = [['id' => 4],['id' => 5],['id' => 6]];
         \Phake::when(Arsse::$db)->articleList($this->userId, (new Context)->starred(true)->hidden(false))->thenReturn(new Result($saved));
         \Phake::when(Arsse::$db)->articleList($this->userId, (new Context)->unread(true)->hidden(false))->thenReturn(new Result($unread));
-        \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
+        \Phake::when(Arsse::$db)->articleMark(\Phake::anyParameters())->thenReturn(0);
         \Phake::when(Arsse::$db)->articleMark($this->userId, $this->anything(), (new Context)->article(2112))->thenThrow(new \JKingWeb\Arsse\Db\ExceptionInput("subjectMissing"));
         $exp = HTTP::respJson($out);
         $this->assertMessage($exp, $this->req("api&$get"));
@@ -428,8 +428,8 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testMakeABaseQuery(): void {
-        \Phake::when($this->hMock)->baseResponse->thenCallParent();
-        \Phake::when($this->hMock)->logIn->thenReturn(true);
+        \Phake::when($this->hMock)->baseResponse(\Phake::anyParameters())->thenCallParent();
+        \Phake::when($this->hMock)->logIn(\Phake::anyParameters())->thenReturn(true);
         \Phake::when(Arsse::$db)->subscriptionRefreshed($this->userId)->thenReturn(new \DateTimeImmutable("2000-01-01T00:00:00Z"));
         $exp = HTTP::respJson([
             'api_version'            => API::LEVEL,
@@ -444,7 +444,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
             'last_refreshed_on_time' => null,
         ]);
         $this->assertMessage($exp, $this->req("api"));
-        \Phake::when($this->hMock)->logIn->thenReturn(false);
+        \Phake::when($this->hMock)->logIn(\Phake::anyParameters())->thenReturn(false);
         $exp = HTTP::respJson([
             'api_version' => API::LEVEL,
             'auth'        => 0,
@@ -457,7 +457,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
         $out = ['unread_item_ids' => "4,5,6"];
         \Phake::when(Arsse::$db)->articleList($this->userId, $this->equalTo((new Context)->limit(1)->hidden(false)), ["marked_date"], ["marked_date desc"])->thenReturn(new Result([['marked_date' => "2000-01-01 00:00:00"]]));
         \Phake::when(Arsse::$db)->articleList($this->userId, $this->equalTo((new Context)->unread(true)->hidden(false)))->thenReturn(new Result($unread));
-        \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
+        \Phake::when(Arsse::$db)->articleMark(\Phake::anyParameters())->thenReturn(0);
         $exp = HTTP::respJson($out);
         $this->assertMessage($exp, $this->req("api", ['unread_recently_read' => 1]));
         \Phake::verify(Arsse::$db)->articleMark($this->userId, ['read' => false], $this->equalTo((new Context)->unread(false)->markedRange("1999-12-31T23:59:45Z", null)->hidden(false)));
@@ -467,7 +467,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testOutputToXml(): void {
-        \Phake::when($this->hMock)->processRequest->thenReturn([
+        \Phake::when($this->hMock)->processRequest(\Phake::anyParameters())->thenReturn([
             'items'       => $this->articles['rest'],
             'total_items' => 1024,
         ]);
@@ -478,7 +478,7 @@ class TestAPI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testListFeedIcons(): void {
         $iconType = (new \ReflectionClassConstant(API::class, "GENERIC_ICON_TYPE"))->getValue();
         $iconData = (new \ReflectionClassConstant(API::class, "GENERIC_ICON_DATA"))->getValue();
-        \Phake::when(Arsse::$db)->iconList->thenReturn(new Result(self::v([
+        \Phake::when(Arsse::$db)->iconList(\Phake::anyParameters())->thenReturn(new Result(self::v([
             ['id' => 42, 'type' => "image/svg+xml", 'data' => "<svg/>"],
             ['id' => 44, 'type' => null,            'data' => "IMAGE DATA"],
             ['id' => 47, 'type' => null,            'data' => null],

@@ -167,11 +167,11 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn($this->transaction);
+        \Phake::when(Arsse::$db)->begin(\Phake::anyParameters())->thenReturn($this->transaction);
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 42, 'admin' => false, 'root_folder_name' => null, 'tz' => "Asia/Gaza"]);
-        \Phake::when(Arsse::$user)->begin->thenReturn($this->transaction);
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn(['num' => 42, 'admin' => false, 'root_folder_name' => null, 'tz' => "Asia/Gaza"]);
+        \Phake::when(Arsse::$user)->begin(\Phake::anyParameters())->thenReturn($this->transaction);
         //initialize a handler
         $this->h = new V1;
     }
@@ -216,7 +216,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             $headers = [];
         }
         Arsse::$user->id = null;
-        \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->tokenLookup(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
         \Phake::when(Arsse::$db)->tokenLookup("miniflux.login", self::TOKEN)->thenReturn(['user' => $user]);
         $this->assertMessage($exp, $this->req("GET", "/", "", $headers, $auth ? "john.doe@example.com" : null));
         $this->assertSame($success ? $user : null, Arsse::$user->id);
@@ -306,18 +306,18 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testQueryUsers(bool $admin, string $route, ResponseInterface $exp): void {
         $user = $admin ? "john.doe@example.com" : "jane.doe@example.com";
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->list->thenReturn(["john.doe@example.com", "jane.doe@example.com", "juan.doe@example.com", "baby.doe@example.com", "admin@example.com"]);
-        \Phake::when(Arsse::$user)->propertiesGet->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->list(\Phake::anyParameters())->thenReturn(["john.doe@example.com", "jane.doe@example.com", "juan.doe@example.com", "baby.doe@example.com", "admin@example.com"]);
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenThrow(new ExceptionConflict("doesNotExist"));
         \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com")->thenReturn(self::USERS[0]);
         \Phake::when(Arsse::$user)->propertiesGet("jane.doe@example.com")->thenReturn(self::USERS[1]);
         \Phake::when(Arsse::$user)->propertiesGet("juan.doe@example.com")->thenReturn(self::USERS[2]);
         \Phake::when(Arsse::$user)->propertiesGet("baby.doe@example.com")->thenReturn(self::USERS[3]);
-        \Phake::when(Arsse::$db)->userPropertiesGet->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$db)->userPropertiesGet(\Phake::anyParameters())->thenThrow(new ExceptionConflict("doesNotExist"));
         \Phake::when(Arsse::$db)->userPropertiesGet("john.doe@example.com")->thenReturn(self::USERS_META[0]);
         \Phake::when(Arsse::$db)->userPropertiesGet("jane.doe@example.com")->thenReturn(self::USERS_META[1]);
         \Phake::when(Arsse::$db)->userPropertiesGet("juan.doe@example.com")->thenReturn(self::USERS_META[2]);
         \Phake::when(Arsse::$db)->userPropertiesGet("baby.doe@example.com")->thenReturn(self::USERS_META[3]);
-        \Phake::when(Arsse::$user)->lookup->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->lookup(\Phake::anyParameters())->thenThrow(new ExceptionConflict("doesNotExist"));
         \Phake::when(Arsse::$user)->lookup(1)->thenReturn("john.doe@example.com");
         \Phake::when(Arsse::$user)->lookup(2)->thenReturn("jane.doe@example.com");
         \Phake::when(Arsse::$user)->lookup(3)->thenReturn("juan.doe@example.com");
@@ -354,12 +354,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideUserModifications")]
     public function testModifyAUser(bool $admin, string $url, array $body, $metaIn, $prefsIn, $passwordOut, $renameOut, ResponseInterface $exp): void {
         $subject = self::USERS_OUT[array_reverse(explode("/", $url))[0] - 1]['username'] ?? "";
-        \Phake::when(Arsse::$user)->lookup->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->lookup(\Phake::anyParameters())->thenThrow(new ExceptionConflict("doesNotExist"));
         \Phake::when(Arsse::$user)->lookup(1)->thenReturn("john.doe@example.com");
         \Phake::when(Arsse::$user)->lookup(2)->thenReturn("jane.doe@example.com");
         \Phake::when(Arsse::$user)->lookup(3)->thenReturn("juan.doe@example.com");
         \Phake::when(Arsse::$user)->lookup(4)->thenReturn("baby.doe@example.com");
-        \Phake::when(Arsse::$user)->propertiesGet->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenThrow(new ExceptionConflict("doesNotExist"));
         \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com")->thenReturn(array_merge(self::USERS[0], ['admin' => $admin]));
         \Phake::when(Arsse::$user)->propertiesGet("jane.doe@example.com")->thenReturn(self::USERS[1]);
         \Phake::when(Arsse::$user)->propertiesGet("juan.doe@example.com")->thenReturn(self::USERS[2]);
@@ -368,15 +368,15 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->userPropertiesGet("jane.doe@example.com")->thenReturn(self::USERS_META[1]);
         \Phake::when(Arsse::$db)->userPropertiesGet("juan.doe@example.com")->thenReturn(self::USERS_META[2]);
         \Phake::when(Arsse::$db)->userPropertiesGet("baby.doe@example.com")->thenReturn(self::USERS_META[3]);
-        \Phake::when(Arsse::$user)->rename->thenReturn($renameOut ?? false);
-        \Phake::when(Arsse::$user)->passwordSet->thenReturn($passwordOut ?? "");
+        \Phake::when(Arsse::$user)->rename(\Phake::anyParameters())->thenReturn($renameOut ?? false);
+        \Phake::when(Arsse::$user)->passwordSet(\Phake::anyParameters())->thenReturn($passwordOut ?? "");
         \Phake::when(Arsse::$user)->propertiesGet("ook")->thenReturn(array_merge(self::USERS[0], ['admin' => $admin]));
         \Phake::when(Arsse::$db)->userPropertiesGet("ook")->thenReturn(array_merge(self::USERS_META[0], []));
         if ($renameOut instanceof \Exception) {
-            \Phake::when(Arsse::$user)->rename->thenThrow($renameOut);
+            \Phake::when(Arsse::$user)->rename(\Phake::anyParameters())->thenThrow($renameOut);
         }
         if (isset($body['timezone']) && !preg_match('/^(UTC|[A-Z][a-z]*\/[A-Z]([a-z]*|_[A-Z])*)$/', $body['timezone'])) {
-            \Phake::when(Arsse::$user)->propertiesSet->thenThrow(new UserExceptionInput("invalidTimezone"));
+            \Phake::when(Arsse::$user)->propertiesSet(\Phake::anyParameters())->thenThrow(new UserExceptionInput("invalidTimezone"));
         }
         Arsse::$user->id = "john.doe@example.com";
         $this->assertMessage($exp, $this->req("PUT", $url, $body));
@@ -423,16 +423,16 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     #[DataProvider("provideUserAdditions")]
     public function testAddAUser(array $body, $addOut, ResponseInterface $exp): void {
-        \Phake::when(Arsse::$user)->add->thenReturn($addOut ?? "");
-        \Phake::when(Arsse::$user)->propertiesGet->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->add(\Phake::anyParameters())->thenReturn($addOut ?? "");
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenThrow(new ExceptionConflict("doesNotExist"));
         \Phake::when(Arsse::$user)->propertiesGet("john.doe@example.com")->thenReturn(self::USERS[0]);
         \Phake::when(Arsse::$user)->propertiesGet("ook")->thenReturn(array_merge(self::USERS[1], []));
         \Phake::when(Arsse::$db)->userPropertiesGet("ook")->thenReturn(array_merge(self::USERS_META[1], []));
         if (isset($body['timezone']) && !preg_match('/^(UTC|[A-Z][a-z]*\/[A-Z]([a-z]*|_[A-Z])*)$/', $body['timezone'])) {
-            \Phake::when(Arsse::$user)->propertiesSet->thenThrow(new UserExceptionInput("invalidTimezone"));
+            \Phake::when(Arsse::$user)->propertiesSet(\Phake::anyParameters())->thenThrow(new UserExceptionInput("invalidTimezone"));
         }
         if ($addOut instanceof \Exception) {
-            \Phake::when(Arsse::$user)->add->thenThrow($addOut);
+            \Phake::when(Arsse::$user)->add(\Phake::anyParameters())->thenThrow($addOut);
         }
         Arsse::$user->id = "john.doe@example.com";
         $this->assertMessage($exp, $this->req("POST", "/users", $body));
@@ -460,9 +460,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testDeleteAUser(): void {
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => true]);
-        \Phake::when(Arsse::$user)->lookup->thenReturn("john.doe@example.com");
-        \Phake::when(Arsse::$user)->remove->thenReturn(true);
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn(['admin' => true]);
+        \Phake::when(Arsse::$user)->lookup(\Phake::anyParameters())->thenReturn("john.doe@example.com");
+        \Phake::when(Arsse::$user)->remove(\Phake::anyParameters())->thenReturn(true);
         $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/users/2112"));
         \Phake::verify(Arsse::$user)->lookup(2112);
         \Phake::verify(Arsse::$user)->remove("john.doe@example.com");
@@ -470,9 +470,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testDeleteAMissingUser(): void {
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['admin' => true]);
-        \Phake::when(Arsse::$user)->lookup->thenThrow(new ExceptionConflict("doesNotExist"));
-        \Phake::when(Arsse::$user)->remove->thenReturn(true);
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn(['admin' => true]);
+        \Phake::when(Arsse::$user)->lookup(\Phake::anyParameters())->thenThrow(new ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->remove(\Phake::anyParameters())->thenReturn(true);
         $this->assertMessage(V1::respError("404", 404), $this->req("DELETE", "/users/2112"));
         \Phake::verify(Arsse::$user)->lookup(2112);
         \Phake::verify(Arsse::$user, \Phake::never())->remove($this->anything());
@@ -485,7 +485,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testListCategories(): void {
-        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result(self::v([
+        \Phake::when(Arsse::$db)->folderList(\Phake::anyParameters())->thenReturn(new Result(self::v([
             ['id' => 1,  'name' => "Science"],
             ['id' => 20, 'name' => "Technology"],
         ])));
@@ -498,7 +498,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->folderList("john.doe@example.com", null, false);
         // run test again with a renamed root folder
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 47, 'admin' => false, 'root_folder_name' => "Uncategorized"]);
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn(['num' => 47, 'admin' => false, 'root_folder_name' => "Uncategorized"]);
         $exp = HTTP::respJson([
             ['id' => 1,  'title' => "Uncategorized", 'user_id' => 47, 'hide_globally' => false],
             ['id' => 2,  'title' => "Science",       'user_id' => 47, 'hide_globally' => false],
@@ -508,11 +508,11 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testListCategoriesWithCounts(): void {
-        \Phake::when(Arsse::$db)->folderList->thenReturn(new Result(self::v([
+        \Phake::when(Arsse::$db)->folderList(\Phake::anyParameters())->thenReturn(new Result(self::v([
             ['id' => 1,  'name' => "Science"   , 'feeds' => 0],
             ['id' => 20, 'name' => "Technology", 'feeds' => 3],
         ])));
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v([
+        \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result(self::v([
             ['top_folder' => 20,   'unread' => 5],
             ['top_folder' => 20,   'unread' => 3],
             ['top_folder' => 20,   'unread' => 0],
@@ -528,7 +528,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->folderList("john.doe@example.com", null, false);
         // run test again with a renamed root folder
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 47, 'admin' => false, 'root_folder_name' => "Uncategorized"]);
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn(['num' => 47, 'admin' => false, 'root_folder_name' => "Uncategorized"]);
         $exp = HTTP::respJson([
             ['id' => 1,  'title' => "Uncategorized", 'user_id' => 47, 'hide_globally' => false, 'feed_count' => 2, 'total_unread' => 62],
             ['id' => 2,  'title' => "Science",       'user_id' => 47, 'hide_globally' => false, 'feed_count' => 0, 'total_unread' => 0],
@@ -540,13 +540,13 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideCategoryAdditions")]
     public function testAddACategory($title, ResponseInterface $exp): void {
         if (!strlen((string) $title)) {
-            \Phake::when(Arsse::$db)->folderAdd->thenThrow(new ExceptionInput("missing"));
+            \Phake::when(Arsse::$db)->folderAdd(\Phake::anyParameters())->thenThrow(new ExceptionInput("missing"));
         } elseif (!strlen(trim((string) $title))) {
-            \Phake::when(Arsse::$db)->folderAdd->thenThrow(new ExceptionInput("whitespace"));
+            \Phake::when(Arsse::$db)->folderAdd(\Phake::anyParameters())->thenThrow(new ExceptionInput("whitespace"));
         } elseif ($title === "Duplicate") {
-            \Phake::when(Arsse::$db)->folderAdd->thenThrow(new ExceptionInput("constraintViolation"));
+            \Phake::when(Arsse::$db)->folderAdd(\Phake::anyParameters())->thenThrow(new ExceptionInput("constraintViolation"));
         } else {
-            \Phake::when(Arsse::$db)->folderAdd->thenReturn(2111);
+            \Phake::when(Arsse::$db)->folderAdd(\Phake::anyParameters())->thenReturn(2111);
         }
         $this->assertMessage($exp, $this->req("POST", "/categories", ['title' => $title]));
     }
@@ -565,12 +565,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     #[DataProvider("provideCategoryRenamings")]
     public function testRenameACategory(int $id, $title, $out, ResponseInterface $exp): void {
-        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 42, 'root_folder_name' => $title]);
-        \Phake::when(Arsse::$db)->folderPropertiesGet->thenReturn(['id' => $id - 1, 'name' => $title]);
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn(['num' => 42, 'root_folder_name' => $title]);
+        \Phake::when(Arsse::$db)->folderPropertiesGet(\Phake::anyParameters())->thenReturn(['id' => $id - 1, 'name' => $title]);
         if (is_string($out)) {
-            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput($out));
+            \Phake::when(Arsse::$db)->folderPropertiesSet(\Phake::anyParameters())->thenThrow(new ExceptionInput($out));
         } else {
-            \Phake::when(Arsse::$db)->folderPropertiesSet->thenReturn($out);
+            \Phake::when(Arsse::$db)->folderPropertiesSet(\Phake::anyParameters())->thenReturn($out);
         }
         $this->assertMessage($exp, $this->req("PUT", "/categories/$id", ['title' => $title]));
         if ($id === 1 && strlen(trim((string) $title))) {
@@ -604,12 +604,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     #[DataProvider("provideCategoryModifications")]
     public function testModifyACategory(int $id, array $in, array $dbIn, $out, ResponseInterface $exp): void {
-        \Phake::when(Arsse::$user)->propertiesGet->thenReturn(['num' => 42, 'root_folder_name' => $in['title'] ?? "All"]);
-        \Phake::when(Arsse::$db)->folderPropertiesGet->thenReturn(['id' => $id -1, 'name' => $in['title'] ?? "Existing"]);
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn(['num' => 42, 'root_folder_name' => $in['title'] ?? "All"]);
+        \Phake::when(Arsse::$db)->folderPropertiesGet(\Phake::anyParameters())->thenReturn(['id' => $id -1, 'name' => $in['title'] ?? "Existing"]);
         if (is_string($out)) {
-            \Phake::when(Arsse::$db)->folderPropertiesSet->thenThrow(new ExceptionInput($out));
+            \Phake::when(Arsse::$db)->folderPropertiesSet(\Phake::anyParameters())->thenThrow(new ExceptionInput($out));
         } else {
-            \Phake::when(Arsse::$db)->folderPropertiesSet->thenReturn($out);
+            \Phake::when(Arsse::$db)->folderPropertiesSet(\Phake::anyParameters())->thenReturn($out);
         }
         $this->assertMessage($exp, $this->req("PUT", "/categories/$id", $in));
         if ($id === 1 && isset($in['title'])) {
@@ -630,7 +630,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testDeleteARealCategory(): void {
-        \Phake::when(Arsse::$db)->folderRemove->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->folderRemove(\Phake::anyParameters())->thenReturn(true)->thenThrow(new ExceptionInput("subjectMissing"));
         $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/categories/2112"));
         \Phake::verify(Arsse::$db)->folderRemove("john.doe@example.com", 2111);
         $this->assertMessage(V1::respError("404", 404), $this->req("DELETE", "/categories/47"));
@@ -638,12 +638,12 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testDeleteTheSpecialCategory(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v([
+        \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result(self::v([
             ['id' => 1],
             ['id' => 47],
             ['id' => 2112],
         ])));
-        \Phake::when(Arsse::$db)->subscriptionRemove->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionRemove(\Phake::anyParameters())->thenReturn(true);
         $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/categories/1"));
         \Phake::inOrder(
             \Phake::verify(Arsse::$db)->begin(),
@@ -656,34 +656,34 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testListFeeds(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result(self::v(self::FEEDS)));
         $exp = HTTP::respJson(self::feedsOut());
         $this->assertMessage($exp, $this->req("GET", "/feeds"));
     }
 
     public function testListFeedsOfACategory(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result(self::v(self::FEEDS)));
         $exp = HTTP::respJson(self::feedsOut());
         $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
         \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 2111, true);
     }
 
     public function testListFeedsOfTheRootCategory(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result(self::v(self::FEEDS)));
         $exp = HTTP::respJson(self::feedsOut());
         $this->assertMessage($exp, $this->req("GET", "/categories/1/feeds"));
         \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 0, false);
     }
 
     public function testListFeedsOfAMissingCategory(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenThrow(new ExceptionInput("idMissing"));
+        \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenThrow(new ExceptionInput("idMissing"));
         $exp = V1::respError("404", 404);
         $this->assertMessage($exp, $this->req("GET", "/categories/2112/feeds"));
         \Phake::verify(Arsse::$db)->subscriptionList(Arsse::$user->id, 2111, true);
     }
 
     public function testGetAFeed(): void {
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn(self::v(self::FEEDS[0]))->thenReturn(self::v(self::FEEDS[1]));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(\Phake::anyParameters())->thenReturn(self::v(self::FEEDS[0]))->thenReturn(self::v(self::FEEDS[1]));
         $this->assertMessage(HTTP::respJson(self::feedsOut()[0]), $this->req("GET", "/feeds/1"));
         $this->assertMessage(HTTP::respJson(self::feedsOut()[1]), $this->req("GET", "/feeds/55"));
         \Phake::when(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1);
@@ -691,7 +691,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testGetAMissingFeed(): void {
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
         $this->assertMessage(V1::respError("404", 404), $this->req("GET", "/feeds/1"));
         \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 1);
     }
@@ -699,9 +699,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideFeedCreations")]
     public function testCreateAFeed(array $in, $out, ResponseInterface $exp): void {
         if ($out instanceof \Exception) {
-            \Phake::when(Arsse::$db)->subscriptionAdd->thenThrow($out);
+            \Phake::when(Arsse::$db)->subscriptionAdd(\Phake::anyParameters())->thenThrow($out);
         } else {
-            \Phake::when(Arsse::$db)->subscriptionAdd->thenReturn($out);
+            \Phake::when(Arsse::$db)->subscriptionAdd(\Phake::anyParameters())->thenReturn($out);
         }
         $this->assertMessage($exp, $this->req("POST", "/feeds", $in));
         if ($out) {
@@ -758,11 +758,11 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideFeedModifications")]
     public function testModifyAFeed(array $in, array $data, $out, ResponseInterface $exp): void {
         $this->h = \Phake::partialMock(V1::class);
-        \Phake::when($this->h)->getFeed->thenReturn(HTTP::respJson(self::feedsOut()[0]));
+        \Phake::when($this->h)->getFeed(\Phake::anyParameters())->thenReturn(HTTP::respJson(self::feedsOut()[0]));
         if ($out instanceof \Exception) {
-            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($out);
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet(\Phake::anyParameters())->thenThrow($out);
         } else {
-            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($out);
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet(\Phake::anyParameters())->thenReturn($out);
         }
         $this->assertMessage($exp, $this->req("PUT", "/feeds/2112", $in));
         \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, $this->identicalTo($data));
@@ -794,20 +794,20 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testModifyAFeedWithNoBody(): void {
         $this->h = \Phake::partialMock(V1::class);
         $feedOut = self::feedsOut()[0];
-        \Phake::when($this->h)->getFeed->thenReturn(HTTP::respJson($feedOut));
-        \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn(true);
+        \Phake::when($this->h)->getFeed(\Phake::anyParameters())->thenReturn(HTTP::respJson($feedOut));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(\Phake::anyParameters())->thenReturn(true);
         $this->assertMessage(HTTP::respJson($feedOut, 201), $this->req("PUT", "/feeds/2112", ""));
         \Phake::verify(Arsse::$db)->subscriptionPropertiesSet(Arsse::$user->id, 2112, []);
     }
 
     public function testDeleteAFeed(): void {
-        \Phake::when(Arsse::$db)->subscriptionRemove->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionRemove(\Phake::anyParameters())->thenReturn(true);
         $this->assertMessage(HTTP::respEmpty(204), $this->req("DELETE", "/feeds/2112"));
         \Phake::verify(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 2112);
     }
 
     public function testDeleteAMissingFeed(): void {
-        \Phake::when(Arsse::$db)->subscriptionRemove->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionRemove(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
         $this->assertMessage(V1::respError("404", 404), $this->req("DELETE", "/feeds/2112"));
         \Phake::verify(Arsse::$db)->subscriptionRemove(Arsse::$user->id, 2112);
     }
@@ -815,9 +815,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideIcons")]
     public function testGetTheIconOfASubscription($out, ResponseInterface $exp): void {
         if ($out instanceof \Exception) {
-            \Phake::when(Arsse::$db)->subscriptionIcon->thenThrow($out);
+            \Phake::when(Arsse::$db)->subscriptionIcon(\Phake::anyParameters())->thenThrow($out);
         } else {
-            \Phake::when(Arsse::$db)->subscriptionIcon->thenReturn(self::v($out));
+            \Phake::when(Arsse::$db)->subscriptionIcon(\Phake::anyParameters())->thenReturn(self::v($out));
         }
         $this->assertMessage($exp, $this->req("GET", "/feeds/2112/icon"));
         \Phake::verify(Arsse::$db)->subscriptionIcon(Arsse::$user->id, 2112);
@@ -837,15 +837,15 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     #[DataProvider("provideEntryQueries")]
     public function testGetEntries(string $url, ?Context $c, ?array $order, $out, bool $count, ResponseInterface $exp): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result(self::v(self::FEEDS)));
-        \Phake::when(Arsse::$db)->articleCount->thenReturn(2112);
-        \Phake::when(Arsse::$db)->articleCategoriesGet->thenReturnCallback(function($user, $id) {
+        \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result(self::v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->articleCount(\Phake::anyParameters())->thenReturn(2112);
+        \Phake::when(Arsse::$db)->articleCategoriesGet(\Phake::anyParameters())->thenReturnCallback(function($user, $id) {
             return self::TAGS[$id] ?? [];
         });
         if ($out instanceof \Exception) {
-            \Phake::when(Arsse::$db)->articleList->thenThrow($out);
+            \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenThrow($out);
         } else {
-            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result(self::v($out)));
+            \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result(self::v($out)));
         }
         $this->assertMessage($exp, $this->req("GET", $url));
         if ($c) {
@@ -953,14 +953,14 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     #[DataProvider("provideSingleEntryQueries")]
     public function testGetASingleEntry(string $url, Context $c, $out, ResponseInterface $exp): void {
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn(self::v(self::FEEDS[1]));
-        \Phake::when(Arsse::$db)->articleCategoriesGet->thenReturnCallback(function($user, $id) {
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(\Phake::anyParameters())->thenReturn(self::v(self::FEEDS[1]));
+        \Phake::when(Arsse::$db)->articleCategoriesGet(\Phake::anyParameters())->thenReturnCallback(function($user, $id) {
             return self::TAGS[$id] ?? [];
         });
         if ($out instanceof \Exception) {
-            \Phake::when(Arsse::$db)->articleList->thenThrow($out);
+            \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenThrow($out);
         } else {
-            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result(self::v($out)));
+            \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result(self::v($out)));
         }
         $this->assertMessage($exp, $this->req("GET", $url));
         if ($c) {
@@ -997,11 +997,11 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testModifyAnEntry(): void {
         // NOTE: This is a no-op
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn(self::v(self::FEEDS[1]));
-        \Phake::when(Arsse::$db)->articleCategoriesGet->thenReturnCallback(function($user, $id) {
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(\Phake::anyParameters())->thenReturn(self::v(self::FEEDS[1]));
+        \Phake::when(Arsse::$db)->articleCategoriesGet(\Phake::anyParameters())->thenReturnCallback(function($user, $id) {
             return self::TAGS[$id] ?? [];
         });
-        \Phake::when(Arsse::$db)->articleList->thenReturn(new Result(self::v([self::ENTRIES[0]])));
+        \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result(self::v([self::ENTRIES[0]])));
         $exp = self::ENTRIES_OUT[0];
         $exp['feed'] = self::feedsOut()[$exp['feed']];
         $exp = HTTP::respJson($exp);
@@ -1010,7 +1010,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     #[DataProvider("provideEntryMarkings")]
     public function testMarkEntries(array $in, ?array $data, ResponseInterface $exp): void {
-        \Phake::when(Arsse::$db)->articleMark->thenReturn(0);
+        \Phake::when(Arsse::$db)->articleMark(\Phake::anyParameters())->thenReturn(0);
         $this->assertMessage($exp, $this->req("PUT", "/entries", $in));
         if ($data) {
             \Phake::verify(Arsse::$db)->articleMark(Arsse::$user->id, $data, (new Context)->articles($in['entry_ids']));
@@ -1039,9 +1039,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideMassMarkings")]
     public function testMassMarkEntries(string $url, Context $c, $out, ResponseInterface $exp): void {
         if ($out instanceof \Exception) {
-            \Phake::when(Arsse::$db)->articleMark->thenThrow($out);
+            \Phake::when(Arsse::$db)->articleMark(\Phake::anyParameters())->thenThrow($out);
         } else {
-            \Phake::when(Arsse::$db)->articleMark->thenReturn($out);
+            \Phake::when(Arsse::$db)->articleMark(\Phake::anyParameters())->thenReturn($out);
         }
         $this->assertMessage($exp, $this->req("PUT", $url));
         if ($out !== null) {
@@ -1068,11 +1068,11 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideBookmarkTogglings")]
     public function testToggleABookmark($before, ?bool $after, ResponseInterface $exp): void {
         $c = (new Context)->article(2112);
-        \Phake::when(Arsse::$db)->articleMark->thenReturn(1);
+        \Phake::when(Arsse::$db)->articleMark(\Phake::anyParameters())->thenReturn(1);
         if ($before instanceof \Exception) {
-            \Phake::when(Arsse::$db)->articleCount->thenThrow($before);
+            \Phake::when(Arsse::$db)->articleCount(\Phake::anyParameters())->thenThrow($before);
         } else {
-            \Phake::when(Arsse::$db)->articleCount->thenReturn($before);
+            \Phake::when(Arsse::$db)->articleCount(\Phake::anyParameters())->thenReturn($before);
         }
         $this->assertMessage($exp, $this->req("PUT", "/entries/2112/bookmark"));
         if ($after !== null) {
@@ -1102,13 +1102,13 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRefreshAFeed(): void {
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn([]);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(\Phake::anyParameters())->thenReturn([]);
         $this->assertMessage(HTTP::respEmpty(204), $this->req("PUT", "/feeds/47/refresh"));
         \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 47);
     }
 
     public function testRefreshAMissingFeed(): void {
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
         $this->assertMessage(V1::respError("404", 404), $this->req("PUT", "/feeds/2112/refresh"));
         \Phake::verify(Arsse::$db)->subscriptionPropertiesGet(Arsse::$user->id, 2112);
     }
@@ -1122,7 +1122,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         $opml = \Phake::mock(OPML::class);
         \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
-        \Phake::when($opml)->import->$action($out);
+        \Phake::when($opml)->import(\Phake::anyParameters())->$action($out);
         $this->assertMessage($exp, $this->req("POST", "/import", "IMPORT DATA"));
         \Phake::verify($opml)->import(Arsse::$user->id, "IMPORT DATA");
     }
@@ -1143,7 +1143,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testExport(): void {
         $opml = \Phake::mock(OPML::class);
         \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);
-        \Phake::when($opml)->export->thenReturn("<EXPORT_DATA/>");
+        \Phake::when($opml)->export(\Phake::anyParameters())->thenReturn("<EXPORT_DATA/>");
         $this->assertMessage(HTTP::respText("<EXPORT_DATA/>", 200, ['Content-Type' => "application/xml"]), $this->req("GET", "/export"));
         \Phake::verify($opml)->export(Arsse::$user->id);
     }
@@ -1151,11 +1151,11 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideScrapings")]
     public function testScrapeAnEntry($entry, array $sub, ResponseInterface $exp): void {
         if ($entry instanceof \Exception) {
-            \Phake::when(Arsse::$db)->articleList->thenThrow($entry);
+            \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenThrow($entry);
         } else {
-            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result(self::v($entry)));
+            \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result(self::v($entry)));
         }
-        \Phake::when(Arsse::$db)->subscriptionPropertiesGet->thenReturn($sub);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(\Phake::anyParameters())->thenReturn($sub);
         $this->assertMessage($exp, $this->req("GET", "/entries/2112/fetch-content"));
         \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, $this->equalTo((new Context)->article(2112)), ["url", "subscription"]);
         if (!$entry instanceof \Exception) {
@@ -1202,9 +1202,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideIconsById")]
     public function testGetAnIcon(int $id, $out, ResponseInterface $exp): void {
         if ($out instanceof \Exception) {
-            \Phake::when(Arsse::$db)->iconPropertiesGet->thenThrow($out);
+            \Phake::when(Arsse::$db)->iconPropertiesGet(\Phake::anyParameters())->thenThrow($out);
         } else {
-            \Phake::when(Arsse::$db)->iconPropertiesGet->thenReturn($out);
+            \Phake::when(Arsse::$db)->iconPropertiesGet(\Phake::anyParameters())->thenReturn($out);
         }
         $this->assertMessage($exp, $this->req("GET", "/icons/$id"));
         \Phake::verify(Arsse::$db)->iconPropertiesGet(Arsse::$user->id, $id);
@@ -1221,7 +1221,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRetrieveCounters(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result($this->v(self::FEEDS)));
+        \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result($this->v(self::FEEDS)));
         $exp = HTTP::respJson([
             'reads' => [
                 1  => 5,
@@ -1236,7 +1236,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRetrieveCountersWithNoFeeds(): void {
-        \Phake::when(Arsse::$db)->subscriptionList->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result([]));
         $exp = HTTP::respJson([
             'reads' => new \stdClass,
             'unreads' => new \stdClass,
@@ -1252,9 +1252,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideEnclosures")]
     public function testGetAnEnclosure(int $id, $out, ResponseInterface $exp): void {
         if ($out instanceof \Exception) {
-            \Phake::when(Arsse::$db)->articleList->thenThrow($out);
+            \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenThrow($out);
         } else {
-            \Phake::when(Arsse::$db)->articleList->thenReturn(new Result($this->v([$out])));
+            \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result($this->v([$out])));
         }
         $this->assertMessage($exp, $this->req("GET", "/enclosures/$id"));
         \Phake::verify(Arsse::$db)->articleList(Arsse::$user->id, (new Context)->article($id), ["id", "media_url", "media_type"]);

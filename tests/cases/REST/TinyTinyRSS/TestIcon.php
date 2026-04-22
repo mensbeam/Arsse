@@ -46,7 +46,7 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testRetrieveFavion(): void {
-        \Phake::when(Arsse::$db)->subscriptionIcon->thenReturn(['url' => null]);
+        \Phake::when(Arsse::$db)->subscriptionIcon(\Phake::anyParameters())->thenReturn(['url' => null]);
         \Phake::when(Arsse::$db)->subscriptionIcon($this->anything(), 1123, false)->thenThrow(new ExceptionInput("subjectMissing"));
         \Phake::when(Arsse::$db)->subscriptionIcon($this->anything(), 42, false)->thenReturn(['url' => "http://example.com/favicon.ico"]);
         \Phake::when(Arsse::$db)->subscriptionIcon($this->anything(), 2112, false)->thenReturn(['url' => "http://example.net/logo.png"]);
@@ -72,7 +72,7 @@ class TestIcon extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRetrieveFavionWithHttpAuthentication(): void {
         $url = ['url' => "http://example.org/icon.gif\r\nLocation: http://bad.example.com/"];
-        \Phake::when(Arsse::$db)->subscriptionIcon->thenReturn(['url' => null]);
+        \Phake::when(Arsse::$db)->subscriptionIcon(\Phake::anyParameters())->thenReturn(['url' => null]);
         \Phake::when(Arsse::$db)->subscriptionIcon($this->user, 42, false)->thenReturn($url);
         \Phake::when(Arsse::$db)->subscriptionIcon("jane.doe", 2112, false)->thenReturn($url);
         \Phake::when(Arsse::$db)->subscriptionIcon($this->user, 1337, false)->thenReturn($url);

@@ -24,8 +24,8 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
         parent::setUp();
         // create a mock Import/Export processor with stubbed underlying import/export routines
         $this->proc = \Phake::partialMock(AbstractImportExport::class);
-        \Phake::when($this->proc)->export->thenReturn("EXPORT_FILE");
-        \Phake::when($this->proc)->import->thenReturn(true);
+        \Phake::when($this->proc)->export(\Phake::anyParameters())->thenReturn("EXPORT_FILE");
+        \Phake::when($this->proc)->import(\Phake::anyParameters())->thenReturn(true);
         $this->vfs = vfsStream::setup("root", null, [
             'exportGoodFile' => "",
             'exportGoodDir'  => [],

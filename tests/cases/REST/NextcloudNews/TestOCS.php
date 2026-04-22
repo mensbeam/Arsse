@@ -45,7 +45,7 @@ class TestOCS extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->userId = "john.doe@example.com";
         Arsse::$user = \Phake::mock(User::class);
         Arsse::$user->id = $this->userId;
-        \Phake::when(Arsse::$user)->auth->thenReturn(true);
+        \Phake::when(Arsse::$user)->auth(\Phake::anyParameters())->thenReturn(true);
         \Phake::when(Arsse::$user)->propertiesGet($this->userId)->thenReturn(['admin' => true, 'lang' => "en_CA"]);
         \Phake::when(Arsse::$user)->propertiesGet("jane.doe@example.com")->thenReturn(['admin' => false, 'lang' => null]);
         // produce consistent timestamps

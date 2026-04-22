@@ -171,7 +171,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         self::clearData();
         // create the object factory as a mock
         Arsse::$obj = \Phake::mock(Factory::class);
-        \Phake::when(Arsse::$obj)->get->thenReturnCallback(function(string $class) {
+        \Phake::when(Arsse::$obj)->get(\Phake::anyParameters())->thenReturnCallback(function(string $class) {
             return new $class();
         });
     }
@@ -575,7 +575,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         if (is_a($class, RequestException::class, true)) {
             $req = \Phake::mock(RequestInterface::class);
             $res = \Phake::mock(ResponseInterface::class);
-            \Phake::when($res)->getStatusCode->thenReturn($code ?? 0);
+            \Phake::when($res)->getStatusCode(\Phake::anyParameters())->thenReturn($code ?? 0);
             return new $class($message ?? "", $req, $res, $e);
         } else {
             return new $class($message ?? "", $code ?? 0, $e);

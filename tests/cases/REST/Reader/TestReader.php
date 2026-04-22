@@ -32,15 +32,15 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->auth->thenReturn(true);
+        \Phake::when(Arsse::$user)->auth(\Phake::anyParameters())->thenReturn(true);
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
-        \Phake::when(Arsse::$db)->tokenCreate->thenReturn("12345");
+        \Phake::when(Arsse::$db)->begin(\Phake::anyParameters())->thenReturn(\Phake::mock(Transaction::class));
+        \Phake::when(Arsse::$db)->tokenCreate(\Phake::anyParameters())->thenReturn("12345");
         // create the reader class, with authentication stubbed out
         $this->h = \Phake::partialMock(Reader::class);
-        \Phake::when($this->h)->authenticate->thenReturn(true);
-        \Phake::when($this->h)->shouldChallenge->thenReturn(false);
+        \Phake::when($this->h)->authenticate(\Phake::anyParameters())->thenReturn(true);
+        \Phake::when($this->h)->shouldChallenge(\Phake::anyParameters())->thenReturn(false);
     }
 
     protected function req(string $method, string $target, string $data = "", ?string $user = null): ResponseInterface {
@@ -52,9 +52,9 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testMarkAnArticleAsRead(): void {
         $user = "john.doe@example.com";
-        \Phake::when(Arsse::$db)->tokenLookup->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->tokenLookup(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
         \Phake::when(Arsse::$db)->tokenLookup("reader.post", "12345", $user)->thenReturn([]);
-        \Phake::when(Arsse::$db)->articleMark->thenReturn(1);
+        \Phake::when(Arsse::$db)->articleMark(\Phake::anyParameters())->thenReturn(1);
         $act = $this->req("POST", "/edit-tag", "i=1&i=2&a=user/-/state/com.google/read&T=12345", $user);
         $this->assertMessage(HTTP::respText("OK"), $act);
     }

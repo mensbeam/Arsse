@@ -30,17 +30,17 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn(new \DateTimeImmutable(self::NOW));
         // create a mock user manager
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->auth->thenReturn(true);
+        \Phake::when(Arsse::$user)->auth(\Phake::anyParameters())->thenReturn(true);
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(Transaction::class));
-        \Phake::when(Arsse::$db)->tokenCreate->thenReturn("12345");
+        \Phake::when(Arsse::$db)->begin(\Phake::anyParameters())->thenReturn(\Phake::mock(Transaction::class));
+        \Phake::when(Arsse::$db)->tokenCreate(\Phake::anyParameters())->thenReturn("12345");
         $this->h = new Auth;
     }
 
     #[DataProvider("provideAuthentications")]
     public function testAuthenticateAUser(string $method, string $target, string $post, ?array $cred, bool $out, ResponseInterface $exp): void {
-        \Phake::when(Arsse::$user)->auth->thenReturn($out);
+        \Phake::when(Arsse::$user)->auth(\Phake::anyParameters())->thenReturn($out);
         $r = $this->serverRequest($method, "/api/greader.php/accounts/".$target, "/api/greader.php/accounts/ClientLogin", [], [], $post, "application/x-www-form-urlencoded", [], null);
         $act = $this->h->dispatch($r);
         $this->assertMessage($exp, $act);

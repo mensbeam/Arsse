@@ -121,7 +121,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         ], [1 =>
             ['id' => 1, 'name' => "", 'parent' => 0],
         ]];
-        \Phake::when($this->proc)->parse->thenReturn($in);
+        \Phake::when($this->proc)->parse(\Phake::anyParameters())->thenReturn($in);
         $this->assertException("invalidFolderName", "ImportExport");
         $this->proc->import("john.doe@example.com", "", false, false);
     }
@@ -132,7 +132,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 1, 'name' => "New", 'parent' => 0],
             ['id' => 2, 'name' => "New", 'parent' => 0],
         ]];
-        \Phake::when($this->proc)->parse->thenReturn($in);
+        \Phake::when($this->proc)->parse(\Phake::anyParameters())->thenReturn($in);
         $this->assertException("invalidFolderCopy", "ImportExport");
         $this->proc->import("john.doe@example.com", "", false, false);
     }
@@ -153,7 +153,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 5, 'name' => "Local",       'parent' => 4],
             ['id' => 6, 'name' => "National",    'parent' => 4],
         ]];
-        \Phake::when($this->proc)->parse->thenReturn($in);
+        \Phake::when($this->proc)->parse(\Phake::anyParameters())->thenReturn($in);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
         $this->proc->import("john.doe@example.com", "", false, false);
         $this->compareExpectations($this->drv, $exp);
@@ -178,7 +178,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 6, 'name' => "National",    'parent' => 4],
             ['id' => 7, 'name' => "Nature",      'parent' => 0], // new folder
         ]];
-        \Phake::when($this->proc)->parse->thenReturn($in);
+        \Phake::when($this->proc)->parse(\Phake::anyParameters())->thenReturn($in);
         $this->proc->import("john.doe@example.com", "", false, true);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
         $exp['arsse_subscriptions']['rows'][3] = [4, "john.doe@example.com", null, "CBC News", "CBC", "http://localhost:8000/Import/cbc", 0];
@@ -190,7 +190,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $in = [[
             ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => ["frequent", "cryptic"]], //one existing tag and one new one
         ], []];
-        \Phake::when($this->proc)->parse->thenReturn($in);
+        \Phake::when($this->proc)->parse(\Phake::anyParameters())->thenReturn($in);
         $this->proc->import("john.doe@example.com", "", false, false);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
         $exp['arsse_subscriptions']['rows'][] = [7, "john.doe@example.com", null, "Some feed", "Some Feed", "http://localhost:8000/Import/some-feed", 0];
@@ -204,7 +204,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $in = [[
             ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => [""]],
         ], []];
-        \Phake::when($this->proc)->parse->thenReturn($in);
+        \Phake::when($this->proc)->parse(\Phake::anyParameters())->thenReturn($in);
         $this->assertException("invalidTagName", "ImportExport");
         $this->proc->import("john.doe@example.com", "", false, false);
     }
@@ -215,7 +215,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         ], [1 =>
             ['id' => 1, 'name' => "Photography", 'parent' => 0],
         ]];
-        \Phake::when($this->proc)->parse->thenReturn($in);
+        \Phake::when($this->proc)->parse(\Phake::anyParameters())->thenReturn($in);
         $this->proc->import("john.doe@example.com", "", false, true);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
         $exp['arsse_subscriptions']['rows'] = [

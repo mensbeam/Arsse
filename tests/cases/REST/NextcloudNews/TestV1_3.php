@@ -39,9 +39,9 @@ class TestV1_3 extends TestV1_2 {
     public function testMoveASubscription(string $url, array $data, $moveOut, ResponseInterface $exp): void {
         $subject = (int) explode("/", $url)[2];
         if ($moveOut instanceof \Exception) {
-            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($moveOut);
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet(\Phake::anyParameters())->thenThrow($moveOut);
         } else {
-            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($moveOut);
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet(\Phake::anyParameters())->thenReturn($moveOut);
         }
         $this->assertMessage($exp, $this->req("POST", $url, json_encode($data)));
         if (isset($data['folderId'])) {
@@ -55,9 +55,9 @@ class TestV1_3 extends TestV1_2 {
     public function testRenameASubscription(string $url, array $data, $renameOut, ResponseInterface $exp): void {
         $subject = (int) explode("/", $url)[2];
         if ($renameOut instanceof \Exception) {
-            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenThrow($renameOut);
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet(\Phake::anyParameters())->thenThrow($renameOut);
         } else {
-            \Phake::when(Arsse::$db)->subscriptionPropertiesSet->thenReturn($renameOut);
+            \Phake::when(Arsse::$db)->subscriptionPropertiesSet(\Phake::anyParameters())->thenReturn($renameOut);
         }
         $this->assertMessage($exp, $this->req("POST", $url, json_encode($data)));
         \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($this->userId, $subject, $this->identicalTo(['title' => (string) ($data['feedTitle'] ?? "")]));
@@ -185,7 +185,7 @@ class TestV1_3 extends TestV1_2 {
         $valid = (new \DateTimeImmutable("now", new \DateTimezone("UTC")))->sub($interval);
         $invalid = $valid->sub($interval)->sub($interval);
         \Phake::when(Arsse::$db)->metaGet("service_last_checkin")->thenReturn(Date::transform($valid, "sql"))->thenReturn(Date::transform($invalid, "sql"));
-        \Phake::when(Arsse::$db)->driverCharsetAcceptable->thenReturn(true)->thenReturn(false);
+        \Phake::when(Arsse::$db)->driverCharsetAcceptable(\Phake::anyParameters())->thenReturn(true)->thenReturn(false);
         $arr1 = $arr2 = [
             'version'       => V1_3::VERSION,
             'arsse_version' => Arsse::VERSION,

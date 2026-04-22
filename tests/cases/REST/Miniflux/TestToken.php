@@ -28,7 +28,7 @@ class TestToken extends \JKingWeb\Arsse\Test\AbstractTest {
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
         $this->transaction = \Phake::mock(Transaction::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn($this->transaction);
+        \Phake::when(Arsse::$db)->begin(\Phake::anyParameters())->thenReturn($this->transaction);
         // instantiate the handler
         $this->h = new Token;
     }
@@ -38,7 +38,7 @@ class TestToken extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testGenerateTokens(): void {
-        \Phake::when(Arsse::$db)->tokenCreate->thenReturn("RANDOM TOKEN");
+        \Phake::when(Arsse::$db)->tokenCreate(\Phake::anyParameters())->thenReturn("RANDOM TOKEN");
         $this->assertSame("RANDOM TOKEN", $this->h->tokenGenerate("ook", "Eek"));
         \Phake::verify(Arsse::$db)->tokenCreate("ook", "miniflux.login", \Phake::capture($token), null, "Eek");
         $this->assertMatchesRegularExpression("/^[A-Za-z0-9_\-]{43}=$/", $token);
@@ -55,14 +55,14 @@ class TestToken extends \JKingWeb\Arsse\Test\AbstractTest {
             ['label' => "Eek", 'id' => "TOKEN 2"],
             ['label' => "Ack", 'id' => "TOKEN 3"],
         ];
-        \Phake::when(Arsse::$db)->tokenList->thenReturn(new Result(self::v($out)));
-        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        \Phake::when(Arsse::$db)->tokenList(\Phake::anyParameters())->thenReturn(new Result(self::v($out)));
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(true);
         $this->assertSame($exp, $this->h->tokenList("john.doe@example.com"));
         \Phake::verify(Arsse::$db)->tokenList("john.doe@example.com", "miniflux.login");
     }
 
     public function testListTheTokensOfAMissingUser(): void {
-        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         $this->h->tokenList("john.doe@example.com");
     }

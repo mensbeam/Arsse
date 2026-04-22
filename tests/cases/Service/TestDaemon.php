@@ -55,7 +55,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider('providePathResolutions')]
     public function testResolveRelativePaths(string $path, $cwd, $exp): void {
         // set up mock daemon class
-        \Phake::when($this->daemon)->cwd->thenReturn($cwd);
+        \Phake::when($this->daemon)->cwd(\Phake::anyParameters())->thenReturn($cwd);
         $daemon = $this->daemon;
         // perform the test
         $this->AssertSame($exp, $daemon->resolveRelativePath($path));
@@ -89,7 +89,7 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         chmod($path."errors/write", 0555);
         chmod($path."errors/readwrite", 0111);
         // set up mock daemon class
-        \Phake::when($this->daemon)->resolveRelativePath->thenReturn($accessible ? dirname($path.$file) : false);
+        \Phake::when($this->daemon)->resolveRelativePath(\Phake::anyParameters())->thenReturn($accessible ? dirname($path.$file) : false);
         $daemon = $this->daemon;
         // perform the test
         if ($exp instanceof \Exception) {

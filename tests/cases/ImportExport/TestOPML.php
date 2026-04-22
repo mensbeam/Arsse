@@ -86,7 +86,7 @@ OPML_EXPORT_SERIALIZATION;
     public function setUp(): void {
         parent::setUp();
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(true);
         \Phake::when(Arsse::$db)->folderList("john.doe@example.com")->thenReturn(new Result($this->folders));
         \Phake::when(Arsse::$db)->subscriptionList("john.doe@example.com")->thenReturn(new Result($this->subscriptions));
         \Phake::when(Arsse::$db)->tagSummarize("john.doe@example.com")->thenReturn(new Result($this->tags));
@@ -101,7 +101,7 @@ OPML_EXPORT_SERIALIZATION;
     }
 
     public function testExportToOpmlAMissingUser(): void {
-        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         (new OPML)->export("john.doe@example.com");
     }

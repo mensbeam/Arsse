@@ -22,7 +22,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData(false);
         // create a mock Lang object so as not to create a dependency loop
         Arsse::$lang = \Phake::mock(Lang::class);
-        \Phake::when(Arsse::$lang)->msg->thenReturn("");
+        \Phake::when(Arsse::$lang)->msg(\Phake::anyParameters())->thenReturn("");
     }
 
     public function testBaseClass(): void {

@@ -25,7 +25,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
         self::setConf();
         // create a mock database interface
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->begin->thenReturn(\Phake::mock(\JKingWeb\Arsse\Db\Transaction::class));
+        \Phake::when(Arsse::$db)->begin(\Phake::anyParameters())->thenReturn(\Phake::mock(\JKingWeb\Arsse\Db\Transaction::class));
         $this->d = new Driver;
     }
 
@@ -74,7 +74,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testListUsers(): void {
         $john = "john.doe@example.com";
         $jane = "jane.doe@example.com";
-        \Phake::when(Arsse::$db)->userList->thenReturn([$john, $jane])->thenReturn([$jane, $john]);
+        \Phake::when(Arsse::$db)->userList(\Phake::anyParameters())->thenReturn([$john, $jane])->thenReturn([$jane, $john]);
         $driver = $this->d;
         $this->assertSame([$john, $jane], $driver->userList());
         $this->assertSame([$jane, $john], $driver->userList());
@@ -83,7 +83,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testAddAUser(): void {
         $john = "john.doe@example.com";
-        \Phake::when(Arsse::$db)->userAdd->thenReturnCallback(function($user, $pass) {
+        \Phake::when(Arsse::$db)->userAdd(\Phake::anyParameters())->thenReturnCallback(function($user, $pass) {
             return $pass;
         });
         $driver = $this->d;
@@ -96,7 +96,7 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRenameAUser(): void {
         $john = "john.doe@example.com";
-        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(true);
         $this->assertTrue($this->d->userRename($john, "jane.doe@example.com"));
         $this->assertFalse($this->d->userRename($john, $john));
         \Phake::verify(Arsse::$db, \Phake::times(2))->userExists($john);
@@ -104,14 +104,14 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRenameAMissingUser(): void {
         $john = "john.doe@example.com";
-        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         $this->d->userRename($john, "jane.doe@example.com");
     }
 
     public function testRemoveAUser(): void {
         $john = "john.doe@example.com";
-        \Phake::when(Arsse::$db)->userRemove->thenReturn(true)->thenThrow(new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$db)->userRemove(\Phake::anyParameters())->thenReturn(true)->thenThrow(new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist"));
         $driver = $this->d;
         $this->assertTrue($driver->userRemove($john));
         \Phake::verify(Arsse::$db)->userRemove($john);
@@ -125,38 +125,38 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testSetAPassword(): void {
         $john = "john.doe@example.com";
-        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(true);
         $this->assertSame("superman", $this->d->userPasswordSet($john, "superman"));
         $this->assertSame(null, $this->d->userPasswordSet($john, null));
         \Phake::verify(Arsse::$db, \Phake::never())->userPasswordSet(\Phake::anyParameters());
     }
 
     public function testSetAPasswordForAMssingUser(): void {
-        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         $this->d->userPasswordSet("john.doe@example.com", "secret");
     }
 
     public function testUnsetAPassword(): void {
-        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(true);
         $this->assertTrue($this->d->userPasswordUnset("john.doe@example.com"));
         \Phake::verify(Arsse::$db, \Phake::never())->userPasswordSet(\Phake::anyParameters());
     }
 
     public function testUnsetAPasswordForAMssingUser(): void {
-        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         $this->d->userPasswordUnset("john.doe@example.com");
     }
 
     public function testGetUserProperties(): void {
-        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(true);
         $this->assertSame([], $this->d->userPropertiesGet("john.doe@example.com"));
         \Phake::verify(Arsse::$db)->userExists("john.doe@example.com");
     }
 
     public function testGetPropertiesForAMissingUser(): void {
-        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         try {
             $this->d->userPropertiesGet("john.doe@example.com");
@@ -167,13 +167,13 @@ class TestInternal extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testSetUserProperties(): void {
         $in = ['admin' => true];
-        \Phake::when(Arsse::$db)->userExists->thenReturn(true);
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(true);
         $this->assertSame($in, $this->d->userPropertiesSet("john.doe@example.com", $in));
         \Phake::verify(Arsse::$db)->userExists("john.doe@example.com");
     }
 
     public function testSetPropertiesForAMissingUser(): void {
-        \Phake::when(Arsse::$db)->userExists->thenReturn(false);
+        \Phake::when(Arsse::$db)->userExists(\Phake::anyParameters())->thenReturn(false);
         $this->assertException("doesNotExist", "User", "ExceptionConflict");
         try {
             $this->d->userPropertiesSet("john.doe@example.com", ['admin' => true]);

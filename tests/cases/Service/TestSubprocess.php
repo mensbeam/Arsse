@@ -39,7 +39,7 @@ class TestSubprocess extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRefreshFeeds(): void {
         $d = \Phake::partialMock(Driver::class);
-        \Phake::when($d)->execCmd->thenReturnCallback(function(string $cmd) {
+        \Phake::when($d)->execCmd(\Phake::anyParameters())->thenReturnCallback(function(string $cmd) {
             // FIXME: Does this work in Windows?
             return popen("echo ".escapeshellarg($cmd), "r");
         });

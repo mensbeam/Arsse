@@ -100,9 +100,9 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         parent::setUp();
         self::setConf();
         Arsse::$db = \Phake::mock(Database::class);
-        \Phake::when(Arsse::$db)->subscriptionMatchLatest->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->subscriptionMatchLatest(\Phake::anyParameters())->thenReturn(new Result([]));
         \Phake::when(Arsse::$db)->subscriptionMatchLatest(1, $this->anything())->thenReturn(new Result($this->latest));
-        \Phake::when(Arsse::$db)->subscriptionMatchIds->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->subscriptionMatchIds(\Phake::anyParameters())->thenReturn(new Result([]));
         \Phake::when(Arsse::$db)->subscriptionMatchIds(1, \Phake::ignoreRemaining())->thenReturn(new Result($this->others));
     }
 

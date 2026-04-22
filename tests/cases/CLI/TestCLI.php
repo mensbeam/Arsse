@@ -30,8 +30,8 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         parent::setup();
         Arsse::$db = \Phake::mock(Database::class);
         $this->cli = \Phake::partialMock(CLI::class);
-        \Phake::when($this->cli)->logError->thenReturn(null);
-        \Phake::when($this->cli)->loadConf->thenReturn(true);
+        \Phake::when($this->cli)->logError(\Phake::anyParameters())->thenReturn(null);
+        \Phake::when($this->cli)->loadConf(\Phake::anyParameters())->thenReturn(true);
     }
 
     public function assertConsole(string $command, int $exitStatus, string $output = "", bool $pattern = false): void {
@@ -70,7 +70,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testStartTheDaemon(): void {
         $srv = \Phake::mock(Service::class);
-        \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable());
+        \Phake::when($srv)->watch(\Phake::anyParameters())->thenReturn(new \DateTimeImmutable());
         \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
         $this->assertConsole("arsse.php daemon", 0);
         \Phake::verify($this->cli)->loadConf();
@@ -81,9 +81,9 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $f = tempnam(sys_get_temp_dir(), "arsse");
         $srv = \Phake::mock(Service::class);
         $daemon = \Phake::mock(Daemon::class);
-        \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable());
-        \Phake::when($daemon)->checkPIDFilePath->thenReturn($f);
-        \Phake::when($daemon)->fork->thenReturn(null);
+        \Phake::when($srv)->watch(\Phake::anyParameters())->thenReturn(new \DateTimeImmutable());
+        \Phake::when($daemon)->checkPIDFilePath(\Phake::anyParameters())->thenReturn($f);
+        \Phake::when($daemon)->fork(\Phake::anyParameters())->thenReturn(null);
         \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
         \Phake::when(Arsse::$obj)->get(Daemon::class)->thenReturn($daemon);
         $this->assertConsole("arsse.php daemon --fork=arsse.pid", 0);
@@ -99,9 +99,9 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testFailToStartTheForkingDaemon(): void {
         $srv = \Phake::mock(Service::class);
         $daemon = \Phake::mock(Daemon::class);
-        \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable());
-        \Phake::when($daemon)->checkPIDFilePath->thenThrow(new Service\Exception("pidDuplicate", ['pid' => 2112]));
-        \Phake::when($daemon)->fork->thenReturn(null);
+        \Phake::when($srv)->watch(\Phake::anyParameters())->thenReturn(new \DateTimeImmutable());
+        \Phake::when($daemon)->checkPIDFilePath(\Phake::anyParameters())->thenThrow(new Service\Exception("pidDuplicate", ['pid' => 2112]));
+        \Phake::when($daemon)->fork(\Phake::anyParameters())->thenReturn(null);
         \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
         \Phake::when(Arsse::$obj)->get(Daemon::class)->thenReturn($daemon);
         $this->assertConsole("arsse.php daemon --fork=arsse.pid", 10809);
@@ -113,7 +113,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRefreshAllFeeds(): void {
         $srv = \Phake::mock(Service::class);
-        \Phake::when($srv)->watch->thenReturn(new \DateTimeImmutable());
+        \Phake::when($srv)->watch(\Phake::anyParameters())->thenReturn(new \DateTimeImmutable());
         \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
         $this->assertConsole("arsse.php feed refresh-all", 0);
         \Phake::verify($this->cli)->loadConf();
@@ -200,8 +200,8 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testAddAUserAsAdministrator(): void {
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->add->thenReturn("random password");
-        \Phake::when(Arsse::$user)->propertiesSet->thenReturn([]);
+        \Phake::when(Arsse::$user)->add(\Phake::anyParameters())->thenReturn("random password");
+        \Phake::when(Arsse::$user)->propertiesSet(\Phake::anyParameters())->thenReturn([]);
         $this->assertConsole("arsse.php user add jane.doe@example.com --admin", 0, "random password");
         \Phake::verify(Arsse::$user)->add("jane.doe@example.com", null);
         \Phake::verify(Arsse::$user)->propertiesSet("jane.doe@example.com", ['admin' => true]);
@@ -211,11 +211,11 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider('provideUserAuthentication')]
     public function testAuthenticateAUser(string $cmd, int $exitStatus, string $output): void {
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->auth->thenReturn(false);
+        \Phake::when(Arsse::$user)->auth(\Phake::anyParameters())->thenReturn(false);
         \Phake::when(Arsse::$user)->auth("john.doe@example.com", "secret")->thenReturn(true);
         \Phake::when(Arsse::$user)->auth("jane.doe@example.com", "superman")->thenReturn(true);
         $fever = \Phake::mock(FeverUser::class);
-        \Phake::when($fever)->authenticate->thenReturn(false);
+        \Phake::when($fever)->authenticate(\Phake::anyParameters())->thenReturn(false);
         \Phake::when($fever)->authenticate("john.doe@example.com", "ashalla")->thenReturn(true);
         \Phake::when($fever)->authenticate("jane.doe@example.com", "thx1138")->thenReturn(true);
         \Phake::when(Arsse::$obj)->get(FeverUser::class)->thenReturn($fever);
@@ -242,7 +242,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider('provideUserRemovals')]
     public function testRemoveAUser(string $cmd, int $exitStatus, string $output): void {
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->remove->thenThrow(new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist"));
+        \Phake::when(Arsse::$user)->remove(\Phake::anyParameters())->thenThrow(new \JKingWeb\Arsse\User\ExceptionConflict("doesNotExist"));
         \Phake::when(Arsse::$user)->remove("john.doe@example.com")->thenReturn(true);
         $this->assertConsole($cmd, $exitStatus, $output);
     }
@@ -266,9 +266,9 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             }
         };
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->passwordSet->thenReturnCallback($passwordChange);
+        \Phake::when(Arsse::$user)->passwordSet(\Phake::anyParameters())->thenReturnCallback($passwordChange);
         $fever = \Phake::mock(FeverUser::class);
-        \Phake::when($fever)->register->thenReturnCallback($passwordChange);
+        \Phake::when($fever)->register(\Phake::anyParameters())->thenReturnCallback($passwordChange);
         \Phake::when(Arsse::$obj)->get(FeverUser::class)->thenReturn($fever);
         $this->assertConsole($cmd, $exitStatus, $output);
     }
@@ -296,9 +296,9 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             }
         };
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->passwordUnset->thenReturnCallback($passwordClear);
+        \Phake::when(Arsse::$user)->passwordUnset(\Phake::anyParameters())->thenReturnCallback($passwordClear);
         $fever = \Phake::mock(FeverUser::class);
-        \Phake::when($fever)->unregister->thenReturnCallback($passwordClear);
+        \Phake::when($fever)->unregister(\Phake::anyParameters())->thenReturnCallback($passwordClear);
         \Phake::when(Arsse::$obj)->get(FeverUser::class)->thenReturn($fever);
         $this->assertConsole($cmd, $exitStatus, $output);
     }
@@ -420,7 +420,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             "root_folder_name  NULL",
         ]);
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->propertiesGet->thenReturn($data);
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn($data);
         $this->assertConsole("arsse.php user show john.doe@example.com", 0, $exp);
         \Phake::verify(Arsse::$user)->propertiesGet("john.doe@example.com");
     }
@@ -429,7 +429,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider('provideMetadataChanges')]
     public function testSetMetadataOfAUser(string $cmd, string $user, array $in, array $out, int $exp): void {
         Arsse::$user = \Phake::mock(User::class);
-        \Phake::when(Arsse::$user)->propertiesSet->thenReturn($out);
+        \Phake::when(Arsse::$user)->propertiesSet(\Phake::anyParameters())->thenReturn($out);
         $this->assertConsole($cmd, $exp, "");
         \Phake::verify(Arsse::$user)->propertiesSet($user, $in);
     }
@@ -457,7 +457,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             "TOKEN 1  Ook",
         ]);
         $t = \Phake::mock(MinifluxToken::class);
-        \Phake::when($t)->tokenList->thenReturn($data);
+        \Phake::when($t)->tokenList(\Phake::anyParameters())->thenReturn($data);
         \Phake::when(Arsse::$obj)->get(MinifluxToken::class)->thenReturn($t);
         $this->assertConsole("arsse.php token list john", 0, $exp);
         \Phake::verify($t)->tokenList("john");
@@ -465,7 +465,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testCreateToken(): void {
         $t = \Phake::mock(MinifluxToken::class);
-        \Phake::when($t)->tokenGenerate->thenReturn("RANDOM TOKEN");
+        \Phake::when($t)->tokenGenerate(\Phake::anyParameters())->thenReturn("RANDOM TOKEN");
         \Phake::when(Arsse::$obj)->get(MinifluxToken::class)->thenReturn($t);
         $this->assertConsole("arse.php token create jane", 0, "RANDOM TOKEN");
         \Phake::verify($t)->tokenGenerate("jane", null);
@@ -473,20 +473,20 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testCreateTokenWithLabel(): void {
         $t = \Phake::mock(MinifluxToken::class);
-        \Phake::when($t)->tokenGenerate->thenReturn("RANDOM TOKEN");
+        \Phake::when($t)->tokenGenerate(\Phake::anyParameters())->thenReturn("RANDOM TOKEN");
         \Phake::when(Arsse::$obj)->get(MinifluxToken::class)->thenReturn($t);
         $this->assertConsole("arse.php token create jane Ook", 0, "RANDOM TOKEN");
         \Phake::verify($t)->tokenGenerate("jane", "Ook");
     }
 
     public function testRevokeAToken(): void {
-        \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(true);
+        \Phake::when(Arsse::$db)->tokenRevoke(\Phake::anyParameters())->thenReturn(true);
         $this->assertConsole("arse.php token revoke jane TOKEN_ID", 0);
         \Phake::verify(Arsse::$db)->tokenRevoke("jane", "miniflux.login", "TOKEN_ID");
     }
 
     public function testRevokeAllTokens(): void {
-        \Phake::when(Arsse::$db)->tokenRevoke->thenReturn(true);
+        \Phake::when(Arsse::$db)->tokenRevoke(\Phake::anyParameters())->thenReturn(true);
         $this->assertConsole("arse.php token revoke jane", 0);
         \Phake::verify(Arsse::$db)->tokenRevoke("jane", "miniflux.login", null);
     }

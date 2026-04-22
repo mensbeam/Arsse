@@ -51,14 +51,14 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testPerformShortPostCleanup(): void {
-        \Phake::when(Arsse::$db)->articleCleanup->thenReturn(0);
+        \Phake::when(Arsse::$db)->articleCleanup(\Phake::anyParameters())->thenReturn(0);
         $this->assertTrue(Service::cleanupPost());
         \Phake::verify(Arsse::$db)->articleCleanup(\Phake::anyParameters());
         \Phake::verify(Arsse::$db, \Phake::never())->driverMaintenance(\Phake::anyParameters());
     }
 
     public function testPerformFullPostCleanup(): void {
-        \Phake::when(Arsse::$db)->articleCleanup->thenReturn(1);
+        \Phake::when(Arsse::$db)->articleCleanup(\Phake::anyParameters())->thenReturn(1);
         $this->assertTrue(Service::cleanupPost());
         \Phake::verify(Arsse::$db)->articleCleanup(\Phake::anyParameters());
         \Phake::verify(Arsse::$db)->driverMaintenance(\Phake::anyParameters());
@@ -66,11 +66,11 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRefreshFeeds(): void {
         // set up mock database actions
-        \Phake::when(Arsse::$db)->metaSet->thenReturn(true);
-        \Phake::when(Arsse::$db)->subscriptionCleanup->thenReturn(true);
-        \Phake::when(Arsse::$db)->sessionCleanup->thenReturn(true);
-        \Phake::when(Arsse::$db)->articleCleanup->thenReturn(0);
-        \Phake::when(Arsse::$db)->subscriptionListStale->thenReturn([1,2,3]);
+        \Phake::when(Arsse::$db)->metaSet(\Phake::anyParameters())->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionCleanup(\Phake::anyParameters())->thenReturn(true);
+        \Phake::when(Arsse::$db)->sessionCleanup(\Phake::anyParameters())->thenReturn(true);
+        \Phake::when(Arsse::$db)->articleCleanup(\Phake::anyParameters())->thenReturn(0);
+        \Phake::when(Arsse::$db)->subscriptionListStale(\Phake::anyParameters())->thenReturn([1,2,3]);
         // perform the test
         $d = \Phake::mock(\JKingWeb\Arsse\Service\Driver::class);
         $s = new \JKingWeb\Arsse\Test\Service($d);

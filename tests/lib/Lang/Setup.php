@@ -40,7 +40,7 @@ trait Setup {
         chmod($this->path."ru.php", 0000);
         // make the test Lang class use the vfs files
         $this->l = \Phake::partialMock(Lang::class, $this->path);
-        \Phake::when($this->l)->globFiles->thenReturnCallback(function(string $path): array {
+        \Phake::when($this->l)->globFiles(\Phake::anyParameters())->thenReturnCallback(function(string $path): array {
             return Glob::glob($this->path."*.php");
         });
         self::clearData(false);
