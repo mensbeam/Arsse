@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "478304c029358fb19f47a753fee1c890",
+    "content-hash": "44a187f42f9f76522b87647b534fac56",
     "packages": [
         {
             "name": "docopt/docopt",
@@ -424,27 +424,31 @@
         },
         {
             "name": "jkingweb/druuid",
-            "version": "3.1.0",
+            "version": "4.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/JKingweb/DrUUID.git",
-                "reference": "19ce75dfdabc247be54e2890c2f1a01ce7c1f9b2"
+                "reference": "4c75dfe12819b37f8fa75fba2275b35fb50a1d67"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/JKingweb/DrUUID/zipball/19ce75dfdabc247be54e2890c2f1a01ce7c1f9b2",
-                "reference": "19ce75dfdabc247be54e2890c2f1a01ce7c1f9b2",
+                "url": "https://api.github.com/repos/JKingweb/DrUUID/zipball/4c75dfe12819b37f8fa75fba2275b35fb50a1d67",
+                "reference": "4c75dfe12819b37f8fa75fba2275b35fb50a1d67",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.0"
+                "php": ">=7.1.0"
             },
-            "suggest": {
-                "ext-bcmath": "Supported alternative to GMP on 32-bit systems",
-                "ext-gmp": "Recommended on 32-bit installations for time-base UUIDs",
-                "phpseclib/phpseclib": "Supported alternative to GMP or BC Math on 32-bit systems (either v1.x or v2.x)"
+            "require-dev": {
+                "bamarni/composer-bin-plugin": "*"
             },
             "type": "library",
+            "extra": {
+                "bamarni-bin": {
+                    "bin-links": false,
+                    "forward-command": true
+                }
+            },
             "autoload": {
                 "psr-4": {
                     "JKingWeb\\DrUUID\\": "lib/"
@@ -467,9 +471,9 @@
             ],
             "support": {
                 "issues": "https://github.com/JKingweb/DrUUID/issues",
-                "source": "https://github.com/JKingweb/DrUUID/tree/3.1.0"
+                "source": "https://github.com/JKingweb/DrUUID/tree/4.0.0"
             },
-            "time": "2025-12-11T21:26:39+00:00"
+            "time": "2025-12-11T21:23:34+00:00"
         },
         {
             "name": "kevinrob/guzzle-cache-middleware",
