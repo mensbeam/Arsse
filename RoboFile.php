@@ -165,7 +165,7 @@ class RoboFile extends \Robo\Tasks {
         $base = escapeshellarg(BASE);
         $blackhole = $this->blackhole();
         // get useable version strings from Git
-        $version = trim(`git -C $base describe --tags $target $blackhole`);
+        $version = trim(shell_exec("git -C $base describe --tags $target $blackhole"));
         if (!$version) {
             throw new \Exception("Commit reference invalid");
         }

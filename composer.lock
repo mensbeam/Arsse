@@ -4,32 +4,32 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "07424c017eaedf003680e4d93683af4e",
+    "content-hash": "44a187f42f9f76522b87647b534fac56",
     "packages": [
         {
             "name": "docopt/docopt",
-            "version": "dev-master",
+            "version": "1.0.6",
             "source": {
                 "type": "git",
-                "url": "https://github.com/mensbeam/docopt.php.git",
-                "reference": "91f3980e42442344d60d5b83e49baddc355e079f"
+                "url": "https://github.com/docopt/docopt.php.git",
+                "reference": "bcb963c87d61948919146d25c22ca0ab74896c24"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mensbeam/docopt.php/zipball/91f3980e42442344d60d5b83e49baddc355e079f",
-                "reference": "91f3980e42442344d60d5b83e49baddc355e079f",
+                "url": "https://api.github.com/repos/docopt/docopt.php/zipball/bcb963c87d61948919146d25c22ca0ab74896c24",
+                "reference": "bcb963c87d61948919146d25c22ca0ab74896c24",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.0"
             },
-            "default-branch": true,
             "type": "library",
             "autoload": {
                 "classmap": [
                     "src/docopt.php"
                 ]
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -48,28 +48,29 @@
                 "docs"
             ],
             "support": {
-                "source": "https://github.com/mensbeam/docopt.php/tree/master"
+                "issues": "https://github.com/docopt/docopt.php/issues",
+                "source": "https://github.com/docopt/docopt.php/tree/1.0.6"
             },
-            "time": "2024-12-12T02:51:22+00:00"
+            "time": "2025-01-20T00:35:03+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
-            "version": "7.9.3",
+            "version": "7.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/guzzle.git",
-                "reference": "7b2f29fe81dc4da0ca0ea7d42107a0845946ea77"
+                "reference": "b51ac707cfa420b7bfd4e4d5e510ba8008e822b4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/7b2f29fe81dc4da0ca0ea7d42107a0845946ea77",
-                "reference": "7b2f29fe81dc4da0ca0ea7d42107a0845946ea77",
+                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/b51ac707cfa420b7bfd4e4d5e510ba8008e822b4",
+                "reference": "b51ac707cfa420b7bfd4e4d5e510ba8008e822b4",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "guzzlehttp/promises": "^1.5.3 || ^2.0.3",
-                "guzzlehttp/psr7": "^2.7.0",
+                "guzzlehttp/promises": "^2.3",
+                "guzzlehttp/psr7": "^2.8",
                 "php": "^7.2.5 || ^8.0",
                 "psr/http-client": "^1.0",
                 "symfony/deprecation-contracts": "^2.2 || ^3.0"
@@ -160,7 +161,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/guzzle/issues",
-                "source": "https://github.com/guzzle/guzzle/tree/7.9.3"
+                "source": "https://github.com/guzzle/guzzle/tree/7.10.0"
             },
             "funding": [
                 {
@@ -176,20 +177,20 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-03-27T13:37:11+00:00"
+            "time": "2025-08-23T22:36:01+00:00"
         },
         {
             "name": "guzzlehttp/promises",
-            "version": "2.2.0",
+            "version": "2.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/promises.git",
-                "reference": "7c69f28996b0a6920945dd20b3857e499d9ca96c"
+                "reference": "481557b130ef3790cf82b713667b43030dc9c957"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/promises/zipball/7c69f28996b0a6920945dd20b3857e499d9ca96c",
-                "reference": "7c69f28996b0a6920945dd20b3857e499d9ca96c",
+                "url": "https://api.github.com/repos/guzzle/promises/zipball/481557b130ef3790cf82b713667b43030dc9c957",
+                "reference": "481557b130ef3790cf82b713667b43030dc9c957",
                 "shasum": ""
             },
             "require": {
@@ -197,7 +198,7 @@
             },
             "require-dev": {
                 "bamarni/composer-bin-plugin": "^1.8.2",
-                "phpunit/phpunit": "^8.5.39 || ^9.6.20"
+                "phpunit/phpunit": "^8.5.44 || ^9.6.25"
             },
             "type": "library",
             "extra": {
@@ -243,7 +244,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/promises/issues",
-                "source": "https://github.com/guzzle/promises/tree/2.2.0"
+                "source": "https://github.com/guzzle/promises/tree/2.3.0"
             },
             "funding": [
                 {
@@ -259,20 +260,20 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-03-27T13:27:01+00:00"
+            "time": "2025-08-22T14:34:08+00:00"
         },
         {
             "name": "guzzlehttp/psr7",
-            "version": "2.7.1",
+            "version": "2.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/psr7.git",
-                "reference": "c2270caaabe631b3b44c85f99e5a04bbb8060d16"
+                "reference": "7d0ed42f28e42d61352a7a79de682e5e67fec884"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/psr7/zipball/c2270caaabe631b3b44c85f99e5a04bbb8060d16",
-                "reference": "c2270caaabe631b3b44c85f99e5a04bbb8060d16",
+                "url": "https://api.github.com/repos/guzzle/psr7/zipball/7d0ed42f28e42d61352a7a79de682e5e67fec884",
+                "reference": "7d0ed42f28e42d61352a7a79de682e5e67fec884",
                 "shasum": ""
             },
             "require": {
@@ -288,7 +289,8 @@
             "require-dev": {
                 "bamarni/composer-bin-plugin": "^1.8.2",
                 "http-interop/http-factory-tests": "0.9.0",
-                "phpunit/phpunit": "^8.5.39 || ^9.6.20"
+                "jshttp/mime-db": "1.54.0.1",
+                "phpunit/phpunit": "^8.5.44 || ^9.6.25"
             },
             "suggest": {
                 "laminas/laminas-httphandlerrunner": "Emit PSR-7 responses"
@@ -359,7 +361,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/psr7/issues",
-                "source": "https://github.com/guzzle/psr7/tree/2.7.1"
+                "source": "https://github.com/guzzle/psr7/tree/2.9.0"
             },
             "funding": [
                 {
@@ -375,7 +377,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-03-27T12:30:47+00:00"
+            "time": "2026-03-10T16:41:02+00:00"
         },
         {
             "name": "hosteurope/password-generator",
@@ -423,27 +425,31 @@
         },
         {
             "name": "jkingweb/druuid",
-            "version": "3.0.0",
+            "version": "4.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/JKingweb/DrUUID.git",
-                "reference": "ca88019069f03ee9c0b1bb6b0200f421bbc9607e"
+                "reference": "4c75dfe12819b37f8fa75fba2275b35fb50a1d67"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/JKingweb/DrUUID/zipball/ca88019069f03ee9c0b1bb6b0200f421bbc9607e",
-                "reference": "ca88019069f03ee9c0b1bb6b0200f421bbc9607e",
+                "url": "https://api.github.com/repos/JKingweb/DrUUID/zipball/4c75dfe12819b37f8fa75fba2275b35fb50a1d67",
+                "reference": "4c75dfe12819b37f8fa75fba2275b35fb50a1d67",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.0"
+                "php": ">=7.1.0"
             },
-            "suggest": {
-                "ext-bcmath": "Supported alternative to GMP on 32-bit systems",
-                "ext-gmp": "Recommended on 32-bit installations for time-base UUIDs",
-                "phpseclib/phpseclib": "Supported alternative to GMP or BC Math on 32-bit systems (either v1.x or v2.x)"
+            "require-dev": {
+                "bamarni/composer-bin-plugin": "*"
             },
             "type": "library",
+            "extra": {
+                "bamarni-bin": {
+                    "bin-links": false,
+                    "forward-command": true
+                }
+            },
             "autoload": {
                 "psr-4": {
                     "JKingWeb\\DrUUID\\": "lib/"
@@ -460,15 +466,15 @@
                     "homepage": "https://jkingweb.ca/"
                 }
             ],
-            "description": "DrUUID RFC 4122 library for PHP",
+            "description": "DrUUID RFC 9562 library for PHP",
             "keywords": [
                 "uuid"
             ],
             "support": {
                 "issues": "https://github.com/JKingweb/DrUUID/issues",
-                "source": "https://github.com/JKingweb/DrUUID/tree/3.0.0"
+                "source": "https://github.com/JKingweb/DrUUID/tree/4.0.0"
             },
-            "time": "2017-02-09T14:17:01+00:00"
+            "time": "2025-12-11T21:23:34+00:00"
         },
         {
             "name": "kevinrob/guzzle-cache-middleware",
@@ -749,12 +755,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/JKingweb/picoFeed-1.git",
-                "reference": "2a81faf6da98ff577438c713357817df884012fc"
+                "reference": "ba6715c0f8c1a07b30a8d9ce4c710d1ab7bfbe91"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/JKingweb/picoFeed-1/zipball/2a81faf6da98ff577438c713357817df884012fc",
-                "reference": "2a81faf6da98ff577438c713357817df884012fc",
+                "url": "https://api.github.com/repos/JKingweb/picoFeed-1/zipball/ba6715c0f8c1a07b30a8d9ce4c710d1ab7bfbe91",
+                "reference": "ba6715c0f8c1a07b30a8d9ce4c710d1ab7bfbe91",
                 "shasum": ""
             },
             "require": {
@@ -805,7 +811,7 @@
             "support": {
                 "source": "https://github.com/JKingweb/picoFeed-1/tree/arsse"
             },
-            "time": "2025-05-21T13:50:31+00:00"
+            "time": "2026-01-19T17:40:15+00:00"
         },
         {
             "name": "psr/http-client",
@@ -1188,16 +1194,16 @@
     "packages-dev": [
         {
             "name": "bamarni/composer-bin-plugin",
-            "version": "1.8.2",
+            "version": "1.9.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bamarni/composer-bin-plugin.git",
-                "reference": "92fd7b1e6e9cdae19b0d57369d8ad31a37b6a880"
+                "reference": "641d0663f5ac270b1aeec4337b7856f76204df47"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bamarni/composer-bin-plugin/zipball/92fd7b1e6e9cdae19b0d57369d8ad31a37b6a880",
-                "reference": "92fd7b1e6e9cdae19b0d57369d8ad31a37b6a880",
+                "url": "https://api.github.com/repos/bamarni/composer-bin-plugin/zipball/641d0663f5ac270b1aeec4337b7856f76204df47",
+                "reference": "641d0663f5ac270b1aeec4337b7856f76204df47",
                 "shasum": ""
             },
             "require": {
@@ -1205,12 +1211,12 @@
                 "php": "^7.2.5 || ^8.0"
             },
             "require-dev": {
-                "composer/composer": "^2.0",
+                "composer/composer": "^2.2.26",
                 "ext-json": "*",
                 "phpstan/extension-installer": "^1.1",
-                "phpstan/phpstan": "^1.8",
-                "phpstan/phpstan-phpunit": "^1.1",
-                "phpunit/phpunit": "^8.5 || ^9.5",
+                "phpstan/phpstan": "^1.8 || ^2.0",
+                "phpstan/phpstan-phpunit": "^1.1 || ^2.0",
+                "phpunit/phpunit": "^8.5 || ^9.6 || ^10.0",
                 "symfony/console": "^2.8.52 || ^3.4.35 || ^4.4 || ^5.0 || ^6.0",
                 "symfony/finder": "^2.8.52 || ^3.4.35 || ^4.4 || ^5.0 || ^6.0",
                 "symfony/process": "^2.8.52 || ^3.4.35 || ^4.4 || ^5.0 || ^6.0"
@@ -1239,9 +1245,9 @@
             ],
             "support": {
                 "issues": "https://github.com/bamarni/composer-bin-plugin/issues",
-                "source": "https://github.com/bamarni/composer-bin-plugin/tree/1.8.2"
+                "source": "https://github.com/bamarni/composer-bin-plugin/tree/1.9.1"
             },
-            "time": "2022-10-31T08:38:03+00:00"
+            "time": "2026-02-04T10:18:12+00:00"
         }
     ],
     "aliases": [
@@ -1254,7 +1260,6 @@
     ],
     "minimum-stability": "stable",
     "stability-flags": {
-        "docopt/docopt": 20,
         "laminas/laminas-xml": 20,
         "nicolus/picofeed": 20
     },
@@ -1272,5 +1277,5 @@
     "platform-overrides": {
         "php": "7.3.33"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }

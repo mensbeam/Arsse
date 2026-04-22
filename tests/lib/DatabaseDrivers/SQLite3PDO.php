@@ -20,7 +20,7 @@ trait SQLite3PDO {
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\SQLite3\PDODriver::class;
     protected static $stringOutput = true;
 
-    public static function dbInterface() {
+    public static function dbInterface(): ?\PDO {
         try {
             $d = new \PDO("sqlite:".Arsse::$conf->dbSQLite3File, "", "", [
                 \PDO::ATTR_ERRMODE           => \PDO::ERRMODE_EXCEPTION,
@@ -29,7 +29,7 @@ trait SQLite3PDO {
             $d->exec("PRAGMA busy_timeout=0");
             return $d;
         } catch (\Throwable $e) {
-            return;
+            return null;
         }
     }
 }

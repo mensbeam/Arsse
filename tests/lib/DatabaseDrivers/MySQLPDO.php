@@ -20,7 +20,7 @@ trait MySQLPDO {
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\MySQL\PDODriver::class;
     protected static $stringOutput = false;
 
-    public static function dbInterface() {
+    public static function dbInterface(): ?\PDO {
         try {
             $dsn = [];
             $params = [
@@ -33,17 +33,18 @@ trait MySQLPDO {
                 $dsn[] = "$k=$v";
             }
             $dsn = "mysql:".implode(";", $dsn);
+            $multiStatements = class_exists(\Pdo\Mysql::class) ? \Pdo\Mysql::ATTR_MULTI_STATEMENTS : \PDO::MYSQL_ATTR_MULTI_STATEMENTS;
             $d = new \PDO($dsn, Arsse::$conf->dbMySQLUser, Arsse::$conf->dbMySQLPass, [
-                \PDO::ATTR_ERRMODE                => \PDO::ERRMODE_EXCEPTION,
-                \PDO::ATTR_STRINGIFY_FETCHES      => false,
-                \PDO::MYSQL_ATTR_MULTI_STATEMENTS => false,
+                \PDO::ATTR_ERRMODE           => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_STRINGIFY_FETCHES => false,
+                $multiStatements             => false,
             ]);
             foreach (\JKingWeb\Arsse\Db\MySQL\PDODriver::makeSetupQueries() as $q) {
                 $d->exec($q);
             }
             return $d;
         } catch (\Throwable $e) {
-            return;
+            return null;
         }
     }
 }

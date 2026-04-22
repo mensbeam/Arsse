@@ -17,6 +17,7 @@ class ValueInfo {
     public const ZERO = 1 << 2;
     public const NEG = 1 << 3;
     public const FLOAT = 1 << 4;
+    public const UNSAFE = 1 << 5;
     // strings
     public const EMPTY = 1 << 2;
     public const WHITE = 1 << 3;
@@ -142,7 +143,7 @@ class ValueInfo {
                     throw new ExceptionType("strictFailure", $type);
                 } elseif (is_bool($value)) {
                     return (int) $value;
-                } elseif ($info & (self::VALID | self::FLOAT)) {
+                } elseif ($info & (self::VALID | self::FLOAT) && !($info & self::UNSAFE)) {
                     $out = strtolower((string) $value);
                     if (strpos($out, "e")) {
                         return (int) (float) $out;
@@ -235,6 +236,8 @@ class ValueInfo {
                         throw new ExceptionType("strictFailure", $type);
                     } elseif (!is_scalar($value)) {
                         return "";
+                    } elseif (is_float($value) && is_nan($value)) {
+                        return "NAN";
                     } else {
                         return (string) $value;
                     }
@@ -446,7 +449,14 @@ class ValueInfo {
                 return $out;
             }
         } elseif (is_float($value)) {
-            if (!fmod($value, 1)) {
+            if (is_nan($value)) {
+                return self::FLOAT + self::UNSAFE;
+            } elseif (is_infinite($value)) {
+                if ($value < 0) {
+                    $out += self::NEG;
+                }
+                return $out + self::FLOAT + self::UNSAFE;
+            } elseif (!fmod($value, 1)) {
                 // an integral float is acceptable
                 $value = (int) $value;
             } else {
@@ -512,12 +522,12 @@ class ValueInfo {
     }
 
     public static function bool($value, ?bool $default = null): ?bool {
-        if (is_null($value) || ValueInfo::str($value) & ValueInfo::WHITE) {
+        if (is_null($value) || (is_float($value) && is_nan($value)) || ValueInfo::str($value) & ValueInfo::WHITE) {
             return $default;
         }
         $out = filter_var($value, \FILTER_VALIDATE_BOOLEAN, \FILTER_NULL_ON_FAILURE);
         if (is_null($out) && (ValueInfo::int($value) & ValueInfo::VALID)) {
-            $out = (int) filter_var($value, \FILTER_VALIDATE_FLOAT);
+            $out = (float) filter_var($value, \FILTER_VALIDATE_FLOAT);
             return ($out == 1 || $out == 0) ? (bool) $out : $default;
         }
         return !is_null($out) ? $out : $default;

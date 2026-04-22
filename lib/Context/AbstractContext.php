@@ -329,6 +329,7 @@ abstract class AbstractContext {
         return $this->act(__FUNCTION__, func_num_args(), $spec);
     }
 
+    /** @return mixed */
     protected function act(string $prop, int $set, $value) {
         if ($set) {
             if (is_null($value)) {

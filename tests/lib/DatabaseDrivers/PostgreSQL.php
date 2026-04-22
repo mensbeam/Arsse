@@ -20,7 +20,7 @@ trait PostgreSQL {
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\PostgreSQL\Driver::class;
     protected static $stringOutput = true;
 
-    public static function dbInterface() {
+    public static function dbInterface(): ?\PgSql\Connection {
         $connString = \JKingWeb\Arsse\Db\PostgreSQL\Driver::makeConnectionString(false, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, Arsse::$conf->dbPostgreSQLDb, Arsse::$conf->dbPostgreSQLHost, Arsse::$conf->dbPostgreSQLPort, "");
         if (function_exists("pg_connect") && $d = @pg_connect($connString, \PGSQL_CONNECT_FORCE_NEW)) {
             foreach (\JKingWeb\Arsse\Db\PostgreSQL\Driver::makeSetupQueries(Arsse::$conf->dbPostgreSQLSchema) as $q) {
@@ -28,7 +28,7 @@ trait PostgreSQL {
             }
             return $d;
         } else {
-            return;
+            return null;
         }
     }
 }

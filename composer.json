@@ -25,9 +25,9 @@
         "ext-filter": "*",
         "ext-dom": "*",
         "mensbeam/mimesniff": "^0.3.0",
-        "jkingweb/druuid": "3.*",
+        "jkingweb/druuid": "4.*",
         "hosteurope/password-generator": "1.*",
-        "docopt/docopt": "dev-master",
+        "docopt/docopt": "^1.0.6",
         "nicolus/picofeed": "dev-arsse",
         "guzzlehttp/psr7": "2.*",
         "laminas/laminas-xml": "dev-fixup as 1.4.0",
@@ -72,11 +72,6 @@
         {
             "type": "vcs",
             "url": "https://github.com/JKingweb/laminas-xml/"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/mensbeam/docopt.php/"
         }
-        
     ]
 }

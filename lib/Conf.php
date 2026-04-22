@@ -319,6 +319,9 @@ class Conf {
 
     protected function propertyExport(string $key, $value) {
         $value = ($value instanceof \DateInterval) ? Value::normalize($value, Value::T_STRING) : $value;
+        if ($value === null) {
+            return $value;
+        }
         switch ($key) {
             case "dbDriver":
                 return array_flip(Database::DRIVER_NAMES)[$value] ?? $value;

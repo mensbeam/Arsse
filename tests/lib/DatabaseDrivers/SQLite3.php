@@ -20,11 +20,11 @@ trait SQLite3 {
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\SQLite3\Driver::class;
     protected static $stringOutput = false;
 
-    protected static function dbInterface() {
+    protected static function dbInterface(): ?\SQLite3 {
         try {
             $d = new \SQLite3(Arsse::$conf->dbSQLite3File);
         } catch (\Throwable $e) {
-            return;
+            return null;
         }
         $d->enableExceptions(true);
         return $d;
