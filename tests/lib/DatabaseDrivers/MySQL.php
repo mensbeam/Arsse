@@ -20,7 +20,7 @@ trait MySQL {
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\MySQL\Driver::class;
     protected static $stringOutput = false;
 
-    public static function dbInterface() {
+    public static function dbInterface(): \mysqli {
         if (!class_exists("mysqli")) {
             return null;
         }

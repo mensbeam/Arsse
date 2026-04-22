@@ -20,12 +20,12 @@ trait PostgreSQLPDO {
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\PostgreSQL\PDODriver::class;
     protected static $stringOutput = false;
 
-    public static function dbInterface() {
+    public static function dbInterface(): ?\PDO {
         $connString = \JKingWeb\Arsse\Db\PostgreSQL\Driver::makeConnectionString(true, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, Arsse::$conf->dbPostgreSQLDb, Arsse::$conf->dbPostgreSQLHost, Arsse::$conf->dbPostgreSQLPort, "");
         try {
             $d = new \PDO("pgsql:".$connString, Arsse::$conf->dbPostgreSQLUser, Arsse::$conf->dbPostgreSQLPass, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
         } catch (\Throwable $e) {
-            return;
+            return null;
         }
         foreach (\JKingWeb\Arsse\Db\PostgreSQL\PDODriver::makeSetupQueries(Arsse::$conf->dbPostgreSQLSchema) as $q) {
             $d->exec($q);

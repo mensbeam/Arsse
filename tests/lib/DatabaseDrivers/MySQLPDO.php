@@ -20,7 +20,7 @@ trait MySQLPDO {
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\MySQL\PDODriver::class;
     protected static $stringOutput = false;
 
-    public static function dbInterface() {
+    public static function dbInterface(): ?\PDO {
         try {
             $dsn = [];
             $params = [
@@ -44,7 +44,7 @@ trait MySQLPDO {
             }
             return $d;
         } catch (\Throwable $e) {
-            return;
+            return null;
         }
     }
 }

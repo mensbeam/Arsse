@@ -11,6 +11,7 @@ abstract class AbstractContext {
     protected $props = [];
     protected $parent = null;
 
+    /** @return mixed */
     protected function act(string $prop, int $set, $value) {
         if ($set) {
             if (is_null($value)) {
