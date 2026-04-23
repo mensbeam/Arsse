@@ -14,7 +14,6 @@ use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Context\ExclusionContext;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\ExceptionInput;
-use JKingWeb\Arsse\Db\Result;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\Misc\Date;
@@ -33,7 +32,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const LABEL_PATTERN = "/^user\/[^\/]+\/label\/(.+)/";
     protected const STATE_PATTERN = "/^user\/[^\/]+\/state\/com\.google\/(.+)/";
     protected const FEED_PATTERN = "/^feed\/(.+)/";
-    /** The list of all known parameters. Their meanings can differ between calls, so they are not documentaed here */
+    /** The list of all known parameters. Their meanings can differ between calls, so they are not documented here */
     protected const ALLOWED = ["s", "t", "i", "a", "r", "ts", "dest", "n", "c", "xt", "it", "ot", "nt", "ac", "quickadd", "includeAllDirectStreamIds"];
     /** The list of URL matches for calls
      * 
@@ -174,7 +173,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
     }
 
-    protected function handleHttpOptions(string $url) {
+    protected function handleHttpOptions(string $url): ResponseInterface {
         if (strpos($url, "/stream/contents/") === 0) {
             $url = "/stream/contents/*";
         }
@@ -206,12 +205,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * - The entity body, parsed the same as teh query unless requested otherwise
      */
     protected function parseInput(ServerRequestInterface $req, array $allowed, int $bodyMode): array {
-        $format = null;
         $token = null;
-        // fill an array with all allowed keys
-        foreach ($allowed as $k => $t) {
-            $outG[$k] = ($t >= V::M_ARRAY) ? [] : null;
-        }
         // parse the query
         $outG = $this->parseQuery(parse_url($req->getRequestTarget(), \PHP_URL_QUERY) ?? "", $allowed, true, false);
         $format = $outG['output'];
