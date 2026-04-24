@@ -108,7 +108,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         if ($this->shouldChallenge($req)) {
             return self::respError("401", 401);
         } elseif (!$this->authenticate($req)) {
-            return $this->challenge(self::respError("401", 400));
+            return $this->challenge(self::respError("401", 401));
         }
         // determine which handler to call
         $func = $this->chooseCall($target, $method);
@@ -130,7 +130,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             try {
                 Arsse::$db->tokenLookup("reader.post", $token, Arsse::$user->id);
             } catch (ExceptionInput $e) {
-                return self::respError("401", 400, ['X-Reader-Google-Bad-Token' => "true"]);
+                return self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"]);
             }
         }
         // handle the request
@@ -426,9 +426,13 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function tokenCreate(string $target, array $query, array $body, string $format): ResponseInterface {
-        // We create a token with a 30-minute expiry; this is typical for
-        //   other Reader implementations and seems to be what the original did
-        return HTTP::respText(Arsse::$db->tokenCreate(Arsse::$user->id, "reader.post", null, $this->now()->add(new \DateInterval("PT30M"))));
+        // Contrary to the original Reader, FreshRSS creates POST tokens which
+        //   never expire, and some implementations (such as Newsflash) assume
+        //   therefore that tokens never expire and never re-authenticate
+        // Additionally, FreshRSS claims that tokens must be 57 characters in
+        //   length, so we satisfy this as well, padding with "Z" as it does
+        $token = base64_encode(random_bytes(42))."Z";
+        return HTTP::respText(Arsse::$db->tokenCreate(Arsse::$user->id, "reader.post", $token)."\n");
     }
 
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#user-info */
@@ -520,7 +524,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return self::respError($e);
             }
         }
-        return HTTP::respText("OK");
+        return HTTP::respText("OK\n");
     }
 
     /** Renames a feed/article tag/label
@@ -563,7 +567,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return self::respError($e);
             }
         }
-        return HTTP::respText("OK");
+        return HTTP::respText("OK\n");
     }
 
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#tag-list */
@@ -638,7 +642,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             return self::respError($e, 400);
         }
-        return HTTP::respText("OK");
+        return HTTP::respText("OK\n");
     }
 
     protected function streamMark(string $target, array $query, array $body, string $format): ResponseInterface {
@@ -659,7 +663,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             return self::respError($e);
         }
-        return HTTP::respText("OK");
+        return HTTP::respText("OK\n");
     }
 
     /** 
@@ -708,9 +712,9 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         try {
             Arsse::$db->subscriptionLookup(Arsse::$user->id, $m[1]);
-            return HTTP::respText("true");
+            return HTTP::respText("true\n");
         } catch (ExceptionInput $e) {
-            return HTTP::respText("false");
+            return HTTP::respText("false\n");
         }
     }
 
@@ -824,7 +828,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         $tr->commit();
-        return HTTP::respText("OK");
+        return HTTP::respText("OK\n");
     }
 
     protected function subscriptionImport(string $target, array $query, string $body, string $format): ResponseInterface {
@@ -832,7 +836,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         Arsse::$obj->get(OPML::class)->import(Arsse::$user->id, $body);
         $newCount = sizeof(iterator_to_array(Arsse::$db->subscriptionList(Arsse::$user->id)));
         $diff = $newCount - $oldCount;
-        return HTTP::respText("OK: $diff");
+        return HTTP::respText("OK: $diff\n");
     }
 
     protected function subscriptionExport(string $target, array $query, array $body, string $format): ResponseInterface {
@@ -912,7 +916,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             // TODO: What do we do about errors?
         }
-        return HTTP::respText($out);
+        return HTTP::respText("$out\n");
     }
 
     /** 

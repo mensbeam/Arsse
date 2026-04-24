@@ -35,6 +35,6 @@ trait Common {
             assert(isset(Arsse::$lang) && Arsse::$lang instanceof \JKingWeb\Arsse\Lang, new \Exception("Language database must be initialized before use"));
             $message = Arsse::$lang->msg("API.Reader.Error.".array_shift($message), $message);
         }
-        return HTTP::respText($message, $status, $headers);
+        return HTTP::respText("$message\n", $status, $headers);
     }
 }
