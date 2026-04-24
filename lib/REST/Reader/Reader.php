@@ -524,7 +524,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return self::respError($e);
             }
         }
-        return HTTP::respText("OK\n");
+        return HTTP::respText("OK");
     }
 
     /** Renames a feed/article tag/label
@@ -567,7 +567,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return self::respError($e);
             }
         }
-        return HTTP::respText("OK\n");
+        return HTTP::respText("OK");
     }
 
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#tag-list */
@@ -642,7 +642,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             return self::respError($e, 400);
         }
-        return HTTP::respText("OK\n");
+        return HTTP::respText("OK");
     }
 
     protected function streamMark(string $target, array $query, array $body, string $format): ResponseInterface {
@@ -663,7 +663,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (ExceptionInput $e) {
             return self::respError($e);
         }
-        return HTTP::respText("OK\n");
+        return HTTP::respText("OK");
     }
 
     /** 
@@ -828,7 +828,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         $tr->commit();
-        return HTTP::respText("OK\n");
+        return HTTP::respText("OK");
     }
 
     protected function subscriptionImport(string $target, array $query, string $body, string $format): ResponseInterface {
