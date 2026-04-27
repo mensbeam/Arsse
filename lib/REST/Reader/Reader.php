@@ -431,8 +431,18 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         //   therefore that tokens never expire and never re-authenticate
         // Additionally, FreshRSS claims that tokens must be 57 characters in
         //   length, so we satisfy this as well, padding with "Z" as it does
-        $token = base64_encode(random_bytes(42))."Z";
-        return HTTP::respText(Arsse::$db->tokenCreate(Arsse::$user->id, "reader.post", $token)."\n");
+        $row = Arsse::$db->tokenList(Arsse::$user->id, "reader.post")->getRow();
+        if ($row) {
+            $token = $row['id'];
+        } else {
+            $token = base64_encode(random_bytes(42))."Z";
+            Arsse::$db->tokenCreate(Arsse::$user->id, "reader.post", $token);
+        }
+        // Note that the newline at the end of the response is required by at
+        //   least some implementations (again such as Newsflash) which strip
+        //   the last character from the response before saving the token in
+        //   their database
+        return HTTP::respText("$token\n");
     }
 
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#user-info */
