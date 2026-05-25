@@ -49,7 +49,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
             //   at least some clients (e.g. Newsflash) treat a 401 response
             //   as a request for HTTP Basic authentication, so we respond
             //   with 400 instead
-            return HTTP::respText("Error=BadAuthentication\n", 400);
+            return HTTP::respText("Error=BadAuthentication", 400);
         }
     }
 }

@@ -430,14 +430,15 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         //   never expire, and some implementations (such as Newsflash) assume
         //   therefore that tokens never expire and never re-authenticate; as a
         //   result we re-use existing tokens if one is requested, to avoid
-        //   cluttering the database
+        //   cluttering the database if there are implementations which do 
+        //   re-authenticate regularly
         $row = Arsse::$db->tokenList(Arsse::$user->id, "reader.post")->getRow();
         if ($row) {
             $token = $row['id'];
         } else {
             // FreshRSS creates 57-character tokens (using "Z" for padding),
             //   and at least one source claims this is required, so we do
-            //   the same, but with fart less padding
+            //   the same, but with far less padding
             $token = base64_encode(random_bytes(42))."Z";
             Arsse::$db->tokenCreate(Arsse::$user->id, "reader.post", $token);
         }
