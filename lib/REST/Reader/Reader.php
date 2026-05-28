@@ -964,7 +964,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $streams = ($query['includeAllDirectStreamIds'] ?? true) ? $this->itemStreams($i, $labels, $meta['num']) : [];
             // prepare the entry
             $out[] = [
-                'id' => $this->itemIdEncode((int) $i['id']),
+                'id' => (string) $i['id'], // FreshRSS returns the ID as a string, so we do the same
                 'timestampUsec' => Date::transform($i['modified_date'], "unix", "sql")."000000",
                 'directStreamIds' => $streams,
             ];
