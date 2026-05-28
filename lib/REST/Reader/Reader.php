@@ -30,7 +30,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const BODY_READ = 1;
     protected const BODY_PARSE= 2;
     protected const LABEL_PATTERN = "/^user\/[^\/]+\/label\/(.+)/";
-    protected const STATE_PATTERN = "/^user\/[^\/]+\/state\/com\.google\/(.+)/";
+    protected const STATE_PATTERN = "/^user\/[^\/]+\/state\/([^\/]+\/[^\/]+)/";
     protected const FEED_PATTERN = "/^feed\/(.+)/";
     /** The list of all known parameters. Their meanings can differ between calls, so they are not documented here */
     protected const ALLOWED = ["s", "t", "i", "a", "r", "ts", "dest", "n", "c", "xt", "it", "ot", "nt", "ac", "quickadd", "includeAllDirectStreamIds"];
@@ -74,14 +74,21 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const CONTINUATION_PARAMS = ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE, 'i' => V::T_INT, 'includeAllDirectStreamIds' => V::T_BOOL];
     /** A list of state streams which we do not support and will therefore return an empty set when queried */
     protected const UNSUPPORTED_STATES = [
-        "broadcast",
-        "broadcast-fiends",
-        "broadcast-friends-comments", // The Old Reader seems to support this
-        "created", // BazQux suggests this existed, but does not itself support it
-        "like", // The Old Reader seems to support this
+        "com.google/broadcast",
+        "com.google/broadcast-fiends",
+        "com.google/broadcast-friends-comments", // The Old Reader seems to support this
+        "com.google/created", // BazQux suggests this existed, but does not itself support it
+        "com.google/like", // The Old Reader seems to support this
+        "org.freshrss/main",
+        "org.freshrss/important",
     ];
     /** A list of reserved state names which cannot be used as an article tag */
-    protected const RESERVED_STATES = ["read", "kept-unread", "starred", "reading-list"] + self::UNSUPPORTED_STATES;
+    protected const RESERVED_STATES = [
+        "com.google/read",
+        "com.google/kept-unread",
+        "com.google/starred",
+        "com.google/reading-list"
+    ] + self::UNSUPPORTED_STATES;
     protected const OUTPUT_TYPES = [
         "application/json",
         "application/xml",
@@ -353,17 +360,17 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             return $c->orGroups($g);
         } elseif (preg_match(self::STATE_PATTERN, $stream, $m)) {
             switch ($m[1]) {
-                case "read":
+                case "com.google/read":
                     return $c->unread(false);
-                case "kept-unread":
+                case "com.google/kept-unread":
                     return $c->unread(true);
-                case "reading-list":
+                case "com.google/reading-list":
                     if ($c instanceof ExclusionContext) {
                         // excluding everything is an empty set
                         throw new EmptySetException;
                     }
                     return $c;
-                case "starred":
+                case "com.google/starred":
                     return $c->starred(true);
                 default:
                     if (in_array($m[1], self::UNSUPPORTED_STATES)) {
@@ -593,13 +600,16 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         ));
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
         $sortId = 0;
-        // start with the special starred state
+        // start with the states FreshRSS always includes
         $out = [
-            ['id' => "user/{$meta['num']}/state/com.google/starred", "sortid" => $this->makeSortId($sortId++)],
+            ['id' => "user/{$meta['num']}/state/com.google/starred",      'sortid' => $this->makeSortId($sortId++)],
+            ['id' => "user/{$meta['num']}/state/com.google/reading-list", 'sortid' => $this->makeSortId($sortId++)],
+            ['id' => "user/{$meta['num']}/state/org.freshrss/main",       'sortid' => $this->makeSortId($sortId++)],
+            ['id' => "user/{$meta['num']}/state/org.freshrss/important",  'sortid' => $this->makeSortId($sortId++)],
         ];
         // add all the feed tags (what Reader calls labels) which have associations to feeds
         foreach ($tags as $t) {
-            $out[] = ['id' => "user/{$meta['num']}/label/$t", "sortid" => $this->makeSortId($sortId++)];
+            $out[] = ['id' => "user/{$meta['num']}/label/$t", 'sortid' => $this->makeSortId($sortId++)];
         }
         return $this->respond($format, ['tags' => $out]);
     }
@@ -635,11 +645,11 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                         Arsse::$db->labelArticlesSet(Arsse::$user->id, $m[1], $c, $op === "a" ? Database::ASSOC_ADD : Database::ASSOC_REMOVE);
                     } elseif (preg_match(self::STATE_PATTERN, $s, $m)) {
                         $state = $m[1];
-                        if ($state === "read") {
+                        if ($state === "com.google/read") {
                             Arsse::$db->articleMark(Arsse::$user->id, ['read' => $op === "a" ? true : false], $c);
-                        } elseif ($state === "kept-unread") {
+                        } elseif ($state === "com.google/kept-unread") {
                             Arsse::$db->articleMark(Arsse::$user->id, ['read' => $op === "a" ? false : true], $c);
-                        } elseif ($state === "starred") {
+                        } elseif ($state === "com.google/starred") {
                             Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $op === "a" ? true : false], $c);
                         } elseif (in_array($state, self::RESERVED_STATES)) {
                             // other known states are a no-op
@@ -1123,7 +1133,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $query = $this->parseQuery($ct, self::CONTINUATION_PARAMS, false, false);
         }
         $c = $this->streamContext($query['s'] ?? "");
-        // streams can be refined by adding an AND condition with 'it' 
+        // streams can be refined by adding an AND condition with 'it'
         //   and/or an AND NOT condition with 'xt'
         if ($query['it']) {
             $this->streamContext($query['it'], $c);
