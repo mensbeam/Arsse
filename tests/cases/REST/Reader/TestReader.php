@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\REST\Reader;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\ExceptionInput;
@@ -22,6 +23,8 @@ use Psr\Http\Message\ServerRequestInterface;
 
 #[CoversClass(\JKingWeb\Arsse\REST\Reader\Reader::class)]
 class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
+    use \JKingWeb\Arsse\REST\Reader\Common;
+
     protected const NOW = "2020-12-21T23:09:17.189065Z";
     protected $h = null;
 
@@ -50,12 +53,37 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         return $this->h->dispatch($this->serverRequest($method, "/api/greader.php/reader/api/0".$target, "/api/greader.php/reader/api/0", [], [], $data, "application/x-www-form-urlencoded", [], $user));
     }
 
-    public function testMarkAnArticleAsRead(): void {
+    #[DataProvider("provideMarkings")]
+    public function testMarkArticles(string $body, ?array $data, ?Context $c, ResponseInterface $exp): void {
         $user = "john.doe@example.com";
         \Phake::when(Arsse::$db)->tokenLookup(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
         \Phake::when(Arsse::$db)->tokenLookup("reader.post", "12345", $user)->thenReturn([]);
         \Phake::when(Arsse::$db)->articleMark(\Phake::anyParameters())->thenReturn(1);
-        $act = $this->req("POST", "/edit-tag", "i=1&i=2&a=user/-/state/com.google/read&T=12345", $user);
-        $this->assertMessage(HTTP::respText("OK"), $act);
+        $act = $this->req("POST", "/edit-tag", $body, $user);
+        $this->assertMessage($exp, $act);
+        if ($data && $c) {
+            \Phake::verify(Arsse::$db)->articleMark($user, $data, $c);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->articleMark(\Phake::anyParameters());
+        }
+    }
+
+    public static function provideMarkings(): iterable {
+        self::clearData(); // initializes string formatter
+        $success = HTTP::respText("OK");
+        $failure = self::respError("InvalidStream");
+        return [
+            ["i=1&i=2&a=user/-/state/com.google/read&T=12345",        ['read' => true],     (new Context)->articles([1,2]), $success],
+            ["i=3&i=4&r=user/-/state/com.google/kept-unread&T=12345", ['read' => true],     (new Context)->articles([3,4]), $success],
+            ["i=1&i=2&r=user/-/state/com.google/read&T=12345",        ['read' => false],    (new Context)->articles([1,2]), $success],
+            ["i=3&i=4&a=user/-/state/com.google/kept-unread&T=12345", ['read' => false],    (new Context)->articles([3,4]), $success],
+            ["i=5&i=6&a=user/-/state/com.google/starred&T=12345",     ['starred' => true],  (new Context)->articles([5,6]), $success],
+            ["i=5&i=6&r=user/-/state/com.google/starred&T=12345",     ['starred' => false], (new Context)->articles([5,6]), $success],
+            ["i=7&i=8&a=user/-/state/org.freshrss/important&T=12345", null,                 null,                           $success],
+            ["i=7&i=8&a=user/-/state/ca.jking/bogus&T=12345",         null,                 null,                           self::respError(["InvalidStream", "user/-/state/ca.jking/bogus"])],
+            ["i=7&i=8&a=not-a-state&T=12345",                         null,                 null,                           self::respError(["InvalidStream", "not-a-state"])],
+            ["a=user/-/state/com.google/read&T=12345",                null,                 null,                           self::respError(["ParameterRequired", "i"])],
+            ["i=9&T=12345",                                           null,                 null,                           self::respError(["ParameterRequiredOneOfTwo", "a", "r"])],
+        ];
     }
 }

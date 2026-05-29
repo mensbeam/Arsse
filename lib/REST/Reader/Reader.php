@@ -30,7 +30,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const BODY_READ = 1;
     protected const BODY_PARSE= 2;
     protected const LABEL_PATTERN = "/^user\/[^\/]+\/label\/(.+)/";
-    protected const STATE_PATTERN = "/^user\/[^\/]+\/state\/([^\/]+\/[^\/]+)/";
+    protected const STATE_PATTERN = "/^user\/[^\/]+\/state\/([^\/]+\/.+)/";
     protected const FEED_PATTERN = "/^feed\/(.+)/";
     /** The list of all known parameters. Their meanings can differ between calls, so they are not documented here */
     protected const ALLOWED = ["s", "t", "i", "a", "r", "ts", "dest", "n", "c", "xt", "it", "ot", "nt", "ac", "quickadd", "includeAllDirectStreamIds"];
@@ -144,8 +144,14 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         try {
             return $this->$func($target, $query, $body, $format);
             // @codeCoverageIgnoreStart
+        } catch (Exception $e) {
+            // Reader exceptions imply bad input, and thus a 400 error
+            return self::respError([$e->getSymbol(), ...$e->getParams()], 400);
+        } catch (ExceptionInput $e) {
+            // input exceptions also imply a 400 error
+            return self::respError($e, 400);
         } catch (AbstractException $e) {
-            // if there was any other Arsse exception return 500
+            // any other Arsse exception should yield 500
             return self::respError($e, 500);
         }
         // @codeCoverageIgnoreEnd
@@ -629,43 +635,39 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         $c->articles(array_map(function($v) {
             return $this->itemIdDecode($v);
         }, $body['i']));
-        try {
-            $tr = Arsse::$db->begin();
-            // get the list of currently extant labels so we know when we need to add one
-            $labels = array_column(iterator_to_array(Arsse::$db->labelList(Arsse::$user->id, true)), "id", "name");
-            // apply each state or label in the order they appear, additions first
-            foreach (['a' => $body['a'], 'r' => $body['r']] as $op => $set) {
-                foreach ($set as $s) {
-                    if (preg_match(self::LABEL_PATTERN, $s, $m)) {
-                        $name = $m[1];
-                        // add the specified label if it doesn't exist
-                        if (!isset($labels[$name]) && $op === "a") {
-                            $labels[$name] = Arsse::$db->labelAdd(Arsse::$user->id, ['name' => $name]);
-                        }
-                        Arsse::$db->labelArticlesSet(Arsse::$user->id, $m[1], $c, $op === "a" ? Database::ASSOC_ADD : Database::ASSOC_REMOVE);
-                    } elseif (preg_match(self::STATE_PATTERN, $s, $m)) {
-                        $state = $m[1];
-                        if ($state === "com.google/read") {
-                            Arsse::$db->articleMark(Arsse::$user->id, ['read' => $op === "a" ? true : false], $c);
-                        } elseif ($state === "com.google/kept-unread") {
-                            Arsse::$db->articleMark(Arsse::$user->id, ['read' => $op === "a" ? false : true], $c);
-                        } elseif ($state === "com.google/starred") {
-                            Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $op === "a" ? true : false], $c);
-                        } elseif (in_array($state, self::RESERVED_STATES)) {
-                            // other known states are a no-op
-                            continue;
-                        } else {
-                            throw new Exception("InvalidStream", $s);
-                        }
-                    } else {
-                        throw new Exception("InvalidStream", $s);
+        $tr = Arsse::$db->begin();
+        // get the list of currently extant labels so we know when we need to add one
+        $labels = array_column(iterator_to_array(Arsse::$db->labelList(Arsse::$user->id, true)), "id", "name");
+        // apply each state or label in the order they appear, additions first
+        foreach (['a' => $body['a'], 'r' => $body['r']] as $op => $set) {
+            foreach ($set as $s) {
+                if (preg_match(self::LABEL_PATTERN, $s, $m)) {
+                    $name = $m[1];
+                    // add the specified label if it doesn't exist
+                    if (!isset($labels[$name]) && $op === "a") {
+                        $labels[$name] = Arsse::$db->labelAdd(Arsse::$user->id, ['name' => $name]);
                     }
+                    Arsse::$db->labelArticlesSet(Arsse::$user->id, $m[1], $c, $op === "a" ? Database::ASSOC_ADD : Database::ASSOC_REMOVE);
+                } elseif (preg_match(self::STATE_PATTERN, $s, $m)) {
+                    $state = $m[1];
+                    if ($state === "com.google/read") {
+                        Arsse::$db->articleMark(Arsse::$user->id, ['read' => $op === "a" ? true : false], $c);
+                    } elseif ($state === "com.google/kept-unread") {
+                        Arsse::$db->articleMark(Arsse::$user->id, ['read' => $op === "a" ? false : true], $c);
+                    } elseif ($state === "com.google/starred") {
+                        Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $op === "a" ? true : false], $c);
+                    } elseif (in_array($state, self::RESERVED_STATES)) {
+                        // other known states are a no-op
+                        continue;
+                    } else {
+                        return self::respError(["InvalidStream", $s]);
+                    }
+                } else {
+                    return self::respError(["InvalidStream", $s]);
                 }
             }
-            $tr->commit();
-        } catch (ExceptionInput $e) {
-            return self::respError($e, 400);
         }
+        $tr->commit();
         return HTTP::respText("OK");
     }
 
