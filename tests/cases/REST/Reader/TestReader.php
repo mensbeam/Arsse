@@ -9,6 +9,7 @@ namespace JKingWeb\Arsse\TestCase\REST\Reader;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Context\Context;
+use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\ExceptionInput;
@@ -71,7 +72,6 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function provideMarkings(): iterable {
         self::clearData(); // initializes string formatter
         $success = HTTP::respText("OK");
-        $failure = self::respError("InvalidStream");
         return [
             ["i=1&i=2&a=user/-/state/com.google/read&T=12345",             ['read' => true],     (new Context)->articles([1,2]), $success],
             ["i=3&i=4&r=user/-/state/com.google/kept-unread&T=12345",      ['read' => true],     (new Context)->articles([3,4]), $success],
@@ -101,5 +101,45 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::verify(Arsse::$db)->articleMark($user, ['read' => true], $c),
             \Phake::verify(Arsse::$db)->articleMark($user, ['starred' => false], $c),
         );
+    }
+
+    #[DataProvider("provideLabellings")]
+    public function testModifyArticleLabels(string $body, ?array $data, ?string $addLabel, ResponseInterface $exp): void {
+        $user = "john.doe@example.com";
+        $labels = [
+            ['id' => 1, 'name' => "Ook"],
+            ['id' => 2, 'name' => "Eek"],
+            ['id' => 3, 'name' => "Ack"],
+        ];
+        \Phake::when(Arsse::$db)->tokenLookup(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->tokenLookup("reader.post", "12345", $user)->thenReturn([]);
+        \Phake::when(Arsse::$db)->labelList(\Phake::anyParameters())->thenReturn(new Result($labels));
+        \Phake::when(Arsse::$db)->labelAdd(\Phake::anyParameters())->thenReturn(4);
+        \Phake::when(Arsse::$db)->labelArticlesSet(\Phake::anyParameters())->thenReturn(1);
+        $act = $this->req("POST", "/edit-tag", $body, $user);
+        $this->assertMessage($exp, $act);
+        if ($data) {
+            \Phake::verify(Arsse::$db)->labelList($user, true);
+            \Phake::verify(Arsse::$db)->labelArticlesSet($user, ...$data);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->labelList(\Phake::anyParameters());
+            \Phake::verify(Arsse::$db, \Phake::never())->articleMark(\Phake::anyParameters());
+        }
+        if ($addLabel) {
+            \Phake::verify(Arsse::$db)->labelAdd($user, ['name' => $addLabel]);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->labelAdd(\Phake::anyParameters());
+        }
+    }
+
+    public static function provideLabellings(): iterable {
+        self::clearData(); // initializes string formatter
+        $success = HTTP::respText("OK");
+        return [
+            ["T=12345&i=1&i=2&a=user/-/label/Ook",    ["Ook", (new Context)->articles([1 ,2]), Database::ASSOC_ADD, true],     null,   $success],
+            ["T=12345&i=1&i=2&a=user/2112/label/Ook", ["Ook", (new Context)->articles([1 ,2]), Database::ASSOC_ADD, true],     null,   $success],
+            ["T=12345&i=1&i=2&a=user/-/label/Boop",   ["Boop", (new Context)->articles([1 ,2]), Database::ASSOC_ADD, true],    "Boop", $success],
+            ["T=12345&i=1&i=2&r=user/-/label/Boop",   ["Boop", (new Context)->articles([1 ,2]), Database::ASSOC_REMOVE, true], null,   $success],
+        ];
     }
 }

@@ -636,18 +636,20 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             return $this->itemIdDecode($v);
         }, $body['i']));
         $tr = Arsse::$db->begin();
-        // get the list of currently extant labels so we know when we need to add one
-        $labels = array_column(iterator_to_array(Arsse::$db->labelList(Arsse::$user->id, true)), "id", "name");
         // apply each state or label in the order they appear, additions first
         foreach (['a' => $body['a'], 'r' => $body['r']] as $op => $set) {
             foreach ($set as $s) {
                 if (preg_match(self::LABEL_PATTERN, $s, $m)) {
                     $name = $m[1];
+                    if (!isset($labels)) {
+                        // get the list of currently extant labels so we know when we need to add one
+                        $labels = array_column(iterator_to_array(Arsse::$db->labelList(Arsse::$user->id, true)), "id", "name");
+                    }
                     // add the specified label if it doesn't exist
                     if (!isset($labels[$name]) && $op === "a") {
                         $labels[$name] = Arsse::$db->labelAdd(Arsse::$user->id, ['name' => $name]);
                     }
-                    Arsse::$db->labelArticlesSet(Arsse::$user->id, $m[1], $c, $op === "a" ? Database::ASSOC_ADD : Database::ASSOC_REMOVE);
+                    Arsse::$db->labelArticlesSet(Arsse::$user->id, $m[1], $c, $op === "a" ? Database::ASSOC_ADD : Database::ASSOC_REMOVE, true);
                 } elseif (preg_match(self::STATE_PATTERN, $s, $m)) {
                     $state = $m[1];
                     if ($state === "com.google/read") {
