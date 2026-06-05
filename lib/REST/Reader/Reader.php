@@ -293,6 +293,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     /** Converts an item ID (which could be a plain integer or a tag URN) into an internal database ID
      * 
      * @see https://feedhq.readthedocs.io/en/latest/api/terminology.html#items
+     * @param int|string $itemId
      */
     protected function itemIdDecode($itemId): int {
         if (is_int($itemId)) {
@@ -554,7 +555,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return HTTP::respText("OK");
     }
 
-    /** Renames a feed/article tag/label
+    /** Renames a tag for a feed or a label for an article (or both)
      * 
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#rename-tag
      */
@@ -599,11 +600,10 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#tag-list */
     protected function tagList(string $target, array $query, array $body, string $format): ResponseInterface {
-        // tags in Reader map to both feed tags and article labels, so we have to get the set of both
-        $tags = array_unique(array_merge(
-            array_column(iterator_to_array(Arsse::$db->tagList(Arsse::$user->id, false)), "name"),
-            array_column(iterator_to_array(Arsse::$db->labelList(Arsse::$user->id, false)), "name"),
-        ));
+        // NOTE: FreshRSS acts very differently from how FeedHQ seemed to,
+        //   here. Feed tags and article labels are treated as distinct
+        //   objects and are listed separately. It also includes unread
+        //   counts for article labels (but not states or feed tags)
         $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
         $sortId = 0;
         // start with the states FreshRSS always includes
@@ -614,8 +614,21 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             ['id' => "user/{$meta['num']}/state/org.freshrss/important",  'sortid' => $this->makeSortId($sortId++)],
         ];
         // add all the feed tags (what Reader calls labels) which have associations to feeds
-        foreach ($tags as $t) {
-            $out[] = ['id' => "user/{$meta['num']}/label/$t", 'sortid' => $this->makeSortId($sortId++)];
+        foreach (Arsse::$db->tagList(Arsse::$user->id, false) as $t) {
+            $out[] = [
+                'id' => "user/{$meta['num']}/label/".$t['name'],
+                'sortid' => $this->makeSortId($sortId++),
+                'type' => "folder",
+            ];
+        }
+        // add all the article labels which have associations to articles
+        foreach (Arsse::$db->labelList(Arsse::$user->id, false) as $l) {
+            $out[] = [
+                'id' => "user/{$meta['num']}/label/".$l['name'],
+                'sortid' => $this->makeSortId($sortId++),
+                'type' => "tag",
+                'unread_count' => ((int) $l['articles']) - ((int) $l['read']),
+            ];
         }
         return $this->respond($format, ['tags' => $out]);
     }

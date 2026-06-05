@@ -14,19 +14,18 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
-use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Reader\Reader;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 
 #[CoversClass(\JKingWeb\Arsse\REST\Reader\Reader::class)]
 class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
     use \JKingWeb\Arsse\REST\Reader\Common;
 
     protected const NOW = "2020-12-21T23:09:17.189065Z";
+    /** @var Reader|\Phake\IMock|null */
     protected $h = null;
 
     public function setUp(): void {
@@ -41,17 +40,17 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db = \Phake::mock(Database::class);
         \Phake::when(Arsse::$db)->begin(\Phake::anyParameters())->thenReturn(\Phake::mock(Transaction::class));
         \Phake::when(Arsse::$db)->tokenCreate(\Phake::anyParameters())->thenReturn("12345");
-        // create the reader class, with authentication stubbed out
-        $this->h = \Phake::partialMock(Reader::class);
-        \Phake::when($this->h)->authenticate(\Phake::anyParameters())->thenReturn(true);
-        \Phake::when($this->h)->shouldChallenge(\Phake::anyParameters())->thenReturn(false);
+        // create the reader class, with authentication stubbed out; for mysterious reasons Phake does not work reliably when mocking this class
+        $this->h = $this->createPartialMock(Reader::class, ["authenticate", "shouldChallenge"]);
+        $this->h->method("authenticate")->willReturn(true);
+        $this->h->method("shouldChallenge")->willReturn(false);
     }
 
     protected function req(string $method, string $target, string $data = "", ?string $user = null): ResponseInterface {
         if (strlen((string) $user)) {
             Arsse::$user->id = $user;
         }
-        return $this->h->dispatch($this->serverRequest($method, "/api/greader.php/reader/api/0".$target, "/api/greader.php/reader/api/0", [], [], $data, "application/x-www-form-urlencoded", [], $user));
+        return $this->h->dispatch($this->serverRequest($method, "/api/greader.php/reader/api/0".$target, "/api/greader.php/reader/api/0", ['Accept' => "application/json"], [], $data, "application/x-www-form-urlencoded", [], $user));
     }
 
     #[DataProvider("provideMarkings")]
@@ -141,5 +140,36 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["T=12345&i=1&i=2&a=user/-/label/Boop",   ["Boop", (new Context)->articles([1 ,2]), Database::ASSOC_ADD, true],    "Boop", $success],
             ["T=12345&i=1&i=2&r=user/-/label/Boop",   ["Boop", (new Context)->articles([1 ,2]), Database::ASSOC_REMOVE, true], null,   $success],
         ];
+    }
+
+    public function testListTags(): void {
+        $user = "john.doe@example.com";
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn([
+            'num' => 2112,
+        ]);
+        \Phake::when(Arsse::$db)->tagList(\Phake::anyParameters())->thenReturn(new Result([
+            ['id' => 1, 'name' => "Foo"],
+            ['id' => 2, 'name' => "Bar"],
+            ['id' => 3, 'name' => "Baz"],
+        ]));
+        \Phake::when(Arsse::$db)->labelList(\Phake::anyParameters())->thenReturn(new Result([
+            ['id' => 1, 'name' => "Ook", 'articles' => 10, 'read' => 3],
+            ['id' => 2, 'name' => "Eek", 'articles' => 20, 'read' => 2],
+            ['id' => 3, 'name' => "Ack", 'articles' => 30, 'read' => 1],
+        ]));
+        $act = $this->req("GET", "/tag/list", "", $user);
+        $exp = HTTP::respJson(['tags' => [
+            ['id' => "user/2112/state/com.google/starred",      'sortid' => "00000000"],
+            ['id' => "user/2112/state/com.google/reading-list", 'sortid' => "00000001"],
+            ['id' => "user/2112/state/org.freshrss/main",       'sortid' => "00000002"],
+            ['id' => "user/2112/state/org.freshrss/important",  'sortid' => "00000003"],
+            ['id' => "user/2112/label/Foo",                     'sortid' => "00000004", 'type' => "folder"],
+            ['id' => "user/2112/label/Bar",                     'sortid' => "00000005", 'type' => "folder"],
+            ['id' => "user/2112/label/Baz",                     'sortid' => "00000006", 'type' => "folder"],
+            ['id' => "user/2112/label/Ook",                     'sortid' => "00000007", 'type' => "tag", 'unread_count' => 7],
+            ['id' => "user/2112/label/Eek",                     'sortid' => "00000008", 'type' => "tag", 'unread_count' => 18],
+            ['id' => "user/2112/label/Ack",                     'sortid' => "00000009", 'type' => "tag", 'unread_count' => 29],
+        ]]);
+        $this->assertMessage($exp, $act);
     }
 }
