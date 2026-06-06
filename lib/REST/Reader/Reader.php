@@ -578,7 +578,11 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         } else {
             return self::respError(["InvalidStream", $body['s']]);
         }
-        // we must rename both the feed tag and article label; it is not an error if only one fails
+        // we must rename both the feed tag and article label; it is not an
+        //   error if only one fails
+        // NOTE: FreshRSS does not do things this way, instead trying to rename
+        //   a matching feed tag or then a matching article label, and stopping
+        //   once one succeeds 
         $success = true;
         try {
             Arsse::$db->labelPropertiesSet(Arsse::$user->id, $old, ['name' => $new], true);

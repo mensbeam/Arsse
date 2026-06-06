@@ -172,4 +172,43 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         ]]);
         $this->assertMessage($exp, $act);
     }
+
+    #[DataProvider("provideTagRenamings")]
+    public function testRenameTags(string $body, ?string $oldName, ?string $newName, ResponseInterface $exp): void {
+        $user = "john.doe@example.com";
+        \Phake::when(Arsse::$db)->tagPropertiesSet(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->tagPropertiesSet($user, "Ook", ['name' => "Foo"], true)->thenReturn(true);
+        \Phake::when(Arsse::$db)->tagPropertiesSet($user, "Eek", ['name' => "Bar"], true)->thenReturn(true);
+        \Phake::when(Arsse::$db)->labelPropertiesSet(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->labelPropertiesSet($user, "Ook", ['name' => "Foo"], true)->thenReturn(true);
+        $act = $this->req("POST", "/rename-tag", $body, $user);
+        $this->assertMessage($exp, $act);
+        if ($oldName && $newName) {
+            \Phake::verify(Arsse::$db)->tagPropertiesSet($user, $oldName, ['name' => $newName], true);
+            \Phake::verify(Arsse::$db)->labelPropertiesSet($user, $oldName, ['name' => $newName], true);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->tagPropertiesSet(\Phake::anyParameters());
+            \Phake::verify(Arsse::$db, \Phake::never())->labelPropertiesSet(\Phake::anyParameters());
+        }
+    }
+
+    public static function provideTagRenamings(): iterable {
+        self::clearData(); // initializes string formatter
+        $success = HTTP::respText("OK");
+        return [
+            ["T=12345&s=user/-/label/Ook&dest=user/-/label/Foo",    "Ook", "Foo", $success],
+            ["T=12345&s=user/-/label/Eek&dest=user/-/label/Bar",    "Eek", "Bar", $success],
+            ["T=12345&s=user/-/label/Ack&dest=user/-/label/Baz",    "Ack", "Baz", self::respError(new ExceptionInput("subjectMissing"))],
+            ["T=12345&s=user/2112/label/Ook&dest=user/-/label/Foo", "Ook", "Foo", $success],
+            ["T=12345&s=user/2112/label/Eek&dest=user/-/label/Bar", "Eek", "Bar", $success],
+            ["T=12345&s=user/2112/label/Ack&dest=user/-/label/Baz", "Ack", "Baz", self::respError(new ExceptionInput("subjectMissing"))],
+            ["T=12345&t=Ook&dest=user/-/label/Foo",                 "Ook", "Foo", $success],
+            ["T=12345&t=Eek&dest=user/-/label/Bar",                 "Eek", "Bar", $success],
+            ["T=12345&t=Ack&dest=user/-/label/Baz",                 "Ack", "Baz", self::respError(new ExceptionInput("subjectMissing"))],
+            ["T=12345&dest=user/-/label/Foo",                       null,  null,  self::respError(["ParameterRequiredOneOfTwo", "s", "t"])],
+            ["T=12345&t=Ook",                                       null,  null,  self::respError(["ParameterRequired", "dest"])],
+            ["T=12345&t=Ook&dest=Foo",                              null,  null,  self::respError(["InvalidStream", "Foo"])],
+            ["T=12345&s=Ook&dest=user/-/label/Foo",                 null,  null,  self::respError(["InvalidStream", "Ook"])],
+        ];
+    }
 }
