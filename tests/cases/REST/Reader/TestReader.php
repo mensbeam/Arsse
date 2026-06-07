@@ -73,8 +73,10 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         $success = HTTP::respText("OK");
         return [
             ["i=1&i=2&a=user/-/state/com.google/read&T=12345",             ['read' => true],     (new Context)->articles([1,2]), $success],
+            ["i=3&i=4&r=user/-/state/com.google/unread&T=12345",           ['read' => true],     (new Context)->articles([3,4]), $success],
             ["i=3&i=4&r=user/-/state/com.google/kept-unread&T=12345",      ['read' => true],     (new Context)->articles([3,4]), $success],
             ["i=1&i=2&r=user/-/state/com.google/read&T=12345",             ['read' => false],    (new Context)->articles([1,2]), $success],
+            ["i=3&i=4&a=user/-/state/com.google/unread&T=12345",           ['read' => false],    (new Context)->articles([3,4]), $success],
             ["i=3&i=4&a=user/-/state/com.google/kept-unread&T=12345",      ['read' => false],    (new Context)->articles([3,4]), $success],
             ["i=5&i=6&a=user/-/state/com.google/starred&T=12345",          ['starred' => true],  (new Context)->articles([5,6]), $success],
             ["i=5&i=6&r=user/-/state/com.google/starred&T=12345",          ['starred' => false], (new Context)->articles([5,6]), $success],

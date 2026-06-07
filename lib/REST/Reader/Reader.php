@@ -82,9 +82,10 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         "org.freshrss/main",
         "org.freshrss/important",
     ];
-    /** A list of reserved state names which cannot be used as an article tag */
-    protected const RESERVED_STATES = [
+    /** The list of known state names */
+    protected const KNOWN_STATES = [
         "com.google/read",
+        "com.google/unread",
         "com.google/kept-unread",
         "com.google/starred",
         "com.google/reading-list"
@@ -369,6 +370,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             switch ($m[1]) {
                 case "com.google/read":
                     return $c->unread(false);
+                case "com.google/unread":
                 case "com.google/kept-unread":
                     return $c->unread(true);
                 case "com.google/reading-list":
@@ -675,11 +677,11 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                     $state = $m[1];
                     if ($state === "com.google/read") {
                         Arsse::$db->articleMark(Arsse::$user->id, ['read' => $op === "a" ? true : false], $c);
-                    } elseif ($state === "com.google/kept-unread") {
+                    } elseif ($state === "com.google/kept-unread" || $state === "com.google/unread") {
                         Arsse::$db->articleMark(Arsse::$user->id, ['read' => $op === "a" ? false : true], $c);
                     } elseif ($state === "com.google/starred") {
                         Arsse::$db->articleMark(Arsse::$user->id, ['starred' => $op === "a" ? true : false], $c);
-                    } elseif (in_array($state, self::RESERVED_STATES)) {
+                    } elseif (in_array($state, self::KNOWN_STATES)) {
                         // other known states are a no-op
                         continue;
                     } else {
@@ -1132,8 +1134,19 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         $streams = [
             "feed/".$item['subscription_url'],
             "user/-/state/com.google/reading-list",
-            $item['unread'] ? "user/-/state/com.google/kept-unread" : "user/-/state/com.google/read",
         ];
+        if ($item['unread']) {
+            // NOTE: Most Reader implementations don't seem to have an
+            //   opposite-of-read state, but both FreshRSS and FeedHQ do.
+            //   Unfortunately they are different from each other. We therefore
+            //   expose both, though neither FreshRSS nor FeedHQ actually
+            //   support the functionality exposed here, so this is largely
+            //   theoretical.
+            $streams[] = "user/-/state/com.google/unread";      // FreshRSS
+            $streams[] = "user/-/state/com.google/kept-unread"; // FeedHQ
+        } else {
+            $streams[] = "user/-/state/com.google/read";
+        }
         if ($item['starred']) {
             $streams[] = "user/-/state/com.google/starred";
         }
