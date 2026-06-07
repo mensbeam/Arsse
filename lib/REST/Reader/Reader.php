@@ -480,14 +480,15 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#friend-list */
     protected function friendsGet(string $target, array $query, array $body, string $format): ResponseInterface {
+        // NOTE: This is not implemented by FreshRSS at all
         $user = Arsse::$user->id;
         $meta = Arsse::$user->propertiesGet($user);
         return self::respond($format, [
             'friends' => [
                 [
-                    'userIds'                 => (string) [$meta['num']],
-                    'profileIds'              => (string) [$meta['num']],
-                    'contactId'               => '-1',
+                    'userIds'                 => [(string) $meta['num']],
+                    'profileIds'              => [(string) $meta['num']],
+                    'contactId'               => "-1",
                     'stream'                  => "user/{$meta['num']}/state/com.google/broadcast",
                     'flags'                   => 1,
                     'displayName'             => $user,
@@ -537,6 +538,9 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         $success = true;
         // first try removing the article label with the name, which is more
         //   likely to fail because they are apt to be used less frequently
+        // NOTE: FreshRSS does not do things this way, instead trying to remove
+        //   a matching feed tag or then a matching article label, and stopping
+        //   once one succeeds 
         try {
             Arsse::$db->labelRemove(Arsse::$user->id, $name, true);
         } catch (ExceptionInput $e) {

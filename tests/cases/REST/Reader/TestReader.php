@@ -84,6 +84,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["a=user/-/state/com.google/read&T=12345",                     null,                 null,                           self::respError(["ParameterRequired", "i"])],
             ["i=9&T=12345",                                                null,                 null,                           self::respError(["ParameterRequiredOneOfTwo", "a", "r"])],
             ["i=1&i=2&i=&a=user/-/state/com.google/read&T=12345",          ['read' => true],     (new Context)->articles([1,2]), $success],
+            ["i=1&a=user/-/state/com.google/read",                         null,                 null,                           self::respError("TokenRequired", 400)],
         ];
     }
 
@@ -209,6 +210,65 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["T=12345&t=Ook",                                       null,  null,  self::respError(["ParameterRequired", "dest"])],
             ["T=12345&t=Ook&dest=Foo",                              null,  null,  self::respError(["InvalidStream", "Foo"])],
             ["T=12345&s=Ook&dest=user/-/label/Foo",                 null,  null,  self::respError(["InvalidStream", "Ook"])],
+            ["t=Ook&dest=user/-/label/Foo",                         null,  null,  self::respError("TokenRequired", 400)],
         ];
+    }
+
+    #[DataProvider("provideTagRemovals")]
+    public function testRemoveTags(string $body, ?string $removed, ResponseInterface $exp): void {
+        $user = "john.doe@example.com";
+        \Phake::when(Arsse::$db)->tagRemove(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->tagRemove($user, "Ook", true)->thenReturn(true);
+        \Phake::when(Arsse::$db)->tagRemove($user, "Eek", true)->thenReturn(true);
+        \Phake::when(Arsse::$db)->labelRemove(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->labelRemove($user, "Ook", true)->thenReturn(true);
+        $act = $this->req("POST", "/disable-tag", $body, $user);
+        $this->assertMessage($exp, $act);
+        if ($removed) {
+            \Phake::verify(Arsse::$db)->tagRemove($user, $removed, true);
+            \Phake::verify(Arsse::$db)->labelRemove($user, $removed, true);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->tagRemove(\Phake::anyParameters());
+            \Phake::verify(Arsse::$db, \Phake::never())->labelRemove(\Phake::anyParameters());
+        }
+    }
+
+    public static function provideTagRemovals(): iterable {
+        self::clearData(); // initializes string formatter
+        $success = HTTP::respText("OK");
+        return [
+            ["T=12345&s=user/-/label/Ook", "Ook", $success],
+            ["T=12345&s=user/-/label/Eek", "Eek", $success],
+            ["T=12345&s=user/-/label/Ack", "Ack", self::respError(new ExceptionInput("subjectMissing"))],
+            ["T=12345&t=Ook",              "Ook", $success],
+            ["T=12345&t=Eek",              "Eek", $success],
+            ["T=12345&t=Ack",              "Ack", self::respError(new ExceptionInput("subjectMissing"))],
+            ["T=12345",                    null,  self::respError(["ParameterRequiredOneOfTwo", "s", "t"])],
+            ["T=12345&s=Ook",              null,  self::respError(["InvalidStream", "Ook"])],
+            ["s=user/-/label/Ook",         null,  self::respError("TokenRequired", 400)],
+        ];
+    }
+
+    public function testListFriends(): void {
+        $user = "john.doe@example.com";
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn([
+            'num' => 2112,
+        ]);
+        $act = $this->req("GET", "/friend/list", "", $user);
+        $exp = HTTP::respJson(['friends' => [
+            [
+                'userIds' => ["2112"],
+                'profileIds' => ["2112"],
+                'contactId' => "-1",
+                'stream' => "user/2112/state/com.google/broadcast",
+                'flags' => 1,
+                'displayName' => "john.doe@example.com",
+                'givenName' => "john.doe@example.com",
+                'n' => "",
+                'p' => "",
+                'hasSharedItemsOnProfile' => false,
+            ],
+        ]]);
+        $this->assertMessage($exp, $act);
     }
 }
