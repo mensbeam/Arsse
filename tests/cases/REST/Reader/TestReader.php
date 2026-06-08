@@ -41,9 +41,10 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->begin(\Phake::anyParameters())->thenReturn(\Phake::mock(Transaction::class));
         \Phake::when(Arsse::$db)->tokenCreate(\Phake::anyParameters())->thenReturn("12345");
         // create the reader class, with authentication stubbed out; for mysterious reasons Phake does not work reliably when mocking this class
-        $this->h = $this->createPartialMock(Reader::class, ["authenticate", "shouldChallenge"]);
+        $this->h = $this->createPartialMock(Reader::class, ["authenticate", "shouldChallenge", "now"]);
         $this->h->method("authenticate")->willReturn(true);
         $this->h->method("shouldChallenge")->willReturn(false);
+        $this->h->method("now")->willReturn(new \DateTimeImmutable(self::NOW));
     }
 
     protected function req(string $method, string $target, string $data = "", ?string $user = null): ResponseInterface {
@@ -271,6 +272,47 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
                 'hasSharedItemsOnProfile' => false,
             ],
         ]]);
+        $this->assertMessage($exp, $act);
+    }
+
+    public function testListPrefs(): void {
+        $user = "john.doe@example.com";
+        $act = $this->req("GET", "/preference/list", "", $user);
+        $exp = HTTP::respJson( [
+            'prefs' => [
+                [
+                    'id' => "lhn-prefs",
+                    'value' => '{"subscriptions":{"ssa":"true"}}',
+                ],
+            ],
+        ]);
+        $this->assertMessage($exp, $act);
+    }
+
+    public function testListPrefsStream(): void {
+        $user = "john.doe@example.com";
+        $act = $this->req("GET", "/preference/stream/list", "", $user);
+        $exp = HTTP::respJson( [
+            'streamprefs' => new \stdClass,
+        ]);
+        $this->assertMessage($exp, $act);
+    }
+
+    public function testGetUserInfo(): void {
+        $user = "john.doe@example.com";
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn([
+            'num' => 2112,
+        ]);
+        $act = $this->req("GET", "/user-info", "", $user);
+        $exp = HTTP::respJson( [
+            'userName' => "john.doe@example.com",
+            'userEmail' => "",
+            'userId' => "2112",
+            'userProfileId' => "2112",
+            'isBloggerUser' => false,
+            'signupTimeSec' => 1608592157,
+            'isMultiLoginEnabled' => false,
+        ]);
         $this->assertMessage($exp, $act);
     }
 }
