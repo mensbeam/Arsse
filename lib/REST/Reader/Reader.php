@@ -299,8 +299,6 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function itemIdDecode($itemId): int {
         if (is_int($itemId)) {
             return $itemId;
-        } elseif (is_string($itemId) && preg_match('/^[0-9]+$/', $itemId)) {
-            return (int) $itemId;
         } elseif (is_string($itemId) && preg_match('/^tag:google.com,2005:reader\/item\/([0-7][0-9a-fA-F]{15})$/', $itemId, $m)) {
             // NOTE: Reader IDs are signed, but because the database will
             //   never use negative IDs, we can safely reject negative IDs and
@@ -310,6 +308,12 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // zero is also an invalid database ID, so only return if the value is not zero
                 return $out;
             }
+        } elseif (is_string($itemId) && preg_match('/^[0-7][0-9A-Fa-f]{15}$/', $itemId)) {
+            // Supposedly Reeder sometimes sends item IDs in this format
+            // See https://www.davd.io/posts/2025-02-05-reimplementing-google-reader-api-in-2025/#item-ids
+            return hexdec($itemId);
+        } elseif (is_string($itemId) && preg_match('/^[0-9]+$/', $itemId)) {
+            return (int) $itemId;
         }
         throw new Exception("InvalidItemId", $itemId);
     }
@@ -344,7 +348,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * A null return value indicates a stream which will always return no articles
      * 
      * @param string $stream The stream identifier
-     * @param ?AbstractContext $c An existing context to apply the stream to. This may be any kind of context, but if one is supplied, splice streams are forbidden
+     * @param ?AbstractContext $c An existing context to apply the stream to. This may be any kind of context, including an exclusion context
      * @return Context
      */
     protected function streamContext(?string $stream, ?AbstractContext $c = null): ?AbstractContext {
@@ -944,6 +948,10 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             'id' => "user/{$meta['num']}/state/com.google/reading-list",
             'count' => $total,
             'newestItemTimestampUsec' => Date::transform($ts, "unix", "sql")."000000",
+        ];
+        $out = [
+            'max' => $total,
+            'unreadcounts' => $out,
         ];
         // return the whole list
         return self::respond($format, $out);
