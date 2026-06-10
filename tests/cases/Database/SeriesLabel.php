@@ -272,9 +272,9 @@ trait SeriesLabel {
     //#[CoversMethod(Database::class, "labelList")]
     public function testListLabels(): void {
         $exp = [
-            ['id' => 2, 'name' => "Fascinating", 'articles' => 3, 'read' => 1],
-            ['id' => 1, 'name' => "Interesting", 'articles' => 2, 'read' => 2],
-            ['id' => 4, 'name' => "Lonely",      'articles' => 0, 'read' => 0],
+            ['id' => 2, 'name' => "Fascinating", 'articles' => 3, 'read' => 1, 'article_modified' => "2010-01-01 00:00:00"],
+            ['id' => 1, 'name' => "Interesting", 'articles' => 2, 'read' => 2, 'article_modified' => "2000-01-01 00:00:00"],
+            ['id' => 4, 'name' => "Lonely",      'articles' => 0, 'read' => 0, 'article_modified' => null],
         ];
         $this->assertResult($exp, Arsse::$db->labelList("john.doe@example.com"));
         $exp = [
@@ -335,10 +335,11 @@ trait SeriesLabel {
     //#[CoversMethod(Database::class, "labelValidateId")]
     public function testGetThePropertiesOfALabel(): void {
         $exp = [
-            'id'       => 2,
-            'name'     => "Fascinating",
-            'articles' => 3,
-            'read'     => 1,
+            'id'               => 2,
+            'name'             => "Fascinating",
+            'articles'         => 3,
+            'read'             => 1,
+            'article_modified' => "2010-01-01 00:00:00"
         ];
         $this->assertArraySubset($exp, Arsse::$db->labelPropertiesGet("john.doe@example.com", 2));
         $this->assertArraySubset($exp, Arsse::$db->labelPropertiesGet("john.doe@example.com", "Fascinating", true));

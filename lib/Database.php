@@ -2300,6 +2300,7 @@ class Database {
      * - "name" The label's textual name
      * - "articles": The count of articles which have the label assigned to them
      * - "read": How many of the total articles assigned to the label are read
+     * - "article_modified": The most recent modification date among articles belonging to the label
      *
      * @param string $user The user whose labels are to be listed
      * @param boolean $includeEmpty Whether to include (true) or supress (false) labels which have no articles assigned to them
@@ -2312,7 +2313,8 @@ class Database {
                     id,
                     name,
                     cast(coalesce(articles - coalesce(hidden, 0), 0) as $integerType) as articles, -- this cast is required for MySQL for unclear reasons
-                    cast(coalesce(marked, 0) as $integerType) as \"read\" -- this cast is required for MySQL for unclear reasons
+                    cast(coalesce(marked, 0) as $integerType) as \"read\", -- this cast is required for MySQL for unclear reasons
+                    article_modified
                 from arsse_labels
                     left join (
                         SELECT
@@ -2327,7 +2329,8 @@ class Database {
                         SELECT
                             label,
                             sum(hidden) as hidden,
-                            sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
+                            sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked,
+                            max(arsse_articles.modified) as article_modified
                         from arsse_articles
                             join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
                             join arsse_label_members on arsse_label_members.article = arsse_articles.id
@@ -2393,6 +2396,7 @@ class Database {
      * - "name" The label's textual name
      * - "articles": The count of articles which have the label assigned to them
      * - "read": How many of the total articles assigned to the label are read
+     * - "article_modified": The most recent modification date among articles belonging to the label
      *
      * @param string $user The owner of the label to remove
      * @param integer|string $id The numeric identifier or name of the label
@@ -2407,7 +2411,8 @@ class Database {
                 id,
                 name,
                 coalesce(articles - coalesce(hidden, 0), 0) as articles,
-                coalesce(marked, 0) as \"read\"
+                coalesce(marked, 0) as \"read\",
+                article_modified
             FROM arsse_labels
                 left join (
                     SELECT
@@ -2422,7 +2427,8 @@ class Database {
                     SELECT
                         label,
                         sum(hidden) as hidden,
-                        sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked
+                        sum(case when \"read\" = 1 and hidden = 0 then 1 else 0 end) as marked,
+                        max(arsse_articles.modified) as article_modified
                     from arsse_articles
                         join arsse_subscriptions on arsse_subscriptions.id = arsse_articles.subscription
                         join arsse_label_members on arsse_label_members.article = arsse_articles.id
