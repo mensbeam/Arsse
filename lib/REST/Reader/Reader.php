@@ -927,13 +927,12 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $ts = max($ts, $date);
         }
         // aggregate information on tags
-        // FIXME: this does not include article labels
         foreach (Arsse::$db->tagSummarize(Arsse::$user->id) as $tag) {
             if (!isset($tags[$tag['name']])) {
                 $tags[$tag['name']] = ['count' => 0, 'ts' => null];
             }
             $tags[$tag['name']]['count'] += $summary[$tag['subscription']]['count'];
-            $tags[$tag['name']]['ts'] = max($tags[$tag['id']]['ts'], $summary[$tag['subscription']]['ts']);
+            $tags[$tag['name']]['ts'] = max($tags[$tag['name']]['ts'], $summary[$tag['subscription']]['ts']);
         }
         // add tags to output
         foreach ($tags as $name => $data) {
@@ -941,6 +940,14 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'id'                      => "user/{$meta['num']}/label/$name",
                 'count'                   => $data['count'],
                 'newestItemTimestampUsec' => Date::transform($data['ts'], "unix", "sql")."000000",
+            ];
+        }
+        // add labels to output
+        foreach (Arsse::$db->labelList(Arsse::$user->id) as $label) {
+            $out[] = [
+                'id'                      => "user/{$meta['num']}/label/{$label['name']}",
+                'count'                   => (int) $label['articles'] - (int) $label['read'],
+                'newestItemTimestampUsec' => $label['article_modified'] ? Date::transform($label['article_modified'], "unix", "sql")."000000" : null,
             ];
         }
         // add "reading list" (all articles) to output

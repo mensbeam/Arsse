@@ -304,7 +304,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             'num' => 2112,
         ]);
         $act = $this->req("GET", "/user-info", "", $user);
-        $exp = HTTP::respJson( [
+        $exp = HTTP::respJson([
             'userName' => "john.doe@example.com",
             'userEmail' => "",
             'userId' => "2112",
@@ -312,6 +312,46 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             'isBloggerUser' => false,
             'signupTimeSec' => 1608592157,
             'isMultiLoginEnabled' => false,
+        ]);
+        $this->assertMessage($exp, $act);
+    }
+
+    public function testListUnreadCounts(): void {
+        $user = "john.doe@example.com";
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn([
+            'num' => 2112,
+        ]);
+        \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result([
+            ['id' => 1, 'url' => "http://example.com/", 'unread' => 5,  'article_modified' => "2026-01-01 00:00:00"],
+            ['id' => 2, 'url' => "http://example.net/", 'unread' => 12, 'article_modified' => "2026-01-02 00:00:00"],
+            ['id' => 3, 'url' => "http://example.org/", 'unread' => 0,  'article_modified' => "2026-01-03 00:00:00"],
+        ]));
+        \Phake::when(Arsse::$db)->tagSummarize(\Phake::anyParameters())->thenReturn(new Result([
+            ['id' => 1, 'name' => "Ook", 'subscription' => 3],
+            ['id' => 1, 'name' => "Ook", 'subscription' => 1],
+            ['id' => 2, 'name' => "Eek", 'subscription' => 2],
+            ['id' => 3, 'name' => "Ack", 'subscription' => 3],
+        ]));
+        \Phake::when(Arsse::$db)->labelList(\Phake::anyParameters())->thenReturn(new Result([
+            ['name' => "Foo", 'articles' => 12, 'read' => 2,  'article_modified' => "2026-01-15 00:00:00"],
+            ['name' => "Bar", 'articles' => 36, 'read' => 30, 'article_modified' => "2026-02-15 00:00:00"],
+            ['name' => "Baz", 'articles' => 0,  'read' => 0,  'article_modified' => null],
+        ]));
+        $act = $this->req("GET", "/unread-count", "", $user);
+        $exp = HTTP::respJson([
+            'max' => 17,
+            'unreadcounts' => [
+                ['id' => "feed/http://example.com/",                'count' => 5,  'newestItemTimestampUsec' => "1767225600000000"],
+                ['id' => "feed/http://example.net/",                'count' => 12, 'newestItemTimestampUsec' => "1767312000000000"],
+                ['id' => "feed/http://example.org/",                'count' => 0,  'newestItemTimestampUsec' => "1767398400000000"],
+                ['id' => "user/2112/label/Ook",                     'count' => 5,  'newestItemTimestampUsec' => "1767398400000000"],
+                ['id' => "user/2112/label/Eek",                     'count' => 12, 'newestItemTimestampUsec' => "1767312000000000"],
+                ['id' => "user/2112/label/Ack",                     'count' => 0,  'newestItemTimestampUsec' => "1767398400000000"],
+                ['id' => "user/2112/label/Foo",                     'count' => 10, 'newestItemTimestampUsec' => "1768435200000000"],
+                ['id' => "user/2112/label/Bar",                     'count' => 6,  'newestItemTimestampUsec' => "1771113600000000"],
+                ['id' => "user/2112/label/Baz",                     'count' => 0,  'newestItemTimestampUsec' => null],
+                ['id' => "user/2112/state/com.google/reading-list", 'count' => 17, 'newestItemTimestampUsec' => "1767398400000000"]
+            ]
         ]);
         $this->assertMessage($exp, $act);
     }
