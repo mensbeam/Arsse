@@ -322,15 +322,15 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             'num' => 2112,
         ]);
         \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result([
-            ['id' => 1, 'url' => "http://example.com/", 'unread' => 5,  'article_modified' => "2026-01-01 00:00:00"],
-            ['id' => 2, 'url' => "http://example.net/", 'unread' => 12, 'article_modified' => "2026-01-02 00:00:00"],
-            ['id' => 3, 'url' => "http://example.org/", 'unread' => 0,  'article_modified' => "2026-01-03 00:00:00"],
+            ['id' => 1, 'unread' => 5,  'article_modified' => "2026-01-01 00:00:00"],
+            ['id' => 2, 'unread' => 12, 'article_modified' => "2026-01-02 00:00:00"],
+            ['id' => 3, 'unread' => 0,  'article_modified' => "2026-01-03 00:00:00"],
         ]));
         \Phake::when(Arsse::$db)->tagSummarize(\Phake::anyParameters())->thenReturn(new Result([
-            ['id' => 1, 'name' => "Ook", 'subscription' => 3],
-            ['id' => 1, 'name' => "Ook", 'subscription' => 1],
-            ['id' => 2, 'name' => "Eek", 'subscription' => 2],
-            ['id' => 3, 'name' => "Ack", 'subscription' => 3],
+            ['name' => "Ook", 'subscription' => 3],
+            ['name' => "Ook", 'subscription' => 1],
+            ['name' => "Eek", 'subscription' => 2],
+            ['name' => "Ack", 'subscription' => 3],
         ]));
         \Phake::when(Arsse::$db)->labelList(\Phake::anyParameters())->thenReturn(new Result([
             ['name' => "Foo", 'articles' => 12, 'read' => 2,  'article_modified' => "2026-01-15 00:00:00"],
@@ -341,9 +341,9 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = HTTP::respJson([
             'max' => 17,
             'unreadcounts' => [
-                ['id' => "feed/http://example.com/",                'count' => 5,  'newestItemTimestampUsec' => "1767225600000000"],
-                ['id' => "feed/http://example.net/",                'count' => 12, 'newestItemTimestampUsec' => "1767312000000000"],
-                ['id' => "feed/http://example.org/",                'count' => 0,  'newestItemTimestampUsec' => "1767398400000000"],
+                ['id' => "feed/1",                                  'count' => 5,  'newestItemTimestampUsec' => "1767225600000000"],
+                ['id' => "feed/2",                                  'count' => 12, 'newestItemTimestampUsec' => "1767312000000000"],
+                ['id' => "feed/3",                                  'count' => 0,  'newestItemTimestampUsec' => "1767398400000000"],
                 ['id' => "user/2112/label/Ook",                     'count' => 5,  'newestItemTimestampUsec' => "1767398400000000"],
                 ['id' => "user/2112/label/Eek",                     'count' => 12, 'newestItemTimestampUsec' => "1767312000000000"],
                 ['id' => "user/2112/label/Ack",                     'count' => 0,  'newestItemTimestampUsec' => "1767398400000000"],

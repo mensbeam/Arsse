@@ -31,7 +31,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const BODY_PARSE= 2;
     protected const LABEL_PATTERN = "/^user\/[^\/]+\/label\/(.+)/";
     protected const STATE_PATTERN = "/^user\/[^\/]+\/state\/([^\/]+\/.+)/";
-    protected const FEED_PATTERN = "/^feed\/(.+)/";
+    protected const SUBSCRIPTION_PATTERN = "/^feed/(\d+)$/";
+    protected const FEED_PATTERN = "/^feed\/https?:\/\/(.+)/";
     /** The list of all known parameters. Their meanings can differ between calls, so they are not documented here */
     protected const ALLOWED = ["s", "t", "i", "a", "r", "ts", "dest", "n", "c", "xt", "it", "ot", "nt", "ac", "quickadd", "includeAllDirectStreamIds"];
     /** The list of URL matches for calls
@@ -396,6 +397,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                     }
                     throw new Exception("InvalidStream", $stream);
             }
+        } elseif (preg_match(self::SUBSCRIPTION_PATTERN, $stream, $m)) {
+            return $c->subscription((int) $m[1]);
         } elseif (preg_match(self::FEED_PATTERN, $stream, $m)) {
             // if no subscription is found this will throw an exception
             return $c->subscription(Arsse::$db->subscriptionLookup(Arsse::$user->id, $m[1]));
@@ -744,7 +747,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 'title' => $f['title'],
                 'htmlUrl' => $f['source'],
                 'sortid' => $this->makeSortId(++$sort),
-                'id' => "feed/{$f['url']}",
+                'id' => "feed/{$f['id']}",
                 'url' => $f['url'], // NOTE: This appears to be a FreshRSS extension and is expected by Newsflash
                 'categories' => array_map(function($t) use ($meta) {
                     return [
@@ -762,11 +765,15 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function subscriptionValid(string $target, array $query, array $body, string $format): ResponseInterface {
         if (!isset($query['s'])) {
             return self::respError(["ParameterRequired", "s"]);
-        } elseif (!preg_match(self::FEED_PATTERN, $query['s'], $m)) {
-            return self::respError(["InvalidStream", $query['s']]);
         }
         try {
-            Arsse::$db->subscriptionLookup(Arsse::$user->id, $m[1]);
+            if (preg_match(self::FEED_PATTERN, $query['s'], $m)) {
+                Arsse::$db->subscriptionLookup(Arsse::$user->id, $m[1]);
+            } elseif (preg_match(self::SUBSCRIPTION_PATTERN, $query['s'], $m)) {
+                Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, (int) $m[1]);
+            } else {
+                return self::respError(["InvalidStream", $query['s']]);
+            }
             return HTTP::respText("true\n");
         } catch (ExceptionInput $e) {
             return HTTP::respText("false\n");
@@ -797,7 +804,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $this->respond($format, [
             'numResults' => 1,
             'query' => $url,
-            'streamId' => "feed/".$data['url'],
+            'streamId' => "feed/".$data['id'],
         ]);
     }
 
@@ -811,16 +818,16 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             return self::respError(["InvalidValue", "ac", $body['ac']]);
         } elseif (!isset($body['s'])) {
             return self::respError(["ParameterRequired", "s"]);
-        } 
-        if (preg_match(self::FEED_PATTERN, $body['s'], $m)) {
-            $url = $m[1];
-        } else {
-            return self::respError(["InvalidValue", "s", $body['s']]);
         }
         // perform whichever operation is requested
         if ($body['ac'] === "subscribe") {
             if (!isset($body['t'])) {
                 return self::respError(["ParameterRequired", "t"]);
+            }
+            if (preg_match(self::FEED_PATTERN, $body['s'], $m)) {
+                $url = $m[1];
+            } else {
+                return self::respError(["InvalidValue", "s", $body['s']]);
             }
             $id = Arsse::$db->subscriptionReserve(Arsse::$user->id, $url, true);
             // start a transaction for the rest of the process so any errors simply roll back everything
@@ -847,11 +854,25 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             Arsse::$db->subscriptionReveal(Arsse::$user->id, $id);
         } elseif ($body['ac'] === "unsubscribe") {
             $tr = Arsse::$db->begin();
-            $id = Arsse::$db->subscriptionLookup(Arsse::$user->id, $url);
+            if (preg_match(self::FEED_PATTERN, $body['s'], $m)) {
+                $url = $m[1];
+                $id = Arsse::$db->subscriptionLookup(Arsse::$user->id, $url);
+            } elseif (preg_match(self::SUBSCRIPTION_PATTERN, $body['s'], $m)) {
+                $id = (int) $m[1];
+            } else {
+                return self::respError(["InvalidValue", "s", $body['s']]);
+            }
             Arsse::$db->subscriptionRemove(Arsse::$user->id, $id);
         } elseif ($body['ac'] === "edit") {
             $tr = Arsse::$db->begin();
-            $id = Arsse::$db->subscriptionLookup(Arsse::$user->id, $url);
+            if (preg_match(self::FEED_PATTERN, $body['s'], $m)) {
+                $url = $m[1];
+                $id = Arsse::$db->subscriptionLookup(Arsse::$user->id, $url);
+            } elseif (preg_match(self::SUBSCRIPTION_PATTERN, $body['s'], $m)) {
+                $id = (int) $m[1];
+            } else {
+                return self::respError(["InvalidValue", "s", $body['s']]);
+            }
             if (isset($body['t'])) {
                 Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $id, ['title' => $body['t']]);
             }
@@ -915,7 +936,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $date = $sub['article_modified'];
             $unread = (int) $sub['unread'];
             $out[] = [
-                'id'                      => "feed/".$sub['url'],
+                'id'                      => "feed/".$sub['id'],
                 'count'                   => $unread,
                 'newestItemTimestampUsec' => Date::transform($date, "unix", "sql")."000000",
             ];
@@ -1067,7 +1088,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             "modified_date",
             "published_date",
             "edited_date",
-            "subscription", // required only for getting feed-level labels
+            "subscription",
             "subscription_url",
             "subscription_title",
             "unread",
@@ -1107,7 +1128,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 ],
                 'enclosures'    => $enclosures,
                 'origin'        => [
-                    'streamId' => "feed/".$i['subscription_url'],
+                    'streamId' => "feed/".$i['subscription'],
                     'title'    => $i['subscription_title'],
                     'htmlUrl'  => $i['subscription_url'],
                 ],
@@ -1145,9 +1166,9 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function itemStreams(array $item, array $labels, int $uid): array {
-        assert(isset($item['id'], $item['subscription'], $item['subscription_url'], $item['unread'], $item['starred']), new \Exception("Supplied article is missing a required column"));
+        assert(isset($item['id'], $item['subscription'], $item['subscription'], $item['unread'], $item['starred']), new \Exception("Supplied article is missing a required column"));
         $streams = [
-            "feed/".$item['subscription_url'],
+            "feed/".$item['subscription'],
             "user/-/state/com.google/reading-list",
         ];
         if ($item['unread']) {
