@@ -18,7 +18,7 @@ ini_set("max_execution_time", "0");
 error_reporting(\E_ALL & ~\E_DEPRECATED);
 
 if (\PHP_SAPI === "cli") {
-    // initialize the CLI; this automatically handles --help and --version else
+    // initialize the CLI; this automatically handles --help and --version also
     Arsse::$obj = new Factory;
     $cli = new CLI;
     // handle other CLI requests; some do not require configuration

@@ -21,7 +21,7 @@ Bug fixes:
 - Relax validation of numeric values in GET queries in the Miniflux protocol
 - Handle errors during article scraping gracefully
 - Use authentication while scraping where appropriate
-- Use User-Agent and cookie settings during faicon fetching
+- Use User-Agent and cookie settings during favicon fetching
 
 Changes:
 - Use a simpler User-Agent string to avoid tripping bot defences
