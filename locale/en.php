@@ -52,6 +52,7 @@ return [
     'API.Reader.Error.InvalidTimestampMicro'                               => 'The supplied timestamp "{0}" is not valid. It must be at least seven digits.',
     'API.Reader.Error.ParameterRequired'                                   => 'This operation requires the "{0}" parameter.',
     'API.Reader.Error.ParameterRequiredOneOfTwo'                           => 'This operation requires either the "{0}" or the "{1}" parameter.',
+    'API.Reader.Error.DuplicateSubscription'                               => 'A subscription for "{url}" already exists.',
 
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',

@@ -14,6 +14,7 @@ use JKingWeb\Arsse\User;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
+use JKingWeb\Arsse\Feed\Exception as FeedException;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Reader\Reader;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -354,5 +355,43 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ]
         ]);
         $this->assertMessage($exp, $act);
+    }
+
+    #[DataProvider("provideQuickadds")]
+    public function testQuickAddASubscription(string $body, ?string $url, ?int $id, ResponseInterface $exp): void {
+        $user = "john.doe@example.com";
+        \Phake::when(Arsse::$db)->subscriptionAdd(\Phake::anyParameters())->thenThrow(new FeedException("subscriptionNotFound"));
+        \Phake::when(Arsse::$db)->subscriptionAdd($user, "http://example.com/", true)->thenThrow(new ExceptionInput("constraintViolation"));
+        \Phake::when(Arsse::$db)->subscriptionAdd($user, "http://example.net/", true)->thenReturn(3);
+        \Phake::when(Arsse::$db)->subscriptionAdd($user, "http://example.org/", true)->thenReturn(4);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet($user, 3)->thenReturn(['id' => 3, 'url' => "https://example.net/atom", 'title' => "Ook"]);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesGet($user, 4)->thenReturn(['id' => 4, 'url' => "https://example.org/rss",  'title' => null]);
+        $act = $this->req("POST", "/subscription/quickadd", $body, $user);
+        $this->assertMessage($exp, $act);
+        if ($url) {
+            \Phake::verify(Arsse::$db)->subscriptionAdd($user, $url, true);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionAdd(\Phake::anyParameters());
+        }
+        if ($id) {
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesGet($user, $id);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesGet(\Phake::anyParameters());
+        }
+    }
+
+    public static function provideQuickadds(): iterable {
+        self::clearData(); // initializes string formatter
+        return [
+            ["T=12345&quickadd=http://example.com/",      "http://example.com/", null, HTTP::respJson(['numResults' => 0, 'query' => "http://example.com/", 'error' => Arsse::$lang->msg("API.Reader.Error.DuplicateSubscription", ['url' => "http://example.com/"])], 400)],
+            ["T=12345&quickadd=http://example.biz/",      "http://example.biz/", null, HTTP::respJson(['numResults' => 0, 'query' => "http://example.biz/", 'error' => (new FeedException("subscriptionNotFound"))->getMessage()], 400)],
+            ["T=12345&quickadd=http://example.net/",      "http://example.net/", 3,    HTTP::respJson(['numResults' => 1, 'query' => "https://example.net/atom", 'streamId' => "feed/3", 'streamName' => "Ook"], 200)],
+            ["T=12345&quickadd=http://example.org/",      "http://example.org/", 4,    HTTP::respJson(['numResults' => 1, 'query' => "https://example.org/rss", 'streamId' => "feed/4", 'streamName' => ""], 200)],
+            ["T=12345&quickadd=feed/http://example.net/", "http://example.net/", 3,    HTTP::respJson(['numResults' => 1, 'query' => "https://example.net/atom", 'streamId' => "feed/3", 'streamName' => "Ook"], 200)],
+            ["T=12345&quickadd=feed/http://example.org/", "http://example.org/", 4,    HTTP::respJson(['numResults' => 1, 'query' => "https://example.org/rss", 'streamId' => "feed/4", 'streamName' => ""], 200)],
+            ["T=12345",                                   null,                  null, self::respError(["ParameterRequired", "quickadd"])],
+            ["quickadd=http://example.com/",              null,                  null, self::respError(["TokenRequired"])],
+        ];
     }
 }

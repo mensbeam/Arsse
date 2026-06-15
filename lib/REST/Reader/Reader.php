@@ -32,7 +32,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const LABEL_PATTERN = "/^user\/[^\/]+\/label\/(.+)/";
     protected const STATE_PATTERN = "/^user\/[^\/]+\/state\/([^\/]+\/.+)/";
     protected const SUBSCRIPTION_PATTERN = "/^feed/(\d+)$/";
-    protected const FEED_PATTERN = "/^feed\/https?:\/\/(.+)/";
+    protected const FEED_PATTERN = "/^feed\/(?i)(https?:\/\/.+)/";
     /** The list of all known parameters. Their meanings can differ between calls, so they are not documented here */
     protected const ALLOWED = ["s", "t", "i", "a", "r", "ts", "dest", "n", "c", "xt", "it", "ot", "nt", "ac", "quickadd", "includeAllDirectStreamIds"];
     /** The list of URL matches for calls
@@ -791,20 +791,26 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         try {
             $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, $url, true);
-            // get the effective feed URL in case of redirects
+            // get the effective feed URL in case of redirects, as well as the title
             $data = Arsse::$db->subscriptionPropertiesGet(Arsse::$user->id, $id);
         } catch (FeedException|ExceptionInput $e) {
+            if ($e->getSymbol() === "constraintViolation") {
+                $message = Arsse::$lang->msg("API.Reader.Error.DuplicateSubscription", ['url' => $url]);
+            } else {
+                $message = $e->getMessage();
+            }
             // NOTE: This is how at least FreshRSS and The Old Reader respond in error cases
             return $this->respond($format, [
                 'numResults' => 0,
                 'query' => $url,
-                'error' => $e->getMessage(),
+                'error' => $message,
             ], 400);
         }
         return $this->respond($format, [
             'numResults' => 1,
-            'query' => $url,
-            'streamId' => "feed/".$data['id'],
+            'query'      => $data['url'],
+            'streamId'   => "feed/".$data['id'],
+            'streamName' => (string) $data['title'], // This is apparently a FreshRSS extension
         ]);
     }
 
