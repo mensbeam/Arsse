@@ -394,4 +394,68 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["quickadd=http://example.com/",              null,                  null, self::respError(["TokenRequired"])],
         ];
     }
+
+    #[DataProvider("provideSubscriptionEdits")]
+    public function testEditASubscription(string $body, ?string $urlReserve, ?int $id, ?string $title, array $tagAdditions, array $tagCreations, ResponseInterface $exp): void {
+        $user = "john.doe@example.com";
+        \Phake::when(Arsse::$db)->subscriptionReserve(\Phake::anyParameters())->thenThrow(new FeedException("subscriptionNotFound"));
+        \Phake::when(Arsse::$db)->subscriptionReserve($user, "http://example.com/", true)->thenReturn(1);
+        \Phake::when(Arsse::$db)->subscriptionPropertiesSet(\Phake::anyParameters())->thenReturn(true);
+        \Phake::when(Arsse::$db)->tagList(\Phake::anyParameters())->thenReturn(new Result([
+            ['id' => 1, 'name' => "Foo"],
+            ['id' => 2, 'name' => "Bar"],
+            ['id' => 3, 'name' => "Baz"],
+        ]));
+        \Phake::when(Arsse::$db)->tagAdd(\Phake::anyParameters())->thenReturn(0);
+        foreach ($tagCreations as $tagId => $tagName) {
+            \Phake::when(Arsse::$db)->tagAdd($user, ['name' => $tagName])->thenReturn($tagId);
+        }
+        \Phake::when(Arsse::$db)->tagSubscriptionsSet(\Phake::anyParameters())->thenReturn(1);
+        $act = $this->req("POST", "/subscription/edit", $body, $user);
+        $this->assertMessage($exp, $act);
+        if ($urlReserve) {
+            \Phake::verify(Arsse::$db)->subscriptionReserve($user, $urlReserve, true);
+            if ($id) {
+                \Phake::verify(Arsse::$db)->subscriptionReveal($user, $id);
+            } else {
+                \Phake::verify(Arsse::$db, \Phake::never())->subscriptionReveal(\Phake::anyParameters());
+            }
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionReserve(\Phake::anyParameters());
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionReveal(\Phake::anyParameters());
+        }
+        if ($title && $id) {
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($user, $id, ['title' => $title], true);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesSet(\Phake::anyParameters());
+        }
+        if ($tagAdditions && $id) {
+            \Phake::verify(Arsse::$db)->tagList($user, true);
+            foreach ($tagAdditions as $tagId => $tagName) {
+                \Phake::verify(Arsse::$db)->tagSubscriptionsSet($user, $tagId, [$id]);
+            }
+            if ($tagCreations) {
+                foreach ($tagCreations as $tagId => $tagName) {
+                    \Phake::verify(Arsse::$db)->tagAdd($user, ['name' => $tagName]);
+                }
+            } else {
+                \Phake::verify(Arsse::$db, \Phake::never())->tagAdd(\Phake::anyParameters());
+            }
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->tagList(\Phake::anyParameters());
+            \Phake::verify(Arsse::$db, \Phake::never())->tagAdd(\Phake::anyParameters());
+            \Phake::verify(Arsse::$db, \Phake::never())->tagSubscriptionsSet(\Phake::anyParameters());
+        }
+        \Phake::verify(Arsse::$db, \Phake::never())->tagAdd($user, ['name' => "Foo"]);
+        \Phake::verify(Arsse::$db, \Phake::never())->tagAdd($user, ['name' => "Bar"]);
+        \Phake::verify(Arsse::$db, \Phake::never())->tagAdd($user, ['name' => "Baz"]);
+    }
+
+    public static function provideSubscriptionEdits(): iterable {
+        self::clearData(); // initializes string formatter
+        $success = HTTP::respText("OK");
+        return [ // request body                                                                            reservation URL        sub  new title  add tags                  create tags   expected output
+            ["T=12345&ac=subscribe&s=feed/http://example.com/&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo", "http://example.com/", 1,   "Ook",     [4 => "Eek", 1 => "Foo"], [4 => "Eek"], $success],
+        ];
+    }
 }

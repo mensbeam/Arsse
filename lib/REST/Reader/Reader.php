@@ -820,14 +820,14 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         // check required parameters
         if (!isset($body['ac'])) {
             return self::respError(["ParameterRequired", "ac"]);
-        } elseif (!in_array($body['ac'], ["subscribed", "unsubscribe", "edit"])) {
+        } elseif (!in_array($body['ac'], ["subscribe", "unsubscribe", "edit"])) {
             return self::respError(["InvalidValue", "ac", $body['ac']]);
         } elseif (!isset($body['s'])) {
             return self::respError(["ParameterRequired", "s"]);
         }
         // perform whichever operation is requested
         if ($body['ac'] === "subscribe") {
-            if (!isset($body['t'])) {
+            if (!isset($body['t'])) { // subscription title
                 return self::respError(["ParameterRequired", "t"]);
             }
             if (preg_match(self::FEED_PATTERN, $body['s'], $m)) {
@@ -835,7 +835,11 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             } else {
                 return self::respError(["InvalidValue", "s", $body['s']]);
             }
-            $id = Arsse::$db->subscriptionReserve(Arsse::$user->id, $url, true);
+            try {
+                $id = Arsse::$db->subscriptionReserve(Arsse::$user->id, $url, true);
+            } catch (ExceptionInput) {
+                return self::respError(["DuplicateSubscription", 'url' => $url]);
+            }
             // start a transaction for the rest of the process so any errors simply roll back everything
             $tr = Arsse::$db->begin();
             Arsse::$db->subscriptionPropertiesSet(Arsse::$user->id, $id, ['title' => $body['t']], true);
