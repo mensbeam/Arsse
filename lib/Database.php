@@ -863,13 +863,13 @@ class Database {
      * @param string $url The URL of the subscription. This should include username and password, where appropriate
      */
     public function subscriptionLookup(string $user, string $url): int {
+        $url = URL::normalize($url);
         $id = $this->db->prepare("SELECT id from arsse_subscriptions where owner = ? and url = ? and deleted = 0", "str", "str")->run($user, $url)->getValue();
         if (!$id) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "subscription", 'id' => $id]);
         }
         return (int) $id;
     }
-
 
     /** Lists a user's subscriptions, returning various data
      *
@@ -1013,10 +1013,10 @@ class Database {
 
     /** Deletes a subscription from the database
      *
-     * This has the side effect of deleting all marks the user has set on articles
-     * belonging to the newsfeed, but may not delete the articles themselves, as
-     * other users may also be subscribed to the same newsfeed. There is also a
-     * configurable retention period for newsfeeds
+     * Deletions are initially soft, subject to a retention period. All
+     * articles and marks are initially retained and re-subscribing to a
+     * newsfeed will restore everything as long as the retention period had not
+     * already expired.
      */
     public function subscriptionRemove(string $user, $id): bool {
         if (!V::id($id)) {

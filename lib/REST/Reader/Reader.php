@@ -31,7 +31,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const BODY_PARSE= 2;
     protected const LABEL_PATTERN = "/^user\/[^\/]+\/label\/(.+)/";
     protected const STATE_PATTERN = "/^user\/[^\/]+\/state\/([^\/]+\/.+)/";
-    protected const SUBSCRIPTION_PATTERN = "/^feed/(\d+)$/";
+    protected const SUBSCRIPTION_PATTERN = "/^feed\/(\d+)$/";
     protected const FEED_PATTERN = "/^feed\/(?i)(https?:\/\/.+)/";
     /** The list of all known parameters. Their meanings can differ between calls, so they are not documented here */
     protected const ALLOWED = ["s", "t", "i", "a", "r", "ts", "dest", "n", "c", "xt", "it", "ot", "nt", "ac", "quickadd", "includeAllDirectStreamIds"];
@@ -825,6 +825,17 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         } elseif (!isset($body['s'])) {
             return self::respError(["ParameterRequired", "s"]);
         }
+        $checkLabels = function(array $labels, string $field): array {
+            $out = [];
+            foreach ($labels as $l) {
+                if (preg_match(self::LABEL_PATTERN, $l, $m)) {
+                    $out[] = $m[1];
+                } else {
+                    throw new Exception("InvalidValue", [$field, $l]);
+                }
+            }
+            return $out;
+        };
         // perform whichever operation is requested
         if ($body['ac'] === "subscribe") {
             if (!isset($body['t'])) { // subscription title
@@ -834,6 +845,9 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $url = $m[1];
             } else {
                 return self::respError(["InvalidValue", "s", $body['s']]);
+            }
+            if ($body['a']) {
+                $body['a'] = $checkLabels($body['a'], "a");
             }
             try {
                 $id = Arsse::$db->subscriptionReserve(Arsse::$user->id, $url, true);
@@ -849,12 +863,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 //   objects like we do, so we must transparently manage the
                 //   objects behind the scenes
                 $existing = array_column(iterator_to_array(Arsse::$db->tagList(Arsse::$user->id, true)), "id", "name");
-                foreach ($body['a'] as $t) {
-                    if (preg_match(self::LABEL_PATTERN, $t, $m)) {
-                        $name = $m[1];
-                    } else {
-                        return self::respError(["InvalidValue", "a", $t]);
-                    }
+                foreach ($body['a'] as $name) {
                     if (!isset($existing[$name])) {
                         $existing[$name] = Arsse::$db->tagAdd(Arsse::$user->id, ['name' => $name]);
                     }

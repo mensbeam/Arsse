@@ -396,10 +396,15 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     #[DataProvider("provideSubscriptionEdits")]
-    public function testEditASubscription(string $body, ?string $urlReserve, ?int $id, ?string $title, array $tagAdditions, array $tagCreations, ResponseInterface $exp): void {
+    public function testEditASubscription(string $body, ?string $urlReserve, ?string $urlLookup, ?int $idEdit, ?int $idUnsub, ?string $title, array $tagAdditions, array $tagCreations, array $tagRemovals, ResponseInterface $exp): void {
         $user = "john.doe@example.com";
         \Phake::when(Arsse::$db)->subscriptionReserve(\Phake::anyParameters())->thenThrow(new FeedException("subscriptionNotFound"));
         \Phake::when(Arsse::$db)->subscriptionReserve($user, "http://example.com/", true)->thenReturn(1);
+        \Phake::when(Arsse::$db)->subscriptionReserve($user, "http://example.org/", true)->thenThrow(new ExceptionInput("constraintViolation"));
+        \Phake::when(Arsse::$db)->subscriptionRemove(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionRemove($user, 2112)->thenReturn(true);
+        \Phake::when(Arsse::$db)->subscriptionLookup(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->subscriptionLookup($user, "http://example.biz/")->thenReturn(2112);
         \Phake::when(Arsse::$db)->subscriptionPropertiesSet(\Phake::anyParameters())->thenReturn(true);
         \Phake::when(Arsse::$db)->tagList(\Phake::anyParameters())->thenReturn(new Result([
             ['id' => 1, 'name' => "Foo"],
@@ -415,8 +420,8 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
         if ($urlReserve) {
             \Phake::verify(Arsse::$db)->subscriptionReserve($user, $urlReserve, true);
-            if ($id) {
-                \Phake::verify(Arsse::$db)->subscriptionReveal($user, $id);
+            if ($idEdit) {
+                \Phake::verify(Arsse::$db)->subscriptionReveal($user, $idEdit);
             } else {
                 \Phake::verify(Arsse::$db, \Phake::never())->subscriptionReveal(\Phake::anyParameters());
             }
@@ -424,15 +429,20 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::verify(Arsse::$db, \Phake::never())->subscriptionReserve(\Phake::anyParameters());
             \Phake::verify(Arsse::$db, \Phake::never())->subscriptionReveal(\Phake::anyParameters());
         }
-        if ($title && $id) {
-            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($user, $id, ['title' => $title], true);
+        if ($urlLookup) {
+            \Phake::verify(Arsse::$db)->subscriptionLookup($user, $urlLookup);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionLookup(\Phake::anyParameters());
+        }
+        if ($title && $idEdit) {
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($user, $idEdit, ['title' => $title], true);
         } else {
             \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesSet(\Phake::anyParameters());
         }
-        if ($tagAdditions && $id) {
+        if ($tagAdditions && $idEdit) {
             \Phake::verify(Arsse::$db)->tagList($user, true);
             foreach ($tagAdditions as $tagId => $tagName) {
-                \Phake::verify(Arsse::$db)->tagSubscriptionsSet($user, $tagId, [$id]);
+                \Phake::verify(Arsse::$db)->tagSubscriptionsSet($user, $tagId, [$idEdit]);
             }
             if ($tagCreations) {
                 foreach ($tagCreations as $tagId => $tagName) {
@@ -449,13 +459,27 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db, \Phake::never())->tagAdd($user, ['name' => "Foo"]);
         \Phake::verify(Arsse::$db, \Phake::never())->tagAdd($user, ['name' => "Bar"]);
         \Phake::verify(Arsse::$db, \Phake::never())->tagAdd($user, ['name' => "Baz"]);
+        if ($idUnsub) {
+            \Phake::verify(Arsse::$db)->subscriptionRemove($user, $idUnsub);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionRemove(\Phake::anyParameters());
+        }
     }
 
     public static function provideSubscriptionEdits(): iterable {
         self::clearData(); // initializes string formatter
         $success = HTTP::respText("OK");
-        return [ // request body                                                                            reservation URL        sub  new title  add tags                  create tags   expected output
-            ["T=12345&ac=subscribe&s=feed/http://example.com/&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo", "http://example.com/", 1,   "Ook",     [4 => "Eek", 1 => "Foo"], [4 => "Eek"], $success],
+        return [ // request body                                                                            reservation URL        lookup URL             edit ID  unsub ID  new title  add tags                  create tags   remove tags  expected output
+            ["T=12345&ac=subscribe&s=feed/http://example.com/&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo", "http://example.com/", null,                  1,       null,     "Ook",     [4 => "Eek", 1 => "Foo"], [4 => "Eek"], [],          $success],
+            ["T=12345&ac=subscribe&s=feed/http://example.com/&t=Ook",                                       "http://example.com/", null,                  1,       null,     "Ook",     [],                       [],           [],          $success],
+            ["T=12345&ac=subscribe&s=feed/http://example.org/&t=Eek",                                       "http://example.org/", null,                  null,    null,     null,      [],                       [],           [],          self::respError(["DuplicateSubscription", 'url' => "http://example.org/"])],
+            ["T=12345&ac=subscribe&s=feed/http://example.com/",                                             null,                  null,                  null,    null,     null,      [],                       [],           [],          self::respError(["ParameterRequired", "t"])],
+            ["T=12345&ac=subscribe&s=http://example.com/&t=Ook",                                            null,                  null,                  null,    null,     null,      [],                       [],           [],          self::respError(["InvalidValue", "s", "http://example.com/"])],
+            ["T=12345&ac=subscribe&s=feed/1&t=Ook",                                                         null,                  null,                  null,    null,     null,      [],                       [],           [],          self::respError(["InvalidValue", "s", "feed/1"])],
+            ["T=12345&ac=subscribe&s=feed/http://example.com/&t=Ook&a=Foo",                                 null,                  null,                  null,    null,     null,      [],                       [],           [],          self::respError(["InvalidValue", "a", "Foo"])],
+            ["T=12345&ac=unsubscribe&s=feed/2112",                                                          null,                  null,                  null,    2112,     null,      [],                       [],           [],          $success],
+            ["T=12345&ac=unsubscribe&s=feed/http://example.biz/",                                           null,                  "http://example.biz/", null,    2112,     null,      [],                       [],           [],          $success],
+            ["T=12345&ac=unsubscribe&s=http://example.biz/",                                                null,                  null,                  null,    null,     null,      [],                       [],           [],          self::respError(["InvalidValue", "s", "http://example.biz/"])],
         ];
     }
 }
