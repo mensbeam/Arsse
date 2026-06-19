@@ -897,24 +897,16 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
             if ($body['a']) {
                 $existing = array_column(iterator_to_array(Arsse::$db->tagList(Arsse::$user->id, true)), "id", "name");
-                foreach ($body['a'] as $t) {
-                    if (preg_match(self::LABEL_PATTERN, $t, $m)) {
-                        $name = $m[1];
-                    } else {
-                        return self::respError(["InvalidValue", "a", $t]);
-                    }
+                $body['a'] = $checkLabels($body['a'], "a");
+                foreach ($body['a'] as $name) {
                     if (!isset($existing[$name])) {
                         $existing[$name] = Arsse::$db->tagAdd(Arsse::$user->id, ['name' => $name]);
                     }
                     Arsse::$db->tagSubscriptionsSet(Arsse::$user->id, $existing[$name], [$id]);
                 }
             }
-            foreach ($body['r'] as $t) {
-                if (preg_match(self::LABEL_PATTERN, $t, $m)) {
-                    $name = $m[1];
-                } else {
-                    return self::respError(["InvalidValue", "r", $t]);
-                }
+            $body['r'] = $checkLabels($body['r'], "r");
+            foreach ($body['r'] as $name) {
                 try {
                     Arsse::$db->tagSubscriptionsSet(Arsse::$user->id, $name, [$id], Database::ASSOC_REMOVE, true);
                 } catch (ExceptionInput $e) {

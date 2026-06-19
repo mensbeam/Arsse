@@ -416,6 +416,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::when(Arsse::$db)->tagAdd($user, ['name' => $tagName])->thenReturn($tagId);
         }
         \Phake::when(Arsse::$db)->tagSubscriptionsSet(\Phake::anyParameters())->thenReturn(1);
+        \Phake::when(Arsse::$db)->tagSubscriptionsSet($user, "Ack", [$idEdit], Database::ASSOC_REMOVE, true)->thenThrow(new ExceptionInput("subjectMissing"));
         $act = $this->req("POST", "/subscription/edit", $body, $user);
         $this->assertMessage($exp, $act);
         if ($urlReserve) {
@@ -434,22 +435,34 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         } else {
             \Phake::verify(Arsse::$db, \Phake::never())->subscriptionLookup(\Phake::anyParameters());
         }
-        if ($title && $idEdit) {
-            \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($user, $idEdit, ['title' => $title], true);
+        if ($title) {
+            if ($urlReserve) {
+                \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($user, $idEdit, ['title' => $title], true);
+            } else {
+                \Phake::verify(Arsse::$db)->subscriptionPropertiesSet($user, $idEdit, ['title' => $title]);
+            }
         } else {
             \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesSet(\Phake::anyParameters());
         }
-        if ($tagAdditions && $idEdit) {
-            \Phake::verify(Arsse::$db)->tagList($user, true);
-            foreach ($tagAdditions as $tagId => $tagName) {
-                \Phake::verify(Arsse::$db)->tagSubscriptionsSet($user, $tagId, [$idEdit]);
-            }
-            if ($tagCreations) {
-                foreach ($tagCreations as $tagId => $tagName) {
-                    \Phake::verify(Arsse::$db)->tagAdd($user, ['name' => $tagName]);
+        if ($tagAdditions || $tagRemovals) {
+            if ($tagAdditions) {
+                \Phake::verify(Arsse::$db)->tagList($user, true);
+                foreach ($tagAdditions as $tagId) {
+                    \Phake::verify(Arsse::$db)->tagSubscriptionsSet($user, $tagId, [$idEdit]);
+                }
+                if ($tagCreations) {
+                    foreach ($tagCreations as $tagId => $tagName) {
+                        \Phake::verify(Arsse::$db)->tagAdd($user, ['name' => $tagName]);
+                    }
+                } else {
+                    \Phake::verify(Arsse::$db, \Phake::never())->tagAdd(\Phake::anyParameters());
                 }
             } else {
+                \Phake::verify(Arsse::$db, \Phake::never())->tagList(\Phake::anyParameters());
                 \Phake::verify(Arsse::$db, \Phake::never())->tagAdd(\Phake::anyParameters());
+            }
+            foreach ($tagRemovals as $tagName) {
+                \Phake::verify(Arsse::$db)->tagSubscriptionsSet($user, $tagName, [$idEdit], Database::ASSOC_REMOVE, true);
             }
         } else {
             \Phake::verify(Arsse::$db, \Phake::never())->tagList(\Phake::anyParameters());
@@ -469,17 +482,26 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function provideSubscriptionEdits(): iterable {
         self::clearData(); // initializes string formatter
         $success = HTTP::respText("OK");
-        return [ // request body                                                                            reservation URL        lookup URL             edit ID  unsub ID  new title  add tags                  create tags   remove tags  expected output
-            ["T=12345&ac=subscribe&s=feed/http://example.com/&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo", "http://example.com/", null,                  1,       null,     "Ook",     [4 => "Eek", 1 => "Foo"], [4 => "Eek"], [],          $success],
-            ["T=12345&ac=subscribe&s=feed/http://example.com/&t=Ook",                                       "http://example.com/", null,                  1,       null,     "Ook",     [],                       [],           [],          $success],
-            ["T=12345&ac=subscribe&s=feed/http://example.org/&t=Eek",                                       "http://example.org/", null,                  null,    null,     null,      [],                       [],           [],          self::respError(["DuplicateSubscription", 'url' => "http://example.org/"])],
-            ["T=12345&ac=subscribe&s=feed/http://example.com/",                                             null,                  null,                  null,    null,     null,      [],                       [],           [],          self::respError(["ParameterRequired", "t"])],
-            ["T=12345&ac=subscribe&s=http://example.com/&t=Ook",                                            null,                  null,                  null,    null,     null,      [],                       [],           [],          self::respError(["InvalidValue", "s", "http://example.com/"])],
-            ["T=12345&ac=subscribe&s=feed/1&t=Ook",                                                         null,                  null,                  null,    null,     null,      [],                       [],           [],          self::respError(["InvalidValue", "s", "feed/1"])],
-            ["T=12345&ac=subscribe&s=feed/http://example.com/&t=Ook&a=Foo",                                 null,                  null,                  null,    null,     null,      [],                       [],           [],          self::respError(["InvalidValue", "a", "Foo"])],
-            ["T=12345&ac=unsubscribe&s=feed/2112",                                                          null,                  null,                  null,    2112,     null,      [],                       [],           [],          $success],
-            ["T=12345&ac=unsubscribe&s=feed/http://example.biz/",                                           null,                  "http://example.biz/", null,    2112,     null,      [],                       [],           [],          $success],
-            ["T=12345&ac=unsubscribe&s=http://example.biz/",                                                null,                  null,                  null,    null,     null,      [],                       [],           [],          self::respError(["InvalidValue", "s", "http://example.biz/"])],
+        return [ // request body                                                                            reservation URL        lookup URL             edit ID  unsub ID  new title  add tags  create tags   remove tags     expected output
+            ["T=12345&ac=subscribe&s=feed/http://example.com/&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo", "http://example.com/", null,                  1,       null,     "Ook",     [4, 1],   [4 => "Eek"], [],             $success],
+            ["T=12345&ac=subscribe&s=feed/http://example.com/&t=Ook",                                       "http://example.com/", null,                  1,       null,     "Ook",     [],       [],           [],             $success],
+            ["T=12345&ac=subscribe&s=feed/http://example.org/&t=Eek",                                       "http://example.org/", null,                  null,    null,     null,      [],       [],           [],             self::respError(["DuplicateSubscription", 'url' => "http://example.org/"])],
+            ["T=12345&ac=subscribe&s=feed/http://example.com/",                                             null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["ParameterRequired", "t"])],
+            ["T=12345&ac=subscribe&s=http://example.com/&t=Ook",                                            null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["InvalidValue", "s", "http://example.com/"])],
+            ["T=12345&ac=subscribe&s=feed/1&t=Ook",                                                         null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["InvalidValue", "s", "feed/1"])],
+            ["T=12345&ac=subscribe&s=feed/http://example.com/&t=Ook&a=Foo",                                 null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["InvalidValue", "a", "Foo"])],
+            ["T=12345&ac=unsubscribe&s=feed/2112",                                                          null,                  null,                  null,    2112,     null,      [],       [],           [],             $success],
+            ["T=12345&ac=unsubscribe&s=feed/http://example.biz/",                                           null,                  "http://example.biz/", null,    2112,     null,      [],       [],           [],             $success],
+            ["T=12345&ac=unsubscribe&s=http://example.biz/",                                                null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["InvalidValue", "s", "http://example.biz/"])],
+            ["T=12345&ac=edit&s=feed/42&t=Ack",                                                             null,                  null,                  42,      null,     "Ack",     [],       [],           [],             $success],
+            ["T=12345&ac=edit&s=feed/http://example.biz/&t=Ack",                                            null,                  "http://example.biz/", 2112,    null,     "Ack",     [],       [],           [],             $success],
+            ["T=12345&ac=edit&s=feed/42&a=user/-/label/Bar&r=user/-/label/Ack&r=user/-/label/Foo",          null,                  null,                  42,      null,     null,      [2],      [],           ["Ack", "Foo"], $success],
+            ["T=12345&ac=edit&s=feed/42&a=user/-/label/Ook",                                                null,                  null,                  42,      null,     null,      [6],      [6 => "Ook"], [],             $success],
+            ["T=12345&ac=edit&s=42&a=user/-/label/Ook",                                                     null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["InvalidValue", "s", "42"])],
+            ["T=12345&s=feed/http://example.com/&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo",              null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["ParameterRequired", "ac"])],
+            ["T=12345&ac=edit&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo",                                 null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["ParameterRequired", "s"])],
+            ["T=12345&ac=edit&s=42&a=user/-/label/Ook",                                                     null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["InvalidValue", "s", "42"])],
+            ["ac=subscribe&s=feed/http://example.com/&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo",         null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["TokenRequired"])],
         ];
     }
 }
