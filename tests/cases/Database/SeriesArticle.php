@@ -461,7 +461,6 @@ trait SeriesArticle {
             'Multiple articles'                                          => [(new Context)->articles([1,20,50]), [1,20]],
             'Multiple starred articles'                                  => [(new Context)->articles([1,2,3])->starred(true), [1]],
             'Multiple unstarred articles'                                => [(new Context)->articles([1,2,3])->starred(false), [2,3]],
-            'Multiple articles'                                          => [(new Context)->articles([1,20,50]), [1,20]],
             'Multiple editions'                                          => [(new Context)->editions([1,1001,50]), [1,20]],
             '150 articles'                                               => [(new Context)->articles(range(1, $setSize * 3)), [1,2,3,4,5,6,7,8,19,20]],
             'Search title or content 1'                                  => [(new Context)->searchTerms(["Article"]), [1,2,3]],
@@ -524,7 +523,10 @@ trait SeriesArticle {
             'Published prior to 1810 or since 1815'                      => [(new Context)->publishedRanges([[null, "1809-12-31T23:59:59Z"], ["1815-01-01T00:00:00Z", null]]), [1,3,5,7,19]],
             'Not published prior to 1810 or since 1815'                  => [(new Context)->not->publishedRanges([[null, "1809-12-31T23:59:59Z"], ["1815-01-01T00:00:00Z", null]]), [2,4,6,8,20]],
             'Either read or hidden'                                      => [(new Context)->orGroups([(new Context)->unread(false)->hidden(true)]), [1, 6, 19]],
+            'Either starred or annotated'                                => [(new Context)->orGroups([(new Context)->starred(true)->annotated(true)]), [1, 2, 20]],
+            'Either read or hidden and either starred or annotated'      => [(new Context)->orGroups([(new Context)->unread(false)->hidden(true), (new Context)->starred(true)->annotated(true)]), [1]],
             'Not both labelled and in folder 1 tree'                     => [(new Context)->not->andGroups([(new Context)->labelled(true)->folder(1)]), [1, 2, 3, 4, 6, 7, 19, 20]],
+            'With tag IDs 1 and 5'                                       => [(new Context)->andGroups([(new Context)->tag(1), (new Context)->tag(5)]), [7, 8]],
         ];
     }
 
