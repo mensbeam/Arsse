@@ -12,11 +12,6 @@ class Context extends AbstractContext {
     public $not;
     public $limit = 0;
     public $offset = 0;
-    public $unread = null;
-    public $starred = null;
-    public $hidden = null;
-    public $labelled = null;
-    public $annotated = null;
 
     public function limit(?int $spec = null) {
         return $this->act(__FUNCTION__, func_num_args(), $spec);

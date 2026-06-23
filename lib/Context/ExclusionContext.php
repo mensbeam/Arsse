@@ -22,28 +22,22 @@ class ExclusionContext extends AbstractContext {
         }
     }
 
+    public function __get(string $v) {
+        switch ($v) {
+            case "unread":
+            case "starred":
+            case "hidden":
+            case "labelled":
+            case "annotated":
+                $p = $this->parent->$$v;
+                return isset($p) ? !$p : $p;
+            default:
+                return null;
+        }
+    }
+
     /** @codeCoverageIgnore */
     public function __destruct() {
         unset($this->parent);
-    }
-
-    public function unread(?bool $spec = null) {
-        return $this->parent->unread(...isset($spec) ? [!$spec] : func_get_args());
-    }
-
-    public function starred(?bool $spec = null) {
-        return $this->parent->starred(...isset($spec) ? [!$spec] : func_get_args());
-    }
-
-    public function hidden(?bool $spec = null) {
-        return $this->parent->hidden(...isset($spec) ? [!$spec] : func_get_args());
-    }
-
-    public function labelled(?bool $spec = null) {
-        return $this->parent->labelled(...isset($spec) ? [!$spec] : func_get_args());
-    }
-
-    public function annotated(?bool $spec = null) {
-        return $this->parent->annotated(...isset($spec) ? [!$spec] : func_get_args());
     }
 }

@@ -1795,7 +1795,7 @@ class Database {
                 }
             }
             // handle the exclusionary version
-            if (property_exists($context->not, $m) && method_exists($context->not, $m) && $context->not->$m()) {
+            if ($context->not->$m()) {
                 if ($op === "between") {
                     // option is a range
                     if ($context->not->$m[0] === null) {

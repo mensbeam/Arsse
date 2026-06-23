@@ -14,6 +14,11 @@ abstract class AbstractContext {
     protected $parent = null;
     protected $props = [];
 
+    public $unread = null;
+    public $starred = null;
+    public $hidden = null;
+    public $labelled = null;
+    public $annotated = null;
     public $folder = null;
     public $folders = [];
     public $folderShallow = null;
