@@ -33,8 +33,25 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const STATE_PATTERN = "/^user\/[^\/]+\/state\/([^\/]+\/.+)/";
     protected const SUBSCRIPTION_PATTERN = "/^feed\/(\d+)$/";
     protected const FEED_PATTERN = "/^feed\/(?i)(https?:\/\/.+)/";
-    /** The list of all known parameters. Their meanings can differ between calls, so they are not documented here */
-    protected const ALLOWED = ["s", "t", "i", "a", "r", "ts", "dest", "n", "c", "xt", "it", "ot", "nt", "ac", "quickadd", "includeAllDirectStreamIds"];
+    /** The list of all known parameters */
+    protected const ALLOWED = [
+        "s",                         // a stream ID
+        "t",                         // a user-supplied title when subscribing to a feed with the subscript/edit route; when operating on a label/tag, its bare name (not in stream format; this appears to be a FeedHQ extension)
+        "i",                         // an item to select when assigning labels/tags or when retriving item contents
+        "a",                         // when assigning states or labels/tags, an assignment to add; for the stream/items/count route, appends the modified date of the latest item when set to "true"
+        "r",                         // when assigning states or labels/tags, an assignment to remove; when retrieving stream contents "r=o" specifies reverse order
+        "ts",                        // a cut-off timestamp for the mark-all-as-read route; items modified after this time are not marked as read
+        "dest",                      // the "destination stream" i.e. the new name of a label/tag when renaming, in stream format
+        "n",                         // number of items per page when retrieving stream contents
+        "c",                         // "continuation" string for pagination when retrieving stream contents; we implement this as a base64-encoded query string for retrieving the next page starting with a given edition ID
+        "xt",                        // an "exclusion target" when retrieving stream contents i.e. s=x&xt=y means "x AND NOT y"
+        "it",                        // an "inclusion target" when retrieving stream contents i.e. s=x&it=y means "x AND y"
+        "ot",                        // oldest timestamp to select when retrieving stream contents; we use the modified date
+        "nt",                        // newest timestamp to select when retrieving stream contents; we use the modified date
+        "ac",                        // an action for the subscription/edit route, either "subscribe", "unsubscribe", or "edit"
+        "quickadd",                  // a stream ID or bare URL for a feed to subscribe to in the subscription/quickadd route
+        "includeAllDirectStreamIds", // whether to include all streams associated with an item or only an arbitrary subset/none when stream contents or item IDs
+    ];
     /** The list of URL matches for calls
      * 
      * An asterisk in a URL is a stand-in for any stream ID. Resources may
@@ -51,7 +68,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/disable-tag'            => ["tagDisable",         false, true,  true,  false, ['s' => V::T_STRING, 't' => V::T_STRING]],
         '/edit-tag'               => ["tagEdit",            false, true,  true,  false, ['i' => V::T_MIXED + V::M_ARRAY, 'a' => V::T_STRING + V::M_ARRAY, 'r' => V::T_STRING + V::M_ARRAY]],
         '/friend/list'            => ["friendsGet",         true,  false, false, false, []],
-        '/mark-all-as-read'       => ["streamMark",         false, true,  true,  false, ['s' => V::T_STRING, 'ts' => V::T_STRING]], // 'ts' is actually a date, but it's in an irregular format, so will require special handling
+        '/mark-all-as-read'       => ["streamMark",         false, true,  true,  false, ['s' => V::T_STRING, 'ts' => V::T_STRING]], // 'ts' is actually a datetime, but it's in an irregular format, so will require special handling
         '/preference/list'        => ["prefsGet",           true,  false, false, false, []],
         '/preference/stream/list' => ["prefsStreamGet",     true,  false, false, false, []],
         '/rename-tag'             => ["tagRename",          false, true,  true,  false, ['s' => V::T_STRING, 't' => V::T_STRING, 'dest' =>V::T_STRING]],
@@ -73,24 +90,30 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     ];
     /** The parameters encoded in a continuation string, with their types */
     protected const CONTINUATION_PARAMS = ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE, 'i' => V::T_INT, 'includeAllDirectStreamIds' => V::T_BOOL];
-    /** A list of state streams which we do not support and will therefore return an empty set when queried */
-    protected const UNSUPPORTED_STATES = [
-        "com.google/broadcast",
-        "com.google/broadcast-fiends",
-        "com.google/broadcast-friends-comments", // The Old Reader seems to support this
-        "com.google/created", // BazQux suggests this existed, but does not itself support it
-        "com.google/like", // The Old Reader seems to support this
-        "org.freshrss/main",
-        "org.freshrss/important",
-    ];
     /** The list of known state names */
     protected const KNOWN_STATES = [
         "com.google/read",
         "com.google/unread",
         "com.google/kept-unread",
         "com.google/starred",
-        "com.google/reading-list"
-    ] + self::UNSUPPORTED_STATES;
+        "com.google/reading-list",
+        "org.freshrss/main", // FreshRSS uses this to mean "the reading list plus hidden items"
+        "com.google/broadcast",
+        "com.google/broadcast-fiends",
+        "com.google/broadcast-friends-comments", // The Old Reader seems to support this
+        "com.google/created", // BazQux suggests this existed, but does not itself support it
+        "com.google/like", // The Old Reader seems to support this
+        "org.freshrss/important",
+    ];
+    /** A list of state streams which we do not support and will therefore return an empty set when queried */
+    protected const UNSUPPORTED_STATES = [
+        "com.google/broadcast",
+        "com.google/broadcast-fiends",
+        "com.google/broadcast-friends-comments",
+        "com.google/created",
+        "com.google/like",
+        "org.freshrss/important",
+    ];
     protected const OUTPUT_TYPES = [
         "application/json",
         "application/xml",
@@ -341,78 +364,156 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return str_pad(dechex($id), 8, "0", \STR_PAD_LEFT);
     }
 
-    /** Converts a stream identifier into a database context
+    /** Converts a set of stream identifiers into a database context
      * 
      * Because feed streams are identified by URL this procedure my require
      * database activity, but should nevertheless be fast and safe
      * 
+     * The three stream identifiers will ultimately be converted to an SQL
+     * filter condition analogous to ($stream AND $include AND NOT $exclude)
+     * 
      * A null return value indicates a stream which will always return no articles
      * 
-     * @param string $stream The stream identifier
-     * @param ?AbstractContext $c An existing context to apply the stream to. This may be any kind of context, including an exclusion context
-     * @return Context
+     * @param ?string $stream The base stream identifier
+     * @param ?string $include The filter stream identifier
+     * @param ?string $exclude The exclusion stream identifier
+     * @param Context|ExclusionContext|null $context An existing context to apply the stream to. This should be used only when populating splice streams
+     * @return Context|ExclusionContext
      */
-    protected function streamContext(?string $stream, ?AbstractContext $c = null): ?AbstractContext {
+    protected function streamContext(?string $stream, ?string $include = null, ?string $exclude = null, ?AbstractContext $context = null): ?AbstractContext {
+        $splice = isset($context);
+        $context = $context ?? new Context;
         $stream = $stream ?? "";
-        $c = $c ?? new Context;
         if ($stream === "") {
             // NOTE: BazQux and FreshRSS both interpret absence of a stream as
             //   the "reading list" stream (all articles) in at least some
             //   circumstances. We apply this interpretation universally and
-            //   leave it to the individual functions to determine whether the
-            //   reading list is a valid target
-            if ($c instanceof ExclusionContext) {
-                // excluding everything is an empty set
-                throw new EmptySetException;
-            }
-            return $c;
-        } elseif (preg_match(self::LABEL_PATTERN, $stream, $m)) {
-            // Reader labels can be applied to either feeds or articles, so we must select for both
-            $g = $c->orGroups;
-            $g[] = (new Context)->tagName($m[1])->labelName($m[1]);
-            return $c->orGroups($g);
-        } elseif (preg_match(self::STATE_PATTERN, $stream, $m)) {
-            switch ($m[1]) {
-                case "com.google/read":
-                    return $c->unread(false);
-                case "com.google/unread":
-                case "com.google/kept-unread":
-                    return $c->unread(true);
-                case "com.google/reading-list":
-                    if ($c instanceof ExclusionContext) {
-                        // excluding everything is an empty set
-                        throw new EmptySetException;
-                    }
-                    return $c;
-                case "com.google/starred":
-                    return $c->starred(true);
-                default:
-                    if (in_array($m[1], self::UNSUPPORTED_STATES)) {
-                        if ($c instanceof ExclusionContext) {
-                            // excluding an empty set is a no-op
-                            return $c;
-                        }
-                        // unsupported states will always be an empty set
-                        throw new EmptySetException;
-                    }
-                    throw new Exception("InvalidStream", $stream);
-            }
-        } elseif (preg_match(self::SUBSCRIPTION_PATTERN, $stream, $m)) {
-            return $c->subscription((int) $m[1]);
-        } elseif (preg_match(self::FEED_PATTERN, $stream, $m)) {
-            // if no subscription is found this will throw an exception
-            return $c->subscription(Arsse::$db->subscriptionLookup(Arsse::$user->id, $m[1]));
-        } elseif (preg_match('<^splice/(.+)>', $stream, $m)) {
-            // splice streams are a union of multiple streams
-            $u = new Context;
-            foreach (explode("|", $stream) as $s) {
-                $u = $this->streamContext($s, $u);
-            }
-            $g = $c->orGroups;
-            $g[] = $u;
-            return $c->orGroups($g);
+            //   leave it to the individual functions to determine whether to
+            //   reject requests without an explicit stream
+            $stream = "user/-/state/com.google/reading-list";
         }
-        throw new Exception("InvalidStream", $stream);
+        foreach (["stream", "include", "exclude"] as $which) {
+            $s = $$which;
+            if ($s === null) {
+                continue;
+            }
+            $not = $which === "exclude";
+            $c = $not ? $context->not : $context;
+            if (preg_match(self::STATE_PATTERN, $s, $m)) {
+                // NOTE: It is possible to specify both a boolean stream and have
+                //   an inverse boolean condition ("unread AND read"), so we must
+                //   account for this where it can happen as it is not
+                //   representable in a context object
+                switch ($m[1]) {
+                    case "com.google/read":
+                        if ($c->unread === true) {
+                            return null;
+                        }
+                        $c->unread(false);
+                        break;
+                    case "com.google/unread":
+                    case "com.google/kept-unread":
+                        if ($c->unread === false) {
+                            return null;
+                        }
+                        $c->unread(true);
+                        break;
+                    case "com.google/reading-list":
+                    case "org.freshrss/main":
+                        if ($c instanceof ExclusionContext) {
+                            // excluding everything is an empty set
+                            return null;
+                        }
+                        break;
+                    case "com.google/starred":
+                        $c->starred(true);
+                        break;
+                    default:
+                        if (in_array($m[1], self::UNSUPPORTED_STATES)) {
+                            if ($c instanceof Context) {
+                                // unsupported states will always be an empty set
+                                return null;
+                            }
+                        }
+                }
+            } elseif (preg_match(self::LABEL_PATTERN, $s, $m)) {
+                // Reader labels can be applied to either feeds or articles, so
+                //   we must select for both; the logic here also handles
+                //   filtering for multiple labels (x AND y) seamlessly
+                // For a splice with multiple labels we need to convert calls
+                //   to tagName and labelName into tagNames and LabelNames so
+                //   the result is an IN() condition rather than an AND
+                $g = $c->orGroups;
+                if (!$splice || !$g) {
+                    $cc = (new Context)->tagName($m[1])->labelName($m[1]);
+                } else {
+                    $cc = array_pop($g);
+                    if ($cc->tagName() && $cc->labelName()) {
+                        $cc->tagNames([$cc->tagName, $m[1]]);
+                        $cc->labelNames([$cc->labelName, $m[1]]);
+                        $cc->tagName(null);
+                        $cc->labelName(null);
+                    } else {
+                        $t = $cc->tagNames;
+                        $l = $cc->labelNames;
+                        $t[] = $m[1];
+                        $l[] = $m[1];
+                        $cc->tagNames($t);
+                        $cc->labelNames($l);
+                    }
+                }
+                $g[] = $cc;
+                $c->orGroups($g);
+            } elseif (preg_match(self::SUBSCRIPTION_PATTERN, $s, $m) || preg_match(self::FEED_PATTERN, $s, $m)) {
+                if (!is_numeric($m[1])) {
+                    // if no subscription is found this will throw an exception
+                    $m[1] = Arsse::$db->subscriptionLookup(Arsse::$user->id, $m[1]);
+                }
+                if ($c->subscription()) {
+                    $sub = $c->subscription;
+                    if ($sub === (int) $m[1]) {
+                        // the same stream twice is a no-op
+                        break;
+                    } elseif ($splice) {
+                        // different subscriptions in a splice can be unioned
+                        $c->subscriptions([$c->subscription, $m[1]]);
+                        $c->subscription(null);
+                    } else {
+                        // different subscriptions outside of a splice is a logical contradiction
+                        return null;
+                    }
+                } elseif ($splice && $c->subscriptions()) {
+                    // add to the existing union of subscriptions in the splice
+                    $u = $c->subscriptions;
+                    $u[] = $m[1];
+                    $c->subscriptions($u);
+                } else {
+                    $c->subscription((int) $m[1]);
+                }
+            } elseif (preg_match('<^splice/(.+)>', $s, $m)) {
+                // splice streams are a union of multiple streams
+                $cc = new Context;
+                $terms = explode("|", $m[1]);
+                $errors = 0;
+                foreach ($terms as $s) {
+                    // keep track of how many empty sets are returned
+                    if (!$this->streamContext($s, null, null, $cc)) {
+                        $errors++;
+                    }
+                }
+                if ($errors == sizeof($terms)) {
+                    // we found only empty sets, so we return an empty set
+                    return null;
+                }
+                $g = $c->orGroups;
+                $g[] = $cc;
+                $c->orGroups($g);
+            } else {
+                var_export([$stream, $include, $exclude, $s]);
+                throw new Exception("InvalidStream", $s);
+            }
+        }
+        return $context;
     }
 
     /** Authenticates the user
@@ -707,19 +808,20 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         if (!isset($body['s'])) {
             return self::respError(["ParameterRequired", "s"]);
         }
-        $c = $this->streamContext($body['s']);
-        if (isset($body['ts'])) {
-            // the timestamp must be at least seven digits (the last six digits are discarded)
-            preg_match('/^(\d+)\d{6}$/', $body['ts'], $m);
-            if (!$m) {
-                return self::respError(["InvalidTimestampMicro", $body['ts']]);
+        if ($c = $this->streamContext($body['s'])) {
+            if (isset($body['ts'])) {
+                // the timestamp must be at least seven digits (the last six digits are discarded)
+                preg_match('/^(\d+)\d{6}$/', $body['ts'], $m);
+                if (!$m) {
+                    return self::respError(["InvalidTimestampMicro", $body['ts']]);
+                }
+                $c->modifiedRange(null, (int) $m[1]);
             }
-            $c->modifiedRange(null, (int) $m[1]);
-        }
-        try {
-            Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
-        } catch (ExceptionInput $e) {
-            return self::respError($e);
+            try {
+                Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);
+            } catch (ExceptionInput $e) {
+                return self::respError($e);
+            }
         }
         return HTTP::respText("OK");
     }
@@ -998,21 +1100,22 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#stream-items-count */
     protected function itemCount(string $target, array $query, array $body, string $format): ResponseInterface {
-        $out = "";
+        $out = 0;
         // convert the stream ID to a context
-        $c = $this->streamContext($query['s']);
-        try {
-            $tr = Arsse::$db->begin();
-            // get the count of articles matched by the context
-            $out .= Arsse::$db->articleCount(Arsse::$user->id, $c);
-            // if the most recent date is requested as well, jump through some hoops to get it
-            if ($query['a']) {
-                $c->limit(1);
-                $date = Arsse::$db->articleList(Arsse::$user->id, $c, ["modified_date"], ["modified_date desc"])->getValue();
-                $out."#".Date::transform($date, "F j, Y", "sql");
+        if ($c = $this->streamContext($query['s'])) {
+            try {
+                $tr = Arsse::$db->begin();
+                // get the count of articles matched by the context
+                $out += Arsse::$db->articleCount(Arsse::$user->id, $c);
+                // if the most recent date is requested as well, jump through some hoops to get it
+                if ($query['a']) {
+                    $c->limit(1);
+                    $date = Arsse::$db->articleList(Arsse::$user->id, $c, ["modified_date"], ["modified_date desc"])->getValue();
+                    $out = $out."#".Date::transform($date, "F j, Y", "sql");
+                }
+            } catch (ExceptionInput $e) {
+                // TODO: What do we do about errors?
             }
-        } catch (ExceptionInput $e) {
-            // TODO: What do we do about errors?
         }
         return HTTP::respText("$out\n");
     }
@@ -1026,23 +1129,24 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         $sort = $asc ? ["edition"] : ["edition desc"];
         $out = [];
         $latest = null;
-        $context = $this->articleContext($query);
-        $tr = Arsse::$db->begin();
-        $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
-        $labels = $this->getAllLabels();
-        foreach (Arsse::$db->articleList(Arsse::$user->id, $context, ["id", 'edition', "modified_date", "subscription", "subscription_url", "unread", "starred"], $sort) as $i) {
-            // NOTE: No two implementations seem to quite agree on what
-            //   this parameter does; FreshRSS doesn't even implement it
-            //   at all, so we'll do what FeedHQ does and just present an
-            //   empty array if it is not true
-            $streams = ($query['includeAllDirectStreamIds'] ?? true) ? $this->itemStreams($i, $labels, $meta['num']) : [];
-            // prepare the entry
-            $out[] = [
-                'id' => (string) $i['id'], // FreshRSS returns the ID as a string, so we do the same
-                'timestampUsec' => Date::transform($i['modified_date'], "unix", "sql")."000000",
-                'directStreamIds' => $streams,
-            ];
-            $latest = $asc ? max($latest, (int) $i['edition']) : min($latest, (int) $i['edition']);
+        if ($context = $this->articleContext($query)) {
+            $tr = Arsse::$db->begin();
+            $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
+            $labels = $this->getAllLabels();
+            foreach (Arsse::$db->articleList(Arsse::$user->id, $context, ["id", 'edition', "modified_date", "subscription", "subscription_url", "unread", "starred"], $sort) as $i) {
+                // NOTE: No two implementations seem to quite agree on what
+                //   this parameter does; FreshRSS doesn't even implement it
+                //   at all, so we'll do what FeedHQ does and just present an
+                //   empty array if it is not true
+                $streams = ($query['includeAllDirectStreamIds'] ?? true) ? $this->itemStreams($i, $labels, $meta['num']) : [];
+                // prepare the entry
+                $out[] = [
+                    'id' => (string) $i['id'], // FreshRSS returns the ID as a string, so we do the same
+                    'timestampUsec' => Date::transform($i['modified_date'], "unix", "sql")."000000",
+                    'directStreamIds' => $streams,
+                ];
+                $latest = $asc ? max($latest, (int) $i['edition']) : min($latest, (int) $i['edition']);
+            }
         }
         $out = ['itemRefs' => $out];
         if (sizeof($out['itemRefs']) === $this->pageSize($query['n'])) {
@@ -1082,70 +1186,72 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return self::respond($format, $this->articleFetch($context, $query, true));
     }
 
-    protected function articleFetch(Context $context, array $query, bool $allowContinuation): array {
+    protected function articleFetch(?Context $context, array $query, bool $allowContinuation): array {
         $asc = $query['r'] !== "o";
         $sort = $asc ? ["edition"] : ["edition desc"];
         $latest = null;
         $out = [];
-        $tr = Arsse::$db->begin();
-        if ($query['includeAllDirectStreamIds'] ?? true) {
-            $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
-            $labels = $this->getAllLabels();
-        }
-        // loop through the articles
-        foreach (Arsse::$db->articleList(Arsse::$user->id, $context, [
-            "id",
-            'edition',
-            "modified_date",
-            "published_date",
-            "edited_date",
-            "subscription",
-            "subscription_url",
-            "subscription_title",
-            "unread",
-            "starred",
-            "author",
-            "title",
-            "url",
-            "content",
-            "media_url",
-            "media_type",
-        ], $sort) as $i) {
-            // NOTE: This parameter is not implemented by either FreshRSS or
-            //   FeedHQ, but it is present in at least Inoreader, so there's
-            //   no harm in having it
-            $streams = ($query['includeAllDirectStreamIds'] ?? true) ? $this->itemStreams($i, $labels, $meta['num']) : [];
-            // enclosures appear to be a FreshRSS extension 
-            $enclosures = isset($i['media_url']) ? [['href' => $i['media_url'], 'type' => $i['media_type']]] : [];
-            // prepare the entry
-            $out[] = [
-                'id'            => $this->itemIdEncode((int) $i['id']),
-                'categories'    => $streams,
-                'timestampUsec' => Date::transform($i['modified_date'], "unix", "sql")."000000",
-                'crawlTimeMsec' => Date::transform($i['modified_date'], "unix", "sql")."000",
-                'published'     => Date::transform($i['published_date'], "unix", "sql"),
-                'updated'       => Date::transform($i['edited_date'], "unix", "sql"),
-                'title'         => $i['title'],
-                'author'        => $i['author'],
-                'canonical'     => ['href' => $i['url']],
-                'alternate'     => [['href' => $i['url'], 'type' => "text/html"]],
-                'linkingUsers'  => [],
-                'comments'      => [],
-                'commentsNum'   => -1,
-                'annotations'   => [],
-                'summary'       => [
-                    'direction' => "ltr", // FIXME: a future feed parser should be able to expose this information
-                    'content'   => $i['content'],
-                ],
-                'enclosures'    => $enclosures,
-                'origin'        => [
-                    'streamId' => "feed/".$i['subscription'],
-                    'title'    => $i['subscription_title'],
-                    'htmlUrl'  => $i['subscription_url'],
-                ],
-            ];
-            // note the largest edition ID for continuation computation
-            $latest = $asc ? max($latest, (int) $i['edition']) : min($latest, (int) $i['edition']);
+        if ($context) {
+            $tr = Arsse::$db->begin();
+            if ($query['includeAllDirectStreamIds'] ?? true) {
+                $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
+                $labels = $this->getAllLabels();
+            }
+            // loop through the articles
+            foreach (Arsse::$db->articleList(Arsse::$user->id, $context, [
+                "id",
+                'edition',
+                "modified_date",
+                "published_date",
+                "edited_date",
+                "subscription",
+                "subscription_url",
+                "subscription_title",
+                "unread",
+                "starred",
+                "author",
+                "title",
+                "url",
+                "content",
+                "media_url",
+                "media_type",
+            ], $sort) as $i) {
+                // NOTE: This parameter is not implemented by either FreshRSS or
+                //   FeedHQ, but it is present in at least Inoreader, so there's
+                //   no harm in having it
+                $streams = ($query['includeAllDirectStreamIds'] ?? true) ? $this->itemStreams($i, $labels, $meta['num']) : [];
+                // enclosures appear to be a FreshRSS extension 
+                $enclosures = isset($i['media_url']) ? [['href' => $i['media_url'], 'type' => $i['media_type']]] : [];
+                // prepare the entry
+                $out[] = [
+                    'id'            => $this->itemIdEncode((int) $i['id']),
+                    'categories'    => $streams,
+                    'timestampUsec' => Date::transform($i['modified_date'], "unix", "sql")."000000",
+                    'crawlTimeMsec' => Date::transform($i['modified_date'], "unix", "sql")."000",
+                    'published'     => Date::transform($i['published_date'], "unix", "sql"),
+                    'updated'       => Date::transform($i['edited_date'], "unix", "sql"),
+                    'title'         => $i['title'],
+                    'author'        => $i['author'],
+                    'canonical'     => ['href' => $i['url']],
+                    'alternate'     => [['href' => $i['url'], 'type' => "text/html"]],
+                    'linkingUsers'  => [],
+                    'comments'      => [],
+                    'commentsNum'   => -1,
+                    'annotations'   => [],
+                    'summary'       => [
+                        'direction' => "ltr", // FIXME: a future feed parser should be able to expose this information
+                        'content'   => $i['content'],
+                    ],
+                    'enclosures'    => $enclosures,
+                    'origin'        => [
+                        'streamId' => "feed/".$i['subscription'],
+                        'title'    => $i['subscription_title'],
+                        'htmlUrl'  => $i['subscription_url'],
+                    ],
+                ];
+                // note the largest edition ID for continuation computation
+                $latest = $asc ? max($latest, (int) $i['edition']) : min($latest, (int) $i['edition']);
+            }
         }
         $out = [
             'id'      => "user/-/state/com.google/reading-list", // NOTE: FreshRSS uses the reading list stream ID for any stream; this avoids a bunch of pointless complexity, so we do the same
@@ -1203,7 +1309,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return $streams;
     }
 
-    protected function articleContext(array &$query): Context {
+    protected function articleContext(array &$query): ?Context {
         $asc = $query['r'] !== "o";
         // parse the continuation string, if any
         if ($query['c']) {
@@ -1217,23 +1323,18 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             //   a new string for the next page later is accurate
             $query = $this->parseQuery($ct, self::CONTINUATION_PARAMS, false, false);
         }
-        $c = $this->streamContext($query['s'] ?? "");
-        // streams can be refined by adding an AND condition with 'it'
+        // NOTE: streams can be refined by adding an AND condition with 'it'
         //   and/or an AND NOT condition with 'xt'
-        if ($query['it']) {
-            $this->streamContext($query['it'], $c);
+        if ($c = $this->streamContext($query['s'] ?? "", $query['it'], $query['xt'])) {
+            // fairly typical time-based constraits can also be applied
+            $c->modifiedRange($query['ot'], $query['nt']);
+            // the 'i' parameter is only valid in continuations and is our page anchor
+            if (isset($query['i'])) {
+                $c->editionRange($asc ? $query['i'] : null, $asc ? null : $query['i']);
+            }
+            // pagination is always applied
+            $c->limit($this->pageSize($query['n']));
         }
-        if ($query['xt']) {
-            $this->streamContext($query['xt'], $c->not);
-        }
-        // fairly typical time-based constraits can also be applied
-        $c->modifiedRange($query['ot'], $query['nt']);
-        // the 'i' parameter is only valid in continuations and is our page anchor
-        if (isset($query['i'])) {
-            $c->editionRange($asc ? $query['i'] : null, $asc ? null : $query['i']);
-        }
-        // pagination is always applied
-        $c->limit($this->pageSize($query['n']));
         // return the context
         return $c;
     }

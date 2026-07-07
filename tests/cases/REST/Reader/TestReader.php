@@ -82,6 +82,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["i=3&i=4&a=user/-/state/com.google/kept-unread&T=12345",      ['read' => false],    (new Context)->articles([3,4]), $success],
             ["i=5&i=6&a=user/-/state/com.google/starred&T=12345",          ['starred' => true],  (new Context)->articles([5,6]), $success],
             ["i=5&i=6&r=user/-/state/com.google/starred&T=12345",          ['starred' => false], (new Context)->articles([5,6]), $success],
+            ["i=7&i=8&a=user/-/state/com.google/reading-list&T=12345",     null,                 null,                           $success],
             ["i=7&i=8&a=user/-/state/org.freshrss/important&T=12345",      null,                 null,                           $success],
             ["i=7&i=8&a=user/-/state/ca.jking/bogus&T=12345",              null,                 null,                           self::respError(["InvalidStream", "user/-/state/ca.jking/bogus"])],
             ["i=7&i=8&a=not-a-state&T=12345",                              null,                 null,                           self::respError(["InvalidStream", "not-a-state"])],
@@ -503,5 +504,73 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["T=12345&ac=edit&s=42&a=user/-/label/Ook",                                                     null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["InvalidValue", "s", "42"])],
             ["ac=subscribe&s=feed/http://example.com/&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo",         null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["TokenRequired"])],
         ];
+    }
+
+    #[DataProvider("provideArticleSelections")]
+    public function testSelectArticles(string $target, string $query, bool $desc, ?Context $c, array $fields): void {
+        // NOTE: This test does not exercise failure modes, only the
+        //   construction of article selection contexts and sorting modes
+        $user = "john.doe@example.com";
+        \Phake::when(Arsse::$db)->labelSummarize(\Phake::anyParameters())->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->tagSummarize(\Phake::anyParameters())->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->subscriptionLookup($user, "http://example.com/")->thenReturn(1);
+        \Phake::when(Arsse::$db)->subscriptionLookup($user, "http://example.net/")->thenReturn(2);
+        \Phake::when(Arsse::$db)->subscriptionLookup($user, "http://example.org/")->thenReturn(3);
+        $sort = $desc ? ["edition desc"] : ["edition"];
+        $this->req("GET", "$target?$query", "", $user);
+        if ($c) {
+            \Phake::verify(Arsse::$db)->articleList($user, $c, $fields, $sort);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->articleList(\Phake::anyParameters());
+        }
+    }
+
+    public static function provideArticleSelections(): iterable {
+        $c = (new Context)->limit(20);
+        // the stream ID is provided seaparately from the rest of the body because it is part of the URL for one of the routes
+        $tests = [
+            ["",                                                                            "",                                        false, $c],
+            ["",                                                                            "r=o",                                     true,  $c],
+            ["",                                                                            "n=2112",                                  false, (clone $c)->limit(2112)],
+            ["",                                                                            "n=10001",                                 false, (clone $c)->limit(10000)],
+            ["",                                                                            "n=0",                                     false, $c],
+            ["",                                                                            "n=",                                      false, $c],
+            ["",                                                                            "n=-1",                                    false, $c],
+            ["",                                                                            "n=1",                                     false, (clone $c)->limit(1)],
+            ["user/-/state/com.google/read",                                                "",                                        false, (clone $c)->unread(false)],
+            ["user/-/state/com.google/unread",                                              "",                                        false, (clone $c)->unread(true)],
+            ["user/-/state/com.google/kept-unread",                                         "",                                        false, (clone $c)->unread(true)],
+            ["user/-/state/com.google/starred",                                             "",                                        false, (clone $c)->starred(true)],
+            ["user/-/state/com.google/reading-list",                                        "",                                        false, $c],
+            ["user/-/state/org.freshrss/main",                                              "",                                        false, $c],
+            ["user/-/state/org.freshrss/important",                                         "",                                        false, null],
+            ["user/-/label/Ook",                                                            "",                                        false, (clone $c)->orGroups([(new Context)->tagName("Ook")->labelName("Ook")])],
+            ["feed/1",                                                                      "",                                        false, (clone $c)->subscription(1)],
+            ["feed/http://example.com/",                                                    "",                                        false, (clone $c)->subscription(1)],
+            ["splice/user/-/label/Ook|feed/1|feed/2",                                       "",                                        false, (clone $c)->orGroups([(new Context)->orGroups([(new Context)->tagName("Ook")->labelName("Ook")])->subscriptions([1, 2])])],
+            ["splice/user/-/label/Ook|user/-/label/Eek|user/-/label/Ack",                   "",                                        false, (clone $c)->orGroups([(new Context)->orGroups([(new Context)->tagNames(["Ook", "Eek", "Ack"])->labelNames(["Ook", "Eek", "Ack"])])])],
+            ["splice/feed/1|feed/1",                                                        "",                                        false, (clone $c)->orGroups([(new Context)->subscription(1)])],
+            ["splice/feed/1|feed/2|feed/3",                                                 "",                                        false, (clone $c)->orGroups([(new Context)->subscriptions([1, 2, 3])])],
+            ["splice/user/-/state/org.freshrss/important|user/-/state/com.google/broadcast", "",                                       false, null],
+            ["user/-/state/com.google/read",                                                "it=user/-/state/com.google/unread",       false, null],
+            ["user/-/state/com.google/read",                                                "it=user/-/state/com.google/kept-unread",  false, null],
+            ["user/-/state/com.google/unread",                                              "it=user/-/state/com.google/read",         false, null],
+            ["user/-/state/com.google/kept-unread",                                         "it=user/-/state/com.google/read",         false, null],
+            ["feed/1",                                                                      "it=feed/2",                               false, null],
+            ["",                                                                            "xt=user/-/state/com.google/read",         false, (clone $c)->not->unread(false)],
+            ["",                                                                            "xt=user/-/state/com.google/unread",       false, (clone $c)->not->unread(true)],
+            ["",                                                                            "xt=user/-/state/com.google/kept-unread",  false, (clone $c)->not->unread(true)],
+            ["",                                                                            "xt=user/-/state/com.google/starred",      false, (clone $c)->not->starred(true)],
+            ["",                                                                            "xt=user/-/state/com.google/reading-list", false, null],
+            ["",                                                                            "xt=feed/2",                               false, (clone $c)->not->subscription(2)],
+        ];
+        $allFields = ["id", 'edition', "modified_date", "published_date", "edited_date", "subscription", "subscription_url", "subscription_title", "unread", "starred", "author", "title", "url", "content", "media_url", "media_type"];
+        $minFields = ["id", 'edition', "modified_date", "subscription", "subscription_url", "unread", "starred"];
+        foreach ($tests as [$stream, $query, $desc, $context]) {
+            yield ["/stream/items/ids",        "s=$stream&$query", false, $context, $minFields];
+            yield ["/stream/contents",         "s=$stream&$query", $desc, $context, $allFields];
+            yield ["/stream/contents/$stream", $query,             $desc, $context, $allFields];
+        }
     }
 }
