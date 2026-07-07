@@ -16,11 +16,6 @@ use GuzzleHttp\Psr7\ServerRequest;
 
 class REST {
     public const API_LIST = [
-        'ncn' => [ // Nextcloud News version enumerator
-            'match' => '/index.php/apps/news/api',
-            'strip' => '/index.php/apps/news/api',
-            'class' => REST\NextcloudNews\Versions::class,
-        ],
         'ncn_v1-2' => [ // Nextcloud News v1-2  https://github.com/nextcloud/news/blob/master/docs/api/api-v1-2.md
             'match' => '/index.php/apps/news/api/v1-2/',
             'strip' => '/index.php/apps/news/api/v1-2',
@@ -30,6 +25,11 @@ class REST {
             'match' => '/index.php/apps/news/api/v1-3/',
             'strip' => '/index.php/apps/news/api/v1-3',
             'class' => REST\NextcloudNews\V1_3::class,
+        ],
+        'ncn' => [ // Nextcloud News version enumerator
+            'match' => '/index.php/apps/news/api',
+            'strip' => '/index.php/apps/news/api',
+            'class' => REST\NextcloudNews\Versions::class,
         ],
         'ncn_ocs' => [ // Nextcloud user metadata  https://docs.nextcloud.com/server/latest/developer_manual/client_apis/OCS/ocs-api-overview.html#user-metadata
             'match' => '/ocs/v1.php/cloud/users/',
@@ -106,7 +106,7 @@ class REST {
             // create a request object if not provided
             $req = $req ?? ServerRequest::fromGlobals();
             // find the API to handle
-            [, $target, $class] = $this->apiMatch($req->getRequestTarget(), $this->apis);
+            [, $target, $class] = $this->apiMatch($req->getRequestTarget());
             // authenticate the request pre-emptively
             $req = $this->authenticateRequest($req);
             // modify the request to have an uppercase method and a stripped target
@@ -129,26 +129,31 @@ class REST {
 
     public function apiMatch(string $url): array {
         $map = $this->apis;
-        // sort the API list so the longest URL prefixes come first
-        uasort($map, function($a, $b) {
-            return (strlen($a['match']) <=> strlen($b['match'])) * -1;
-        });
         // normalize the target URL
         $url = URL::normalize($url);
         // find a match
-        foreach ($map as $id => $api) {
-            // first try a simple substring match
-            if (strpos($url, $api['match']) === 0) {
-                // if it matches, perform a more rigorous match and then strip off any defined prefix
-                $pattern = "<^".preg_quote($api['match'])."([/\?#]|$)>D";
-                if ($url === $api['match'] || in_array(substr($api['match'], -1, 1), ["/", "?", "#"]) || preg_match($pattern, $url)) {
-                    $target = substr($url, strlen($api['strip']));
+        foreach ($map as $id => ['match' => $match, 'strip' => $strip, 'class' => $class]) {
+            // try to find a match; this is careful to handle doubled slashes 
+            $pattern = str_replace("/", "/+", preg_quote($match));
+            if (substr($match, -1) !== "/") {
+                // if the pattern does not end with a slash, make sure we're
+                //   still only matching whole patch segments with a lookahead
+                $pattern .= "(?=[/\?#]|$)";
+            }
+            $pattern = "<^$pattern>D";
+            if (preg_match($pattern, $url, $m)) {
+                // if it matches, strip off any defined prefix; 
+                if ($match === $strip) {
+                    $target = substr($url, strlen($m[0]));
+                } elseif ($match === "$strip/") {
+                    $target = substr($url, strlen($m[0]) - 1);
+                } elseif ($strip === "") {
+                    $target = preg_replace("<^/+(?=/)>", "", $url);
                 } else {
-                    // if the match fails we are not able to handle the request
-                    throw new REST\Exception501;
+                    throw new \Exception("Not implemented"); // @codeCoverageIgnore
                 }
                 // return the API name, stripped URL, and API class name
-                return [$id, $target, $api['class']];
+                return [$id, $target, $class];
             }
         }
         // or throw an exception otherwise
@@ -241,7 +246,7 @@ class REST {
             $origin = $req->getHeader("Origin");
             if (sizeof($origin) == 1) {
                 // continue if the origin is syntactically valid
-                $origin = $this->corsNormalizeOrigin($origin[0]);
+                $origin = URL::origin($origin[0]);
                 if ($origin) {
                     // the special "null" origin should not be matched by the wildcard origin
                     $null = ($origin === "null");
@@ -267,56 +272,5 @@ class REST {
             }
         }
         return false;
-    }
-
-    public function corsNormalizeOrigin(string $origin, ?array $ports = null): string {
-        $origin = trim($origin);
-        if ($origin === "null") {
-            // if the origin is the special value "null", use it
-            return "null";
-        }
-        if (preg_match("<^([^:]+)://(\[[^\]]+\]|[^\[\]:/\?#@]+)((?::.*)?)$>Di", $origin, $match)) {
-            // if the origin sort-of matches the syntax in a general sense, continue
-            $scheme = $match[1];
-            $host = $match[2];
-            $port = $match[3];
-            // decode and normalize the scheme and port (the port may be blank)
-            $scheme = strtolower(rawurldecode($scheme));
-            $port = rawurldecode($port);
-            if (!preg_match("<^(?::[0-9]+)?$>D", $port) || !preg_match("<^[a-z](?:[a-z0-9\+\-\.])*$>D", $scheme)) {
-                // if the normalized port contains anything but numbers, or the scheme does not follow the generic URL syntax, the origin is invalid
-                return "";
-            }
-            if ($host[0] === "[") {
-                // if the host appears to be an IPv6 address, validate it
-                $host = rawurldecode(substr($host, 1, strlen($host) - 2));
-                if (!filter_var($host, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV6)) {
-                    return "";
-                } else {
-                    $host = "[".inet_ntop(inet_pton($host))."]";
-                }
-            } else {
-                // if the host is a domain name or IP address, split it along dots and just perform URL decoding
-                $host = explode(".", $host);
-                $host = array_map(function($segment) {
-                    return str_replace(".", "%2E", rawurlencode(strtolower(rawurldecode($segment))));
-                }, $host);
-                $host = implode(".", $host);
-            }
-            // suppress default ports
-            if (strlen($port)) {
-                $port = (int) substr($port, 1);
-                $list = array_merge($ports ?? [], self::DEFAULT_PORTS);
-                if (isset($list[$scheme]) && $port == $list[$scheme]) {
-                    $port = "";
-                } else {
-                    $port = ":".$port;
-                }
-            }
-            // return the reconstructed result
-            return $scheme."://".$host.$port;
-        } else {
-            return "";
-        }
     }
 }

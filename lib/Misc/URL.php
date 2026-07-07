@@ -7,6 +7,9 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\Misc;
 
+use MensBeam\Uri\Rfc3986\Parser as RfcParser;
+use Uri\WhatWg\Url as WebUrl;
+
 /**
  * A collection of functions for manipulating URLs
  */
@@ -25,7 +28,6 @@ class URL {
      * - IDN normalization
      * - IPv6 address normalization
      * - Resolution of relative path segments
-     * - Discarding empty path segments
      * - Discarding empty queries
      * - Generic percent-encoding normalization
      * - Fragment discarding
@@ -39,105 +41,32 @@ class URL {
      * @param ?string $p Password to add to the URL, if a username is specified; passing null will using the existing value, while passing an empty string will clear it
      */
     public static function normalize(string $url, ?string $u = null, ?string $p = null): string {
-        extract(parse_url($url));
-        $out = "";
-        if (isset($scheme)) {
-            $out .= strtolower($scheme).":";
+        $credValid = true;
+        if (substr($url, 0, 2) === "//") {
+            $prefix = "http:";
+        } elseif (substr($url, 0, 1) === "/") {
+            $prefix = "http://a";
+            $credValid = false;
+        } else {
+            $prefix = "";
         }
-        if (isset($host)) {
-            $out .= "//";
-            if (strlen($u ?? $user ?? "")) {
-                $out .= self::normalizeEncoding(rawurlencode($u ?? $user));
-                if (strlen($p ?? $pass ?? "")) {
-                    $out .= ":".self::normalizeEncoding(rawurlencode($p ?? $pass));
+        $parsed = WebUrl::parse("$prefix$url");
+        if ($parsed) {
+            if ($credValid) {
+                if ($u !== null) {
+                    $parsed = $parsed->withUsername($u);
                 }
-                $out .= "@";
-            }
-            $out .= self::normalizeHost($host);
-            $out .= isset($port) ? ":$port" : "";
-        }
-        $out .= self::normalizePath($path ?? "", isset($host));
-        if (isset($query) && strlen($query)) {
-            $out .= "?".self::normalizeEncoding($query);
-        }
-        return $out;
-    }
-
-    /** Perform percent-encoding normalization for a given URL component */
-    protected static function normalizeEncoding(string $part): string {
-        $pos = 0;
-        $end = strlen($part);
-        $out = "";
-        // process each character in sequence
-        while ($pos < $end) {
-            $c = $part[$pos];
-            if ($c === "%") {
-                // the % character signals an encoded character...
-                $d = substr($part, $pos + 1, 2);
-                if (!preg_match("/^[0-9a-fA-F]{2}$/D", $d)) {
-                    // unless there are fewer than two characters left in the string or the two characters are not hex digits
-                    $d = ord($c);
-                } else {
-                    $d = hexdec($d);
-                    $pos += 2;
-                }
-            } else {
-                $d = ord($c);
-            }
-            $dc = chr($d);
-            if ($d < 0x21 || $d > 0x7E || $d == 0x25) {
-                // these characters are always encoded
-                $out .= "%".strtoupper(dechex($d));
-            } elseif (preg_match("/[a-zA-Z0-9\._~-]/", $dc)) {
-                // these characters are never encoded
-                $out .= $dc;
-            } else {
-                // these characters are passed through as-is
-                if ($c === "%") {
-                    $out .= "%".strtoupper(dechex($d));
-                } else {
-                    $out .= $c;
+                if ($p !== null) {
+                    $parsed = $parsed->withPassword($p);
                 }
             }
-            $pos++;
-        }
-        return $out;
-    }
-
-    /** Normalizes a hostname per IDNA:2008 */
-    protected static function normalizeHost(string $host): string {
-        if ($host[0] === "[" && substr($host, -1) === "]") {
-            // normalize IPv6 addresses
-            $addr = @inet_pton(substr($host, 1, strlen($host) - 2));
-            if ($addr !== false) {
-                return "[".inet_ntop($addr)."]";
+            $parsed = $parsed->withFragment(null);
+            if ($parsed->getQuery() === "") {
+                $parsed = $parsed->withQuery(null);
             }
+            $url = substr($parsed->toAsciiString(), strlen($prefix));
         }
-        $idn = idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46);
-        return $idn !== false ? idn_to_utf8($idn, \IDNA_NONTRANSITIONAL_TO_UNICODE, \INTL_IDNA_VARIANT_UTS46) : $host;
-    }
-
-    /** Normalizes the whole path segment to remove empty segments and relative segments */
-    protected static function normalizePath(string $path, bool $hasHost): string {
-        $parts = explode("/", self::normalizeEncoding($path));
-        $absolute = ($hasHost || $path[0] === "/");
-        $index = (substr($path, -1) === "/");
-        $out = [];
-        foreach ($parts as $p) {
-            switch ($p) {
-                case "":
-                case ".":
-                    break;
-                case "..":
-                    array_pop($out);
-                    break;
-                default:
-                    $out[] = $p;
-            }
-        }
-        $out = implode("/", $out);
-        $out = ($absolute ? "/" : "").$out.($index ? "/" : "");
-        return str_replace("//", "/", $out);
+        return preg_replace('/%(?![0-9A-F]{2})/', "%25", RfcParser::normalize($url));
     }
 
     /** Appends data to a URL's query component
@@ -182,5 +111,20 @@ class URL {
             }
         }
         return $destination;
+    }
+
+    public static function origin(string $url): string {
+        $origin = trim($url);
+        if ($origin === "null") {
+            // if the origin is the special value "null", use it
+            return "null";
+        }
+        $parsed = WebUrl::parse($origin);
+        if ($parsed) {
+            $port = $parsed->getPort();
+            return $parsed->getScheme()."://".strtolower($parsed->getAsciiHost()).($port !== null ? ":$port" : "");
+        } else {
+            return "";
+        }
     }
 }

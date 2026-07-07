@@ -31,7 +31,8 @@
         "nicolus/picofeed": "dev-arsse",
         "guzzlehttp/psr7": "2.*",
         "laminas/laminas-xml": "dev-fixup as 1.4.0",
-        "laminas/laminas-httphandlerrunner": "2.*"
+        "laminas/laminas-httphandlerrunner": "2.*",
+        "mensbeam/uri": "^1.0"
     },
     "require-dev": {
         "bamarni/composer-bin-plugin": "*"

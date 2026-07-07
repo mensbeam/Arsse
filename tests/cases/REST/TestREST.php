@@ -26,7 +26,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 #[CoversClass(\JKingWeb\Arsse\REST::class)]
 class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider('provideApiMatchData')]
-    public function testMatchAUrlToAnApi($apiList, string $input, array $exp): void {
+    public function testMatchAUrlToAnApi(?array $apiList, string $input, array $exp): void {
         $r = new REST($apiList);
         try {
             $out = $r->apiMatch($input);
@@ -42,22 +42,22 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
             'unstripped' => ['match' => "/full/url", 'strip' => "", 'class' => "UnstrippedProtocol"],
         ];
         return [
-            [$real, "/index.php/apps/news/api/v1-2/feeds", ["ncn_v1-2",    "/feeds",     \JKingWeb\Arsse\REST\NextcloudNews\V1_2::class]],
-            [$real, "/index.php/apps/news/api/v1-2",       ["ncn",         "/v1-2",      \JKingWeb\Arsse\REST\NextcloudNews\Versions::class]],
-            [$real, "/index.php/apps/news/api/",           ["ncn",         "/",          \JKingWeb\Arsse\REST\NextcloudNews\Versions::class]],
-            [$real, "/index%2Ephp/apps/news/api/",         ["ncn",         "/",          \JKingWeb\Arsse\REST\NextcloudNews\Versions::class]],
-            [$real, "/index.php/apps/news/",               []],
-            [$real, "/index!php/apps/news/api/",           []],
-            [$real, "/tt-rss/api/index.php",               ["ttrss_api",   "/index.php", \JKingWeb\Arsse\REST\TinyTinyRSS\API::class]],
-            [$real, "/tt-rss/api",                         ["ttrss_api",   "",           \JKingWeb\Arsse\REST\TinyTinyRSS\API::class]],
-            [$real, "/tt-rss/API",                         []],
-            [$real, "/tt-rss/api-bogus",                   []],
-            [$real, "/tt-rss/api bogus",                   []],
-            [$real, "/tt-rss/feed-icons/",                 ["ttrss_icon",  "",           \JKingWeb\Arsse\REST\TinyTinyRSS\Icon::class]],
-            [$real, "/tt-rss/feed-icons/",                 ["ttrss_icon",  "",           \JKingWeb\Arsse\REST\TinyTinyRSS\Icon::class]],
-            [$real, "/tt-rss/feed-icons",                  []],
-            [$fake, "/full/url/",                          ["unstripped",  "/full/url/", "UnstrippedProtocol"]],
-            [$fake, "/full/url-not",                       []],
+            [$real, "/index.php/apps/news/api//v1-2/feeds", ["ncn_v1-2",    "/feeds",      \JKingWeb\Arsse\REST\NextcloudNews\V1_2::class]],
+            [$real, "/index.php/apps/news/api//v1-2",       ["ncn",         "//v1-2",      \JKingWeb\Arsse\REST\NextcloudNews\Versions::class]],
+            [$real, "/index.php/apps/news/api/",            ["ncn",         "/",           \JKingWeb\Arsse\REST\NextcloudNews\Versions::class]],
+            [$real, "/index%2Ephp/apps/news/api/",          ["ncn",         "/",           \JKingWeb\Arsse\REST\NextcloudNews\Versions::class]],
+            [$real, "/index.php/apps/news/",                []],
+            [$real, "/index!php/apps/news/api/",            []],
+            [$real, "/tt-rss/api/index.php",                ["ttrss_api",   "/index.php",  \JKingWeb\Arsse\REST\TinyTinyRSS\API::class]],
+            [$real, "/tt-rss/api",                          ["ttrss_api",   "",            \JKingWeb\Arsse\REST\TinyTinyRSS\API::class]],
+            [$real, "/tt-rss/API",                          []],
+            [$real, "/tt-rss/api-bogus",                    []],
+            [$real, "/tt-rss/api bogus",                    []],
+            [$real, "/tt-rss/feed-icons/",                  ["ttrss_icon",  "",            \JKingWeb\Arsse\REST\TinyTinyRSS\Icon::class]],
+            [$real, "/tt-rss//feed-icons/",                 ["ttrss_icon",  "",            \JKingWeb\Arsse\REST\TinyTinyRSS\Icon::class]],
+            [$real, "/tt-rss/feed-icons",                   []],
+            [$fake, "/full//url/",                          ["unstripped",  "/full//url/", "UnstrippedProtocol"]],
+            [$fake, "/full/url-not",                        []],
         ];
     }
 
@@ -94,50 +94,6 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],                                                                                                              []],
         ];
     }
-
-    #[DataProvider('provideUnnormalizedOrigins')]
-    public function testNormalizeOrigins(string $origin, string $exp, ?array $ports = null): void {
-        $r = new REST;
-        $act = $r->corsNormalizeOrigin($origin, $ports);
-        $this->assertSame($exp, $act);
-    }
-
-    public static function provideUnnormalizedOrigins(): iterable {
-        return [
-            ["null", "null"],
-            ["http://example.com",             "http://example.com"],
-            ["http://example.com:80",          "http://example.com"],
-            ["http://example.com:8%30",        "http://example.com"],
-            ["http://example.com:8080",        "http://example.com:8080"],
-            ["http://[2001:0db8:0:0:0:0:2:1]", "http://[2001:db8::2:1]"],
-            ["http://example",                 "http://example"],
-            ["http://ex%41mple",               "http://example"],
-            ["http://ex%41mple.co.uk",         "http://example.co.uk"],
-            ["http://ex%41mple.co%2euk",       "http://example.co%2Euk"],
-            ["http://example/",                ""],
-            ["http://example?",                ""],
-            ["http://example#",                ""],
-            ["http://user@example",            ""],
-            ["http://user:pass@example",       ""],
-            ["http://[example",                ""],
-            ["http://[2bef]",                  ""],
-            ["http://example%2F",              "http://example%2F"],
-            ["HTTP://example",                 "http://example"],
-            ["HTTP://EXAMPLE",                 "http://example"],
-            ["%48%54%54%50://example",         "http://example"],
-            ["http:%2F%2Fexample",             ""],
-            ["https://example",                "https://example"],
-            ["https://example:443",            "https://example"],
-            ["https://example:80",             "https://example:80"],
-            ["ssh://example",                  "ssh://example"],
-            ["ssh://example:22",               "ssh://example:22"],
-            ["ssh://example:22",               "ssh://example",            ['ssh' => 22]],
-            ["SSH://example:22",               "ssh://example",            ['ssh' => 22]],
-            ["ssh://example:22",               "ssh://example",            ['ssh' => "22"]],
-            ["ssh://example:22",               "ssh://example:22",         ['SSH' => "22"]],
-        ];
-    }
-
 
     #[DataProvider('provideCorsNegotiations')]
     public function testNegotiateCors($origin, bool $exp, ?string $allowed = null, ?string $denied = null): void {
