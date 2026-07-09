@@ -25,7 +25,8 @@ class PDODriver extends AbstractPDODriver {
         if (class_exists(\Pdo\Sqlite::class)) {
             $this->db = new \Pdo\Sqlite("sqlite:".$file, "", "", $options);
         } else {
-            $this->db = new \PDO("sqlite:".$file, "", "", $options);
+            // obsolete as of PHP 8.4
+            $this->db = new \PDO("sqlite:".$file, "", "", $options); // @codeCoverageIgnore
         }
     }
 

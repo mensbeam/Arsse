@@ -22,20 +22,6 @@ class ExclusionContext extends AbstractContext {
         }
     }
 
-    public function __get(string $v) {
-        switch ($v) {
-            case "unread":
-            case "starred":
-            case "hidden":
-            case "labelled":
-            case "annotated":
-                $p = $this->parent->$$v;
-                return isset($p) ? !$p : $p;
-            default:
-                return null;
-        }
-    }
-
     /** @codeCoverageIgnore */
     public function __destruct() {
         unset($this->parent);

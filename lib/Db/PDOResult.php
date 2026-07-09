@@ -21,8 +21,8 @@ class PDOResult extends AbstractResult {
     public function lastId(): int {
         try {
             return (int) $this->db->lastInsertId();
-        } catch (\PDOException $e) {
-            return 0;
+        } catch (\PDOException $e) { // @codeCoverageIgnore
+            return 0; // @codeCoverageIgnore
         }
     }
 

@@ -23,7 +23,7 @@ class Result extends \JKingWeb\Arsse\Db\AbstractResult {
         if ($r = @pg_query($this->db, "SELECT lastval()")) {
             return (int) pg_fetch_result($r, 0, 0);
         } else {
-            return 0;
+            return 0; // @codeCoverageIgnore
         }
     }
 

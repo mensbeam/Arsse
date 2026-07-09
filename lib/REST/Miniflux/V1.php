@@ -28,7 +28,7 @@ use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\Psr7\Uri;
 
 class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
-    // NOTE: Commit, build date,  and Go version are synthetic
+    // NOTE: Commit, build date, and Go version are synthetic
     //   data taken from the Arch package for the 2.2.7 release of Miniflux
     public const VERSION = "2.2.7";
     public const COMMIT = "f99dff5238484c5f22b204c464239bec716976f5";
@@ -82,7 +82,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'feed_url'                             => "string",
         'category_id'                          => "integer",
         'crawler'                              => "boolean",
-        'user_agent'                           => "string",
         'scraper_rules'                        => "string",
         'rewrite_rules'                        => "string",
         'keeplist_rules'                       => "string",
@@ -340,7 +339,8 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     public static function respError($message, int $status = 400, array $headers = []): ResponseInterface {
         if ($message instanceof \Exception) {
-            $message = $message->getMessage();
+            // This is used only in the case of unforeseen errors
+            $message = $message->getMessage(); // @codeCoverageIgnore
         } else {
             $message = (array) $message;
             assert(isset(Arsse::$lang) && Arsse::$lang instanceof \JKingWeb\Arsse\Lang, new \Exception("Language database must be initialized before use"));
@@ -1175,7 +1175,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 case 10236:
                     return self::respError("DuplicateFeed", 409);
                 default:
-                    throw $e;
+                    throw $e; // @codeCoverageIgnore
             }
         }
         return HTTP::respJson(['feed_id' => $id], 201);
