@@ -507,7 +507,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     #[DataProvider("provideArticleSelections")]
-    public function testSelectArticles(string $target, string $query, bool $desc, ?Context $c, array $fields): void {
+    public function testSelectArticles(string $target, string $query, bool $asc, ?Context $c, array $fields): void {
         // NOTE: This test does not exercise failure modes, only the
         //   construction of article selection contexts and sorting modes
         $user = "john.doe@example.com";
@@ -517,7 +517,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->subscriptionLookup($user, "http://example.com/")->thenReturn(1);
         \Phake::when(Arsse::$db)->subscriptionLookup($user, "http://example.net/")->thenReturn(2);
         \Phake::when(Arsse::$db)->subscriptionLookup($user, "http://example.org/")->thenReturn(3);
-        $sort = $desc ? ["edition desc"] : ["edition"];
+        $sort = $asc ? ["edition"] : ["edition desc"];
         $this->req("GET", "$target?$query", "", $user);
         if ($c) {
             \Phake::verify(Arsse::$db)->articleList($user, $c, $fields, $sort);
@@ -528,6 +528,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public static function provideArticleSelections(): iterable {
         $c = (new Context)->limit(20);
+        $continuation = base64_encode("s=feed/1&xt=user/-/state/com.google/read&i=2112&r=o&n=200");
         // the stream ID is provided seaparately from the rest of the body because it is part of the URL for one of the routes
         $tests = [
             ["",                                                                            "",                                        false, $c],
@@ -564,13 +565,14 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["",                                                                            "xt=user/-/state/com.google/starred",      false, (clone $c)->not->starred(true)],
             ["",                                                                            "xt=user/-/state/com.google/reading-list", false, null],
             ["",                                                                            "xt=feed/2",                               false, (clone $c)->not->subscription(2)],
+            ["",                                                                            "c=$continuation",                         true,  (clone $c)->limit(200)->subscription(1)->not->unread(false)->editionRange(2112, null)],
         ];
         $allFields = ["id", 'edition', "modified_date", "published_date", "edited_date", "subscription", "subscription_url", "subscription_title", "unread", "starred", "author", "title", "url", "content", "media_url", "media_type"];
         $minFields = ["id", 'edition', "modified_date", "subscription", "subscription_url", "unread", "starred"];
-        foreach ($tests as [$stream, $query, $desc, $context]) {
-            yield ["/stream/items/ids",        "s=$stream&$query", false, $context, $minFields];
-            yield ["/stream/contents",         "s=$stream&$query", $desc, $context, $allFields];
-            yield ["/stream/contents/$stream", $query,             $desc, $context, $allFields];
+        foreach ($tests as $k => [$stream, $query, $desc, $context]) {
+            yield "#$k (IDs)"   => ["/stream/items/ids",        "s=$stream&$query", $desc, $context, $minFields];
+            yield "#$k (query)" => ["/stream/contents",         "s=$stream&$query", $desc, $context, $allFields];
+            yield "#$k (URL)"   => ["/stream/contents/$stream", $query,             $desc, $context, $allFields];
         }
     }
 }

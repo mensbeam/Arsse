@@ -39,7 +39,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         "t",                         // a user-supplied title when subscribing to a feed with the subscript/edit route; when operating on a label/tag, its bare name (not in stream format; this appears to be a FeedHQ extension)
         "i",                         // an item to select when assigning labels/tags or when retriving item contents
         "a",                         // when assigning states or labels/tags, an assignment to add; for the stream/items/count route, appends the modified date of the latest item when set to "true"
-        "r",                         // when assigning states or labels/tags, an assignment to remove; when retrieving stream contents "r=o" specifies reverse order
+        "r",                         // when assigning states or labels/tags, an assignment to remove; when retrieving stream contents "r=o" specifies reverse (ascending) order
         "ts",                        // a cut-off timestamp for the mark-all-as-read route; items modified after this time are not marked as read
         "dest",                      // the "destination stream" i.e. the new name of a label/tag when renaming, in stream format
         "n",                         // number of items per page when retrieving stream contents
@@ -76,7 +76,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/stream/contents/*'      => ["streamContents",     true,  true,  false, true,  ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE, 'includeAllDirectStreamIds' => V::T_BOOL]],
         '/stream/items/contents'  => ["itemContents",       true,  true,  false, true,  ['i' => V::T_STRING + V::M_ARRAY, 'includeAllDirectStreamIds' => V::T_BOOL]],
         '/stream/items/count'     => ["itemCount",          true,  false, false, false, ['s' => V::T_STRING, 'a' => V::T_BOOL]],
-        '/stream/items/ids'       => ["itemIds",            true,  false, false, false, ['s' => V::T_STRING, 'n' => V::T_INT, 'includeAllDirectStreamIds' => V::T_BOOL, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE]],
+        '/stream/items/ids'       => ["itemIds",            true,  false, false, false, ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'includeAllDirectStreamIds' => V::T_BOOL, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE]],
         '/subscribed'             => ["subscriptionValid",  true,  false, false, false, ['s' => V::T_STRING]],
         '/subscription/edit'      => ["subscriptionEdit",   false, true,  true,  false, ['ac' => V::T_STRING, 's' => V::T_STRING, 't' => V::T_STRING, 'a' => V::T_STRING + V::M_ARRAY, 'r' => V::T_STRING + V::M_ARRAY]],
         '/subscription/export'    => ["subscriptionExport", true,  false, false, false, []],
@@ -285,7 +285,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         // parse the string
         foreach (explode("&", $query) as $q) {
             [$k, $v] = array_pad(explode("=", $q, 2), 2, "");
-            $v = urldecode($v);
+            $v = rawurldecode($v);
             if ($k === "output" && $allowFormat && in_array($v, self::FORMAT_MAP)) {
                 // handle the "output" parameter which may dictate the format of our output
                 $out[$k] = $v;
@@ -509,7 +509,6 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $g[] = $cc;
                 $c->orGroups($g);
             } else {
-                var_export([$stream, $include, $exclude, $s]);
                 throw new Exception("InvalidStream", $s);
             }
         }
@@ -1125,11 +1124,11 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * @see https://github.com/bazqux/bazqux-api?tab=readme-ov-file#item-ids
      * @see https://github.com/mihaip/google-reader-api/blob/master/wiki/ApiStreamItemsIds.wiki */
     protected function itemIds(string $target, array $query, array $body, string $format): ResponseInterface {
-        $asc = $query['r'] !== "o";
-        $sort = $asc ? ["edition"] : ["edition desc"];
         $out = [];
         $latest = null;
         if ($context = $this->articleContext($query)) {
+            $asc = $query['r'] === "o";
+            $sort = $asc ? ["edition"] : ["edition desc"];
             $tr = Arsse::$db->begin();
             $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
             $labels = $this->getAllLabels();
@@ -1179,7 +1178,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         $stream = substr($target, strlen("/stream/contents/"));
         if (strlen($stream)) {
             // if there is a stream ID in the URL, stuff its decoded version into the query
-            $query['s'] = urldecode($stream);
+            $query['s'] = rawurldecode($stream);
         }
         // fetch the articles
         $context = $this->articleContext($query);
@@ -1187,7 +1186,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function articleFetch(?Context $context, array $query, bool $allowContinuation): array {
-        $asc = $query['r'] !== "o";
+        $asc = $query['r'] === "o";
         $sort = $asc ? ["edition"] : ["edition desc"];
         $latest = null;
         $out = [];
@@ -1310,10 +1309,9 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function articleContext(array &$query): ?Context {
-        $asc = $query['r'] !== "o";
         // parse the continuation string, if any
         if ($query['c']) {
-            if (!$ct = @base64_decode($query['c'], true)) {
+            if (!($ct = @base64_decode($query['c'], true))) {
                 throw new Exception("InvalidContinuation");
             }
             // replace the query data with the continuation data; a user
@@ -1323,6 +1321,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             //   a new string for the next page later is accurate
             $query = $this->parseQuery($ct, self::CONTINUATION_PARAMS, false, false);
         }
+        // set the sorting direction
+        $asc = $query['r'] === "o";
         // NOTE: streams can be refined by adding an AND condition with 'it'
         //   and/or an AND NOT condition with 'xt'
         if ($c = $this->streamContext($query['s'] ?? "", $query['it'], $query['xt'])) {
