@@ -15,6 +15,7 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
+use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Reader\Reader;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -528,7 +529,11 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public static function provideArticleSelections(): iterable {
         $c = (new Context)->limit(20);
-        $continuation = base64_encode("s=feed/1&xt=user/-/state/com.google/read&i=2112&r=o&n=200");
+        $start = "2026-05-01 00:00:00";
+        $startU = Date::transform($start, "unix", "sql");
+        $end = "2026-05-31 23:59:59";
+        $endU = Date::transform($end, "unix", "sql");
+        $continuation = base64_encode("s=feed/1&xt=user/-/state/com.google/read&i=2112&r=o&n=200&ot=$startU&nt=$endU");
         // the stream ID is provided seaparately from the rest of the body because it is part of the URL for one of the routes
         $tests = [
             ["",                                                                            "",                                        false, $c],
@@ -565,7 +570,10 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["",                                                                            "xt=user/-/state/com.google/starred",      false, (clone $c)->not->starred(true)],
             ["",                                                                            "xt=user/-/state/com.google/reading-list", false, null],
             ["",                                                                            "xt=feed/2",                               false, (clone $c)->not->subscription(2)],
-            ["",                                                                            "c=$continuation",                         true,  (clone $c)->limit(200)->subscription(1)->not->unread(false)->editionRange(2112, null)],
+            ["",                                                                            "ot=$startU",                              false, (clone $c)->modifiedRange($start, null)],
+            ["",                                                                            "nt=$endU",                                false, (clone $c)->modifiedRange(null, $end)],
+            ["",                                                                            "ot=$startU&nt=$endU",                     false, (clone $c)->modifiedRange($start, $end)],
+            ["",                                                                            "c=$continuation",                         true,  (clone $c)->limit(200)->subscription(1)->not->unread(false)->editionRange(2112, null)->modifiedRange($start, $end)],
         ];
         $allFields = ["id", 'edition', "modified_date", "published_date", "edited_date", "subscription", "subscription_url", "subscription_title", "unread", "starred", "author", "title", "url", "content", "media_url", "media_type"];
         $minFields = ["id", 'edition', "modified_date", "subscription", "subscription_url", "unread", "starred"];
