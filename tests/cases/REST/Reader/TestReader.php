@@ -20,6 +20,7 @@ use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Reader\Reader;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Http\Message\ResponseInterface;
 
 #[CoversClass(\JKingWeb\Arsse\REST\Reader\Reader::class)]
@@ -54,6 +55,30 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             Arsse::$user->id = $user;
         }
         return $this->h->dispatch($this->serverRequest($method, "/api/greader.php/reader/api/0".$target, "/api/greader.php/reader/api/0", ['Accept' => "application/json"], [], $data, "application/x-www-form-urlencoded", [], $user));
+    }
+
+    #[TestWith([true])]
+    #[TestWith([false])]
+    public function testIssuePostTokens(bool $existing): void {
+        $user = "john.doe@example.com";
+        $token = "ivSJ+XWZMktLeqgRbw+D0gTAhXlZCUv/FT6VVMfH2iENJP8yfpXK3pGiZ";
+        $bogus = "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ";
+        \Phake::when(Arsse::$db)->tokenList(\Phake::anyParameters())->thenReturn(new Result($existing ? [['id' => $token]] : []));
+        \Phake::when(Arsse::$db)->tokenCreate(\Phake::anyParameters())->thenReturn($bogus);
+        $act = $this->req("GET", "/token", "", $user);
+        \Phake::verify(Arsse::$db)->tokenList($user, "reader.post");
+        if ($existing) {
+            \Phake::verify(Arsse::$db, \Phake::never())->tokenCreate(\Phake::anyParameters());
+            $exp = HTTP::respText("$token\n");
+        } else {
+            $random = "";
+            \Phake::verify(Arsse::$db)->tokenCreate($user, "reader.post", \Phake::capture($random));
+            $exp = HTTP::respText("$random\n");
+            $this->assertNotEquals($token, $random);
+            $this->assertNotEquals($bogus, $random);
+            $this->assertSame(57, strlen($random));
+        }
+        $this->assertMessage($exp, $act);
     }
 
     #[DataProvider("provideMarkings")]
