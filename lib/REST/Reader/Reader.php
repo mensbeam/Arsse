@@ -890,9 +890,9 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             } else {
                 return self::respError(["InvalidStream", $query['s']]);
             }
-            return HTTP::respText("true\n");
+            return HTTP::respText("true");
         } catch (ExceptionInput $e) {
-            return HTTP::respText("false\n");
+            return HTTP::respText("false");
         }
     }
 
@@ -1039,7 +1039,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         Arsse::$obj->get(OPML::class)->import(Arsse::$user->id, $body);
         $newCount = sizeof(iterator_to_array(Arsse::$db->subscriptionList(Arsse::$user->id)));
         $diff = $newCount - $oldCount;
-        return HTTP::respText("OK: $diff\n");
+        return HTTP::respText("OK: $diff");
     }
 
     protected function subscriptionExport(string $target, array $query, array $body, string $format): ResponseInterface {
@@ -1131,7 +1131,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 // TODO: What do we do about errors?
             }
         }
-        return HTTP::respText("$out\n");
+        return HTTP::respText("$out");
     }
 
     /** 

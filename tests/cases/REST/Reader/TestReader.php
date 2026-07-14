@@ -503,6 +503,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["T=12345&s=feed/http://example.com/&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo",              null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["ParameterRequired", "ac"])],
             ["T=12345&ac=edit&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo",                                 null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["ParameterRequired", "s"])],
             ["T=12345&ac=edit&s=42&a=user/-/label/Ook",                                                     null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["InvalidValue", "s", "42"])],
+            ["T=12345&ac=bogus&s=feed/42&a=user/-/label/Ook",                                               null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["InvalidValue", "ac", "bogus"])],
             ["ac=subscribe&s=feed/http://example.com/&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo",         null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["TokenRequired"])],
         ];
     }
@@ -638,5 +639,45 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
         \Phake::verify(Arsse::$db)->subscriptionList($user);
         \Phake::verify(Arsse::$db)->tagSummarize($user);
+    }
+
+    #[DataProvider("provideSubscriptionValidations")]
+    public function testValidateSubscriptions(?string $stream, ?string $lookupIn, ?int $lookupOut, ?int $propertiesIn, ?array $propertiesOut, ResponseInterface $exp): void {
+        $user = "john.doe@example.com";
+        if ($lookupOut !== null) {
+            \Phake::when(Arsse::$db)->subscriptionLookup(\Phake::anyParameters())->thenReturn($lookupOut);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionLookup(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
+        }
+        if ($propertiesOut !== null) {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesGet(\Phake::anyParameters())->thenReturn($propertiesOut);
+        } else {
+            \Phake::when(Arsse::$db)->subscriptionPropertiesGet(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
+        }
+        $act = $this->req("GET", "/subscribed?s=$stream", "", $user);
+        $this->assertMessage($exp, $act);
+        if ($lookupIn !== null) {
+            \Phake::verify(Arsse::$db)->subscriptionLookup($user, $lookupIn);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionLookup(\Phake::anyParameters());
+        }
+        if ($propertiesIn !== null) {
+            \Phake::verify(Arsse::$db)->subscriptionPropertiesGet($user, $propertiesIn);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->subscriptionPropertiesGet(\Phake::anyParameters());
+        }
+    }
+
+    public static function provideSubscriptionValidations(): iterable {
+        $true = HTTP::respText("true");
+        $false = HTTP::respText("false");
+        return [
+            ["feed/1",                  null,                 null, 1,    [],   $true],
+            ["feed/1",                  null,                 null, 1,    null, $false],
+            ["feed/http://example.com", "http://example.com", 2112, null, null, $true],
+            ["feed/http://example.com", "http://example.com", null, null, null, $false],
+            ["feed/bogus",              null,                 null, null, null, self::respError(["InvalidStream", "feed/bogus"])],
+            [null,                      null,                 null, null, null, self::respError(["ParameterRequired", "s"])],
+        ];
     }
 }
