@@ -211,6 +211,9 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         $server = [
             'REQUEST_METHOD' => $method,
             'REQUEST_URI'    => $url,
+            'HTTPS'          => "on",
+            'SERVER_PORT'    => "443",
+            'HTTP_HOST'      => "example.test",
         ];
         if (strlen($type)) {
             $server['HTTP_CONTENT_TYPE'] = $type;

@@ -943,7 +943,10 @@ class Database {
                 s.scrape,
                 case when i.data is not null then i.id end as icon_id,
                 i.url as icon_url,
-                folder, t.top as top_folder, d.name as folder_name, dt.name as top_folder_name,
+                folder,
+                t.top as top_folder,
+                d.name as folder_name,
+                dt.name as top_folder_name,
                 coalesce(s.title, s.feed_title) as title,
                 cast(coalesce((articles - hidden - marked), coalesce(articles,0)) as $integerType) as unread, -- this cast is required for MySQL for unclear reasons
                 cast(coalesce(marked,0) as $integerType) as \"read\", -- this cast is required for MySQL for unclear reasons

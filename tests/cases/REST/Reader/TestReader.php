@@ -583,4 +583,60 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             yield "#$k (URL)"   => ["/stream/contents/$stream", $query,             $desc, $context, $allFields];
         }
     }
+
+    public function testListSubscriptions(): void {
+        $user = "john.doe@example.com";
+        \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result([
+            ['id' => 42,    'title' => 'Ook!', 'url' => "http://ook.net/feed", 'source' => "http://ook.net", 'icon_url' => "http://ook.net/icon"],
+            ['id' => 2112,  'title' => 'Eek!', 'url' => "http://eek.org/feed", 'source' => "http://eek.org", 'icon_url' => "http://eek.org/icon"],
+            ['id' => 31337, 'title' => 'Ack!', 'url' => "http://ack.com/feed", 'source' => "http://ack.com", 'icon_url' => null],
+        ]));
+        \Phake::when(Arsse::$db)->tagSummarize(\Phake::anyParameters())->thenReturn(new Result([
+            ['id' => 1, 'name' => "Foo", 'subscription' => 2112],
+            ['id' => 2, 'name' => "Bar", 'subscription' => 42],
+            ['id' => 2, 'name' => "Bar", 'subscription' => 2112],
+
+        ]));
+        $exp = HTTP::respJson(['subscriptions' => [
+            [
+                'id'    => "feed/42",
+                'title' => "Ook!",
+                'categories' => [
+                    ['id' => 'user/-/label/Bar', 'label' => "Bar"],
+                ],
+                'url' => "http://ook.net/feed",
+                'htmlUrl' => "http://ook.net",
+                'iconUrl' => "http://ook.net/icon",
+                'frss:priority' => "main",
+                'sortid' => "00000001",
+            ],
+            [
+                'id'    => "feed/2112",
+                'title' => "Eek!",
+                'categories' => [
+                    ['id' => 'user/-/label/Foo', 'label' => "Foo"],
+                    ['id' => 'user/-/label/Bar', 'label' => "Bar"],
+                ],
+                'url' => "http://eek.org/feed",
+                'htmlUrl' => "http://eek.org",
+                'iconUrl' => "http://eek.org/icon",
+                'frss:priority' => "main",
+                'sortid' => "00000002",
+            ],
+            [
+                'id'    => "feed/31337",
+                'title' => "Ack!",
+                'categories' => [],
+                'url' => "http://ack.com/feed",
+                'htmlUrl' => "http://ack.com",
+                'iconUrl' => "https://example.test/freshrss/default.png",
+                'frss:priority' => "main",
+                'sortid' => "00000003",
+            ],
+        ]]);
+        $act = $this->req("GET", "/subscription/list", "", $user);
+        $this->assertMessage($exp, $act);
+        \Phake::verify(Arsse::$db)->subscriptionList($user);
+        \Phake::verify(Arsse::$db)->tagSummarize($user);
+    }
 }

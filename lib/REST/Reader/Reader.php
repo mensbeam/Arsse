@@ -19,6 +19,7 @@ use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo as V;
 use JKingWeb\Arsse\Misc\HTTP;
+use JKingWeb\Arsse\Misc\URL;
 use MensBeam\Mime\MimeType;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -126,12 +127,17 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     ];
     protected const ACCEPTED_TYPES_OPML = ["application/xml", "text/xml", "text/x-opml"];
 
+    /** @var ServerRequestInterface */
+    protected $request;
+
     public function __construct() {
     }
 
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         $method = strtoupper($req->getMethod());
         $target = parse_url($req->getRequestTarget(), \PHP_URL_PATH);
+        // save the request in case we need it later 
+        $this->request = $req;
         // handle OPTIONS requests
         if ($method === "OPTIONS") {
             return $this->handleHttpOptions($target);
@@ -178,6 +184,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         } catch (AbstractException $e) {
             // any other Arsse exception should yield 500
             return self::respError($e, 500);
+        } finally {
+            unset($this->request);
         }
         // @codeCoverageIgnoreEnd
     }
@@ -231,6 +239,14 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         } else {
             return HTTP::respEmpty(404);
         }
+    }
+
+    protected function origin(): string {
+        $p = $this->request->getServerParams();
+        $scheme = $p['HTTPS'] ? "https" : "http";
+        $host = $p['HTTP_HOST'] ?? $p['SERVER_NAME'] ?? "";
+        $port = $p['SERVER_PORT'] ?? "";
+        return URL::normalize("$scheme://$host:$port");
     }
 
     /** Extracts body and query input from a request
@@ -832,8 +848,6 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function subscriptionList(string $target, array $query, array $body, string $format): ResponseInterface {
         $out = [];
         $sort = 0;
-        // retrieve the user number
-        $meta = Arsse::$user->propertiesGet(Arsse::$user->id);
         // get the tag list of each subscription
         $tags = [];
         foreach (Arsse::$db->tagSummarize(Arsse::$user->id) as $t) {
@@ -845,18 +859,19 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $f) {
             // NOTE: FreshRSS omits firstitemmsec, and FeedHQ seems to populate it with nonsense, so we feel confident in omitting it
             $out[] = [
-                'title' => $f['title'],
-                'htmlUrl' => $f['source'],
-                'sortid' => $this->makeSortId(++$sort),
                 'id' => "feed/{$f['id']}",
-                'url' => $f['url'], // NOTE: This appears to be a FreshRSS extension and is expected by Newsflash
-                'categories' => array_map(function($t) use ($meta) {
+                'title' => $f['title'],
+                'categories' => array_map(function($t) {
                     return [
-                        'id' => "user/{$meta['num']}/$t",
+                        'id' => "user/-/label/$t",
                         'label' => $t,
                     ];
                 }, $tags[$f['id']] ?? []),
-                'iconUrl' => $f['icon_url'] ?? "", // this appears to be a common extension
+                'url' => $f['url'], // NOTE: This appears to be a FreshRSS extension and is expected by Newsflash
+                'htmlUrl' => $f['source'],
+                'iconUrl' => $f['icon_url'] ?? $this->origin()."freshrss/default.png", // this appears to be a common extension; the fallback value points to an image approximating FreshRSS' generic icon
+                'frss:priority' => "main",
+                'sortid' => $this->makeSortId(++$sort),
             ];
         }
         return $this->respond($format, ['subscriptions' => $out]);
