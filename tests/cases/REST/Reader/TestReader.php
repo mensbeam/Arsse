@@ -15,6 +15,8 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\ExceptionInput;
 use JKingWeb\Arsse\Db\Transaction;
 use JKingWeb\Arsse\Feed\Exception as FeedException;
+use JKingWeb\Arsse\ImportExport\Exception as ImportException;
+use JKingWeb\Arsse\ImportExport\OPML;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Reader\Reader;
@@ -24,6 +26,7 @@ use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Http\Message\ResponseInterface;
 
 #[CoversClass(\JKingWeb\Arsse\REST\Reader\Reader::class)]
+#[CoversClass(\JKingWeb\Arsse\REST\Reader\Exception::class)]
 class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
     use \JKingWeb\Arsse\REST\Reader\Common;
 
@@ -704,5 +707,34 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["feed/bogus",              null,                 null, null, null, self::respError(["InvalidStream", "feed/bogus"])],
             [null,                      null,                 null, null, null, self::respError(["ParameterRequired", "s"])],
         ];
+    }
+
+    #[TestWith([true])]
+    #[TestWith([false])]
+    public function testImport(bool $success): void {
+        $user = "john.doe@example.com";
+        $opml = \Phake::mock(OPML::class);
+        \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);
+        if ($success) {
+            \Phake::when($opml)->import(\Phake::anyParameters())->thenReturn(true);
+            $exp = HTTP::respText("OK");
+        } else {
+            \Phake::when($opml)->import(\Phake::anyParameters())->thenThrow(new ImportException("invalidSyntax"));
+            $exp = self::respError(new ImportException("invalidSyntax"));
+        }
+        $act = $this->req("POST", "/subscription/import", "IMPORT DATA", $user);
+        $this->assertMessage($exp, $act);
+        \Phake::verify($opml)->import($user, "IMPORT DATA");
+    }
+
+    public function testExport(): void {
+        $user = "john.doe@example.com";
+        $opml = \Phake::mock(OPML::class);
+        \Phake::when(Arsse::$obj)->get(OPML::class)->thenReturn($opml);
+        \Phake::when($opml)->export(\Phake::anyParameters())->thenReturn("<EXPORT_DATA/>");
+        $exp = HTTP::respText("<EXPORT_DATA/>", 200, ['Content-Type' => "application/xml"]);
+        $act = $this->req("GET", "/subscription/export", "", $user);
+        $this->assertMessage($exp, $act);
+        \Phake::verify($opml)->export($user);
     }
 }

@@ -1035,11 +1035,17 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function subscriptionImport(string $target, array $query, string $body, string $format): ResponseInterface {
-        $oldCount = sizeof(iterator_to_array(Arsse::$db->subscriptionList(Arsse::$user->id)));
-        Arsse::$obj->get(OPML::class)->import(Arsse::$user->id, $body);
-        $newCount = sizeof(iterator_to_array(Arsse::$db->subscriptionList(Arsse::$user->id)));
-        $diff = $newCount - $oldCount;
-        return HTTP::respText("OK: $diff");
+        // NOTE: FeedHQ would return the number of imported feeds along with
+        //   the success signal (e.g. "OK: 12"), but FreshRSS does not, and
+        //   some FreshRSS clients rely more on the "OK" text than the 200
+        //   success code for detecting success, so we omit the difference in
+        //   case it causes problems.
+        try {
+            Arsse::$obj->get(OPML::class)->import(Arsse::$user->id, $body);
+        } catch (AbstractException $e) {
+            return self::respError($e);
+        }
+        return HTTP::respText("OK");
     }
 
     protected function subscriptionExport(string $target, array $query, array $body, string $format): ResponseInterface {
