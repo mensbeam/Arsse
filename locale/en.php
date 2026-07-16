@@ -49,7 +49,6 @@ return [
     'API.Reader.Error.TokenRequired'                                       => 'A POST token is required to perform this operation.',
     'API.Reader.Error.InvalidValue'                                        => 'The supplied value "{1}" for the "{0}" field is not valid.',
     'API.Reader.Error.InvalidStream'                                       => 'The supplied stream ID "{0}" is not valid.',
-    'API.Reader.Error.InvalidTimestampMicro'                               => 'The supplied timestamp "{0}" is not valid. It must be at least seven digits.',
     'API.Reader.Error.ParameterRequired'                                   => 'This operation requires the "{0}" parameter.',
     'API.Reader.Error.ParameterRequiredOneOfTwo'                           => 'This operation requires either the "{0}" or the "{1}" parameter.',
     'API.Reader.Error.DuplicateSubscription'                               => 'A subscription for "{url}" already exists.',

@@ -827,10 +827,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             if (isset($body['ts'])) {
                 // the timestamp must be at least seven digits (the last six digits are discarded)
                 preg_match('/^(\d+)\d{6}$/', $body['ts'], $m);
-                if (!$m) {
-                    return self::respError(["InvalidTimestampMicro", $body['ts']]);
-                }
-                $c->modifiedRange(null, (int) $m[1]);
+                $c->modifiedRange(null, (int) ($m[1] ?? 0));
             }
             try {
                 Arsse::$db->articleMark(Arsse::$user->id, ['read' => true], $c);

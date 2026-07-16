@@ -137,6 +137,38 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         );
     }
 
+    #[DataProvider("provideStreamMarkings")]
+    public function testMarkStreamsAsRead(string $data, ?Context $context, bool $success, ResponseInterface $exp): void {
+        $user = "john.doe@example.com";
+        if ($success) {
+            \Phake::when(Arsse::$db)->articleMark(\Phake::anyParameters())->thenReturn(1);
+        } else {
+            \Phake::when(Arsse::$db)->articleMark(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
+        }
+        $act = $this->req("POST", "/mark-all-as-read", $data, $user);
+        $this->assertMessage($exp, $act);
+        if ($context) {
+            \Phake::verify(Arsse::$db)->articleMark($user, ['read' => true], $context);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->articleMark(\Phake::anyParameters());
+        }
+    }
+
+    public static function provideStreamMarkings(): iterable {
+        self::clearData(); // initializes string formatter
+        $success = HTTP::respText("OK");
+        return [
+            ["T=12345&s=feed/1&ts=0000000",          (new Context)->subscription(1)->modifiedRange(null, "1970-01-01T00:00:00"), true,   $success],
+            ["T=12345&s=feed/1&ts=0",                (new Context)->subscription(1)->modifiedRange(null, "1970-01-01T00:00:00"), true,   $success],
+            ["T=12345&s=feed/1&ts=1784195407000000", (new Context)->subscription(1)->modifiedRange(null, "2026-07-16T09:50:07"), true,   $success],
+            ["T=12345&s=feed/1&ts=1784195407",       (new Context)->subscription(1)->modifiedRange(null, "1970-01-01T00:29:44"), true,   $success],
+            ["T=12345&s=feed/1",                     (new Context)->subscription(1),                                             true,   $success],
+            ["T=12345&s=feed/1&ts=1784195407",       (new Context)->subscription(1)->modifiedRange(null, "1970-01-01T00:29:44"), false,  self::respError(new ExceptionInput("subjectMissing"))],
+            ["T=12345&ts=1784195407000000",          null,                                                                       true,   self::respError(["ParameterRequired", "s"])],
+            ["s=feed/1&ts=1784195407000000",         null,                                                                       true,   self::respError("TokenRequired")],
+        ];
+    }
+
     #[DataProvider("provideLabellings")]
     public function testModifyArticleLabels(string $body, ?array $data, ?string $addLabel, ResponseInterface $exp): void {
         $user = "john.doe@example.com";
