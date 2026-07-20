@@ -31,7 +31,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
     use \JKingWeb\Arsse\REST\Reader\Common;
 
     protected const NOW = "2020-12-21T23:09:17.189065Z";
-    /** @var Reader|\Phake\IMock|null */
+    /** @var Reader|\PHPUnit\Framework\MockObject\MockObject|null */
     protected $h = null;
 
     public function setUp(): void {
@@ -643,6 +643,94 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             yield "#$k (query)" => ["/stream/contents",         "s=$stream&$query", $desc, $context, $allFields];
             yield "#$k (URL)"   => ["/stream/contents/$stream", $query,             $desc, $context, $allFields];
         }
+    }
+
+    public function testListArticles(): void {
+        $user = "john.doe@example.com";
+        $articles = [
+            ['id' => 1,  'edition' => 65, 'modified_date' => "2001-01-01 00:00:00", 'published_date' => "2000-01-01 00:00:00", 'edited_date' => "2000-01-02 00:00:00", 'subscription' => 1,  'subscription_url' => "http://example.com/", 'subscription_title' => "Sub 1",  'unread' => 1, 'starred' => 0, 'author' => "John Doe", 'title' => "Edition 65", 'url' => "http://example.com/65", 'content' => "Content 65", 'media_url' => null,                       'media_type' => null],
+            ['id' => 11, 'edition' => 32, 'modified_date' => "2001-01-05 00:00:00", 'published_date' => "2000-01-04 00:00:00", 'edited_date' => "2000-01-04 00:00:00", 'subscription' => 12, 'subscription_url' => "http://example.org/", 'subscription_title' => "Sub 12", 'unread' => 0, 'starred' => 1, 'author' => null,       'title' => "Edition 32", 'url' => "http://example.com/32", 'content' => "Content 32", 'media_url' => "http://example.com/audio", 'media_type' => "audio/vorbis"],
+        ];
+        \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result($articles));
+        \Phake::when(Arsse::$db)->tagSummarize(\Phake::anyParameters())->thenReturn(new Result([
+            ['name' => "Ook",  'subscription' => 1],
+            ['name' => "Dupe", 'subscription' => 12],
+        ]));
+        \Phake::when(Arsse::$db)->articleLabelsGet(\Phake::anyParameters())->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleLabelsGet($user, 1, true)->thenReturn(["Foo", "Bar"]);
+        \Phake::when(Arsse::$db)->articleLabelsGet($user, 11, true)->thenReturn(["Dupe"]);
+        \Phake::when(Arsse::$db)->articleCategoriesGet(\Phake::anyParameters())->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleCategoriesGet($user, 1)->thenReturn(["Alfa", "Bravo"]);
+        $act = $this->req("GET", "/stream/contents/", "", $user);
+        $exp = HTTP::respJson([
+            'id' => "user/-/state/com.google/reading-list",
+            'updated' => Date::transform(self::NOW, "unix"),
+            'items' => [
+                [
+                    'id' => "tag:google.com,2005:reader/item/0000000000000001",
+                    'crawlTimeMsec' => Date::transform($articles[0]['modified_date'], "unix")."000",
+                    'timestampUsec' => Date::transform($articles[0]['modified_date'], "unix")."000000",
+                    'published'     => Date::transform($articles[0]['published_date'], "unix"),
+                    'updated'       => Date::transform($articles[0]['edited_date'], "unix"),
+                    'title'         => $articles[0]['title'],
+                    'canonical'     => [['href' => $articles[0]['url']]],
+                    'alternate'     => [['href' => $articles[0]['url'], 'type' => "text/html"]],
+                    'categories'    => [
+                        "user/-/state/com.google/reading-list",
+                        "user/-/state/org.freshrss/main",
+                        "user/-/state/com.google/unread",
+                        "user/-/state/com.google/kept-unread",
+                        "user/-/label/Ook",
+                        "user/-/label/Foo",
+                        "user/-/label/Bar",
+                        "Alfa",
+                        "Bravo",
+                    ],
+                    'origin'       => [
+                        'streamId' => "feed/1",
+                        'htmlUrl'  => $articles[0]['subscription_url'],
+                        'title'    => $articles[0]['subscription_title'],
+                    ],
+                    'summary'      => ['content' => $articles[0]['content']],
+                    'enclosure'    => [],
+                    'author'       => $articles[0]['author'],
+                    'linkingUsers'  => [],
+                    'comments'      => [],
+                    'commentsNum'   => -1,
+                    'annotations'   => [],
+                ],
+                [
+                    'id' => "tag:google.com,2005:reader/item/000000000000000b",
+                    'crawlTimeMsec' => Date::transform($articles[1]['modified_date'], "unix")."000",
+                    'timestampUsec' => Date::transform($articles[1]['modified_date'], "unix")."000000",
+                    'published'     => Date::transform($articles[1]['published_date'], "unix"),
+                    'updated'       => Date::transform($articles[1]['edited_date'], "unix"),
+                    'title'         => $articles[1]['title'],
+                    'canonical'     => [['href' => $articles[1]['url']]],
+                    'alternate'     => [['href' => $articles[1]['url'], 'type' => "text/html"]],
+                    'categories'    => [
+                        "user/-/state/com.google/reading-list",
+                        "user/-/state/org.freshrss/main",
+                        "user/-/state/com.google/read",
+                        "user/-/state/com.google/starred",
+                        "user/-/label/Dupe",
+                    ],
+                    'origin'       => [
+                        'streamId' => "feed/12",
+                        'htmlUrl'  => $articles[1]['subscription_url'],
+                        'title'    => $articles[1]['subscription_title'],
+                    ],
+                    'summary'      => ['content' => $articles[1]['content']],
+                    'enclosure'    => [['href' => $articles[1]['media_url'], 'type' => $articles[1]['media_type']]],
+                    'author'       => $articles[1]['author'],
+                    'linkingUsers'  => [],
+                    'comments'      => [],
+                    'commentsNum'   => -1,
+                    'annotations'   => [],
+                ],
+            ],
+        ]);
+        $this->assertMessage($exp, $act);
     }
 
     public function testListSubscriptions(): void {
