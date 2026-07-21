@@ -733,6 +733,71 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
+    public function testListArticlesWithNoEntries(): void {
+        $user = "john.doe@example.com";
+        $act = $this->req("GET", "/stream/contents/user/-/state/com.google/broadcast", "", $user);
+        $exp = HTTP::respJson([
+            'id' => "user/-/state/com.google/reading-list",
+            'updated' => Date::transform(self::NOW, "unix"),
+            'items' => [],
+        ]);
+        $this->assertMessage($exp, $act);
+    }
+
+    public function testListArticlesWithBadStream(): void {
+        $user = "john.doe@example.com";
+        $act = $this->req("GET", "/stream/contents/bogus", "", $user);
+        $exp = HTTP::respText('The supplied stream ID "bogus" is not valid.', 400);
+        $this->assertMessage($exp, $act);
+    }
+
+    public function testListArticlesWithBadContinuation(): void {
+        $user = "john.doe@example.com";
+        $act = $this->req("GET", "/stream/contents/?c=!", "", $user);
+        $exp = HTTP::respText('The supplied continuation string is invalid.', 400);
+        $this->assertMessage($exp, $act);
+    }
+
+    #[DataProvider("provideContinuations")]
+    public function testComputeContinuations(string $query, int $count, int $min, int $max, string $exp): void {
+        $minUsed = false;
+        $maxUsed = false;
+        $rand = new \Random\Randomizer(new \Random\Engine\PcgOneseq128XslRr64);
+        $articles = array_fill(0, $count, ['id' => 1, 'edition' => null, 'modified_date' => "2000-01-01 00:00:00", 'published_date' => "2000-01-01 00:00:00", 'edited_date' => "2000-01-01 00:00:00", 'subscription' => 1, 'subscription_url' => "http://example.com/", 'subscription_title' => "Example", 'unread' => 0, 'starred' => 0, 'author' => "Example", 'title' => "Example", 'url' => "http://example.com/", 'content' => "Example", 'media_url' => null, 'media_type' => null]);
+        for ($a = 0; $a < $count; $a++) {
+            if (!$minUsed && $rand->getInt(0, 1)) {
+                $n = $min;
+                $minUsed = true;
+            } elseif (!$maxUsed && $rand->getInt(0, 1)) {
+                $n = $max;
+                $maxUsed = true;
+            } else {
+                $n = $rand->getInt($min, $max);
+            }
+            $articles[$a]['edition'] = $n;
+        }
+        if (!$maxUsed) {
+            $articles[0]['edition'] = $max;
+        }
+        if (!$minUsed) {
+            $articles[sizeof($articles) - 1]['edition'] = $min;
+        }
+        \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result($articles));
+        \Phake::when(Arsse::$db)->tagSummarize(\Phake::anyParameters())->thenReturn(new Result([]));
+        \Phake::when(Arsse::$db)->articleLabelsGet(\Phake::anyParameters())->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleCategoriesGet(\Phake::anyParameters())->thenReturn([]);
+        $act = json_decode($this->req("GET", "/stream/contents/?$query", "", "john.doe@example.com")->getBody()->getContents(), true)['continuation'] ?? "";
+        $this->assertSame($exp, base64_decode($act));
+    }
+
+    public static function provideContinuations(): iterable {
+        return [
+            ["ot=100&nt=200", 20, 100, 200, "nt=200&ot=100&i=99"],
+            ["n=20&r=d",      20, 100, 200, "i=99"],
+            ["n=25&r=o",      25, 100, 200, "n=25&r=o&i=201"],
+        ];
+    }
+
     public function testListSubscriptions(): void {
         $user = "john.doe@example.com";
         \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result([

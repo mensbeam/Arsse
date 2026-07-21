@@ -45,8 +45,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         "dest",                      // the "destination stream" i.e. the new name of a label/tag when renaming, in stream format
         "n",                         // number of items per page when retrieving stream contents
         "c",                         // "continuation" string for pagination when retrieving stream contents; we implement this as a base64-encoded query string for retrieving the next page starting with a given edition ID
-        "xt",                        // an "exclusion target" when retrieving stream contents i.e. s=x&xt=y means "x AND NOT y"
-        "it",                        // an "inclusion target" when retrieving stream contents i.e. s=x&it=y means "x AND y"
+        "xt",                        // an "exclusion term" when retrieving stream contents i.e. s=x&xt=y means "x AND NOT y"
+        "it",                        // an "inclusion term" when retrieving stream contents i.e. s=x&it=y means "x AND y"
         "ot",                        // oldest timestamp to select when retrieving stream contents; we use the modified date
         "nt",                        // newest timestamp to select when retrieving stream contents; we use the modified date
         "ac",                        // an action for the subscription/edit route, either "subscribe", "unsubscribe", or "edit"
@@ -1254,8 +1254,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'commentsNum'   => -1,
                     'annotations'   => [],
                 ];
-                // note the largest edition ID for continuation computation
-                $latest = $asc ? max($latest, (int) $i['edition']) : min($latest, (int) $i['edition']);
+                // note the smallest/largest editon ID (depending on sort direction) for continuation computation
+                $latest = $latest ? ($asc ? max($latest, (int) $i['edition']) : min($latest, (int) $i['edition'])) : $i['edition'];
             }
         }
         $out = [
@@ -1341,9 +1341,9 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         //   this modification has to be made somewhere (context ranges are
         //   inclusive), so we make it here
         if ($query['r']) {
-            $anchor--;
-        } else {
             $anchor++;
+        } else {
+            $anchor--;
         }
         // sort by key for consistency
         ksort($query);
