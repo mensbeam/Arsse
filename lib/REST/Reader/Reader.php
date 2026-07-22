@@ -129,9 +129,6 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     /** @var ServerRequestInterface */
     protected $request;
 
-    public function __construct() {
-    }
-
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         $method = strtoupper($req->getMethod());
         $target = parse_url($req->getRequestTarget(), \PHP_URL_PATH);

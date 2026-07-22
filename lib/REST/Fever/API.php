@@ -52,9 +52,6 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'unread_recently_read' => V::T_BOOL,
     ];
 
-    public function __construct() {
-    }
-
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         $G = $this->normalizeInputGet($req->getQueryParams() ?? []);
         $P = $this->normalizeInputPost($req->getParsedBody() ?? []);

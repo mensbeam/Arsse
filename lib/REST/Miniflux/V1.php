@@ -334,9 +334,6 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         ],
     ];
 
-    public function __construct() {
-    }
-
     public static function respError($message, int $status = 400, array $headers = []): ResponseInterface {
         if ($message instanceof \Exception) {
             // This is used only in the case of unforeseen errors

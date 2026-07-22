@@ -12,9 +12,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class Status extends \JKingWeb\Arsse\REST\AbstractHandler {
-    public function __construct() {
-    }
-
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         $target = parse_url($req->getRequestTarget())['path'] ?? "";
         if (!in_array($target, ["/version", "/healthcheck"])) {

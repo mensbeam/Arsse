@@ -11,6 +11,5 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 interface Handler {
-    public function __construct();
     public function dispatch(ServerRequestInterface $req): ResponseInterface;
 }

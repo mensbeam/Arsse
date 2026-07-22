@@ -14,8 +14,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class Icon extends \JKingWeb\Arsse\REST\AbstractHandler {
-    public function __construct() {
-    }
 
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         if ($req->getAttribute("authenticated", false)) {

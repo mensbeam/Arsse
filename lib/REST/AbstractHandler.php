@@ -13,7 +13,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 abstract class AbstractHandler implements Handler {
-    abstract public function __construct();
     abstract public function dispatch(ServerRequestInterface $req): ResponseInterface;
 
     protected function now(): \DateTimeImmutable {

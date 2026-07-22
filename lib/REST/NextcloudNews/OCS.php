@@ -98,9 +98,6 @@ class OCS extends \JKingWeb\Arsse\REST\AbstractHandler {
         ],
     ];
 
-    public function __construct() {
-    }
-
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         // respond to OPTIONS rquests
         if ($req->getMethod() === "OPTIONS") {

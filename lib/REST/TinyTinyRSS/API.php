@@ -91,9 +91,6 @@ class API extends \JKingWeb\Arsse\REST\AbstractHandler {
         'content' => ['error' => "MALFORMED_INPUT"],
     ];
 
-    public function __construct() {
-    }
-
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         if (!preg_match("<^(?:/(?:index\.php)?)?$>D", $req->getRequestTarget())) {
             // reject paths other than the index

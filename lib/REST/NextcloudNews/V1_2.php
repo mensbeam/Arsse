@@ -73,9 +73,6 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/user'                  => ['GET' => "userStatus"],
     ];
 
-    public function __construct() {
-    }
-
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         // get the request path only; this is assumed to already be normalized
         $target = parse_url($req->getRequestTarget())['path'] ?? "";
