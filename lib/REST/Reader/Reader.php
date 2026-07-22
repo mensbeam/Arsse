@@ -132,11 +132,10 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         $method = strtoupper($req->getMethod());
         $target = parse_url($req->getRequestTarget(), \PHP_URL_PATH);
-        // save the request in case we need it later 
-        $this->request = $req;
-        // handle OPTIONS requests
-        if ($method === "OPTIONS") {
-            return $this->handleHttpOptions($target);
+        // determine which handler to call
+        $func = $this->chooseCall($target, $method);
+        if ($func instanceof ResponseInterface) {
+            return $func;
         }
         // check authentication
         if ($this->shouldChallenge($req)) {
@@ -144,13 +143,10 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         } elseif (!$this->authenticate($req)) {
             return $this->challenge(self::respError("401", 401));
         }
-        // determine which handler to call
-        $func = $this->chooseCall($target, $method);
-        if ($func instanceof ResponseInterface) {
-            return $func;
-        }
-        [$func, $params, $reqT, $atomAllowed] = $func;
+        // save the request in case we need it later 
+        $this->request = $req;
         // parse body and query arguments (the body is not parsed for OPML import, only read from the request object)
+        [$func, $params, $reqT, $atomAllowed] = $func;
         $bodyMode = $method === "POST" ? ($func !== "subscriptionImport" ? self::BODY_PARSE : self::BODY_READ) : self::BODY_IGNORE;
         [$format, $query, $body, $token] = $this->parseInput($req, $params, $bodyMode);
         // perform content negotiation if a format is not specified in the query
@@ -208,30 +204,15 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                     if ($POST) {
                         $allowed[] = "POST";
                     }
-                    return HTTP::respEmpty(405, ['Allow' => implode(", ", $allowed)]);
+                    if ($method === "OPTIONS") {
+                        return HTTP::respEmpty(204, [
+                            'Allow' => implode(", ", $allowed),
+                            'Accept' => implode(", ", $url === "/subscription/import" ? self::ACCEPTED_TYPES_OPML : ["x-www-form-urlencoded"]),
+                        ]);
+                    } else {
+                        return HTTP::respEmpty(405, ['Allow' => implode(", ", $allowed)]);
+                    }
             }
-        } else {
-            return HTTP::respEmpty(404);
-        }
-    }
-
-    protected function handleHttpOptions(string $url): ResponseInterface {
-        if (strpos($url, "/stream/contents/") === 0) {
-            $url = "/stream/contents/*";
-        }
-        if (isset(self::CALLS[$url])) {
-            [$func, $GET, $POST, $params] = self::CALLS[$url];
-            $allowed = [];
-            if ($GET) {
-                $allowed[] = "GET";
-            }
-            if ($POST) {
-                $allowed[] = "POST";
-            }
-            return HTTP::respEmpty(204, [
-                'Allow' => implode(", ", $allowed),
-                'Accept' => implode(", ", $url === "/subscription/import" ? self::ACCEPTED_TYPES_OPML : ["x-www-form-urlencoded"]),
-            ]);
         } else {
             return HTTP::respEmpty(404);
         }

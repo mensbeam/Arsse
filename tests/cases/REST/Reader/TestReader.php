@@ -60,6 +60,53 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         return $this->h->dispatch($this->serverRequest($method, "/api/greader.php/reader/api/0".$target, "/api/greader.php/reader/api/0", ['Accept' => "application/json"], [], $data, "application/x-www-form-urlencoded", [], $user));
     }
 
+    #[DataProvider("provideInvalidCalls")]
+    public function testMakeInvalidCalls(string $url, string $method, ResponseInterface $exp): void {
+        // make sure any valid calls don't actually proceed past authentication
+        $this->h->method("authenticate")->willReturn(false);
+        $this->h->method("shouldChallenge")->willReturn(true);
+        // perform the test
+        $act = $this->req($method, $url);
+        $this->assertMessage($exp, $act);
+    }
+
+    public static function provideInvalidCalls(): iterable {
+        $r404 = HTTP::respEmpty(404);
+        $r405G = HTTP::respEmpty(405, ['Allow' => "GET"]);
+        $r405P = HTTP::respEmpty(405, ['Allow' => "POST"]);
+        $r405B = HTTP::respEmpty(405, ['Allow' => "GET, POST"]);
+        return [
+            ["/bogus",                 "GET", $r404],
+            ["/user-info",             "ACK", $r405G],
+            ["/edit-tag",              "ACK", $r405P],
+            ["/stream/items/contents", "ACK", $r405B],
+        ];
+    }
+
+    #[DataProvider("provideOptionCalls")]
+    public function testMakeOptionCalls(string $url, ResponseInterface $exp): void {
+        // OPTIONS requests should succeed regardless of authentication
+        $this->h->method("authenticate")->willReturn(false);
+        $this->h->method("shouldChallenge")->willReturn(true);
+        // perform the test
+        $act = $this->req("OPTIONS", $url);
+        $this->assertMessage($exp, $act);
+    }
+
+    public static function provideOptionCalls(): iterable {
+        $r404 = HTTP::respEmpty(404);
+        $r405G = HTTP::respEmpty(204, ['Allow' => "GET",       'Accept' => "x-www-form-urlencoded"]);
+        $r405P = HTTP::respEmpty(204, ['Allow' => "POST",      'Accept' => "x-www-form-urlencoded"]);
+        $r405B = HTTP::respEmpty(204, ['Allow' => "GET, POST", 'Accept' => "x-www-form-urlencoded"]);
+        return [
+            ["/bogus",                 $r404],
+            ["/user-info",             $r405G],
+            ["/edit-tag",              $r405P],
+            ["/stream/items/contents", $r405B],
+            ["/subscription/import",   HTTP::respEmpty(204, ['Allow' => "POST", 'Accept' => "application/xml, text/xml, text/x-opml"])],
+        ];
+    }
+
     #[TestWith([true])]
     #[TestWith([false])]
     public function testIssuePostTokens(bool $existing): void {
