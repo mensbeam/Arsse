@@ -637,7 +637,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["",                                                                            "c=$continuation",                         true,  (clone $c)->limit(200)->subscription(1)->not->unread(false)->editionRange(2112, null)->modifiedRange($start, $end)],
         ];
         $allFields = ["id", 'edition', "modified_date", "published_date", "edited_date", "subscription", "subscription_url", "subscription_title", "unread", "starred", "author", "title", "url", "content", "media_url", "media_type"];
-        $minFields = ["id", 'edition', "modified_date", "subscription", "subscription_url", "unread", "starred"];
+        $minFields = ["id", 'edition', "modified_date"];
         foreach ($tests as $k => [$stream, $query, $desc, $context]) {
             yield "#$k (IDs)"   => ["/stream/items/ids",        "s=$stream&$query", $desc, $context, $minFields];
             yield "#$k (query)" => ["/stream/contents",         "s=$stream&$query", $desc, $context, $allFields];
@@ -758,6 +758,52 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
+    public function testListItemIdentifiers(): void {
+        $user = "john.doe@example.com";
+        $articles = [
+            ['id' => 1,  'edition' => 65, 'modified_date' => "2001-01-01 00:00:00"],
+            ['id' => 11, 'edition' => 32, 'modified_date' => "2001-01-05 00:00:00"],
+        ];
+        \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result($articles));
+        $act = $this->req("GET", "/stream/items/ids", "", $user);
+        $exp = HTTP::respJson([
+            'itemRefs' => [
+                [
+                    'id' => "1",
+                    'timestampUsec' => Date::transform($articles[0]['modified_date'], "unix")."000000",
+                ],
+                [
+                    'id' => "11",
+                    'timestampUsec' => Date::transform($articles[1]['modified_date'], "unix")."000000",
+                ],
+            ],
+        ]);
+        $this->assertMessage($exp, $act);
+    }
+
+    public function testListItemIdentifiersWithNoEntries(): void {
+        $user = "john.doe@example.com";
+        $act = $this->req("GET", "/stream/items/ids?s=user/-/state/com.google/broadcast", "", $user);
+        $exp = HTTP::respJson([
+            'itemRefs' => [],
+        ]);
+        $this->assertMessage($exp, $act);
+    }
+
+    public function testListItemIdentifiersWithBadStream(): void {
+        $user = "john.doe@example.com";
+        $act = $this->req("GET", "/stream/items/ids?s=bogus", "", $user);
+        $exp = HTTP::respText('The supplied stream ID "bogus" is not valid.', 400);
+        $this->assertMessage($exp, $act);
+    }
+
+    public function testListItemIdentifiersWithBadContinuation(): void {
+        $user = "john.doe@example.com";
+        $act = $this->req("GET", "/stream/items/ids?c=!", "", $user);
+        $exp = HTTP::respText('The supplied continuation string is invalid.', 400);
+        $this->assertMessage($exp, $act);
+    }
+
     #[DataProvider("provideContinuations")]
     public function testComputeContinuations(string $query, int $count, int $min, int $max, string $exp): void {
         $minUsed = false;
@@ -786,15 +832,21 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->tagSummarize(\Phake::anyParameters())->thenReturn(new Result([]));
         \Phake::when(Arsse::$db)->articleLabelsGet(\Phake::anyParameters())->thenReturn([]);
         \Phake::when(Arsse::$db)->articleCategoriesGet(\Phake::anyParameters())->thenReturn([]);
-        $act = json_decode($this->req("GET", "/stream/contents/?$query", "", "john.doe@example.com")->getBody()->getContents(), true)['continuation'] ?? "";
+        $act = json_decode($this->req("GET", $query, "", "john.doe@example.com")->getBody()->getContents(), true)['continuation'] ?? "";
         $this->assertSame($exp, base64_decode($act));
     }
 
     public static function provideContinuations(): iterable {
+        $c = base64_encode("s=feed/42&i=5000");
         return [
-            ["ot=100&nt=200", 20, 100, 200, "nt=200&ot=100&i=99"],
-            ["n=20&r=d",      20, 100, 200, "i=99"],
-            ["n=25&r=o",      25, 100, 200, "n=25&r=o&i=201"],
+            ["/stream/contents/?ot=100&nt=200", 20, 100,  200,  "nt=200&ot=100&i=99"],
+            ["/stream/contents/?n=20&r=d",      20, 100,  200,  "i=99"],
+            ["/stream/contents/?n=25&r=o",      25, 100,  200,  "n=25&r=o&i=201"],
+            ["/stream/contents/?c=$c&n=10&r=o", 20, 2113, 4224, "s=feed%2F42&i=2112"],
+            ["/stream/items/ids?ot=100&nt=200", 20, 100,  200,  "nt=200&ot=100&i=99"],
+            ["/stream/items/ids?n=20&r=d",      20, 100,  200,  "i=99"],
+            ["/stream/items/ids?n=25&r=o",      25, 100,  200,  "n=25&r=o&i=201"],
+            ["/stream/items/ids?c=$c&n=10&r=o", 20, 2113, 4224, "s=feed%2F42&i=2112"],
         ];
     }
 

@@ -1142,18 +1142,18 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * @see https://github.com/mihaip/google-reader-api/blob/master/wiki/ApiStreamItemsIds.wiki */
     protected function itemIds(string $target, array $query, array $body, string $format): ResponseInterface {
         $out = [];
-        $latest = null;
+        $latest = 0;
         if ($context = $this->articleContext($query)) {
             $asc = $query['r'] === "o";
             $sort = $asc ? ["edition"] : ["edition desc"];
             $tr = Arsse::$db->begin();
-            foreach (Arsse::$db->articleList(Arsse::$user->id, $context, ["id", 'edition', "modified_date", "subscription", "subscription_url", "unread", "starred"], $sort) as $i) {
+            foreach (Arsse::$db->articleList(Arsse::$user->id, $context, ["id", 'edition', "modified_date"], $sort) as $i) {
                 // prepare the entry
                 $out[] = [
                     'id' => (string) $i['id'], // FreshRSS returns the ID as a string, so we do the same
                     'timestampUsec' => Date::transform($i['modified_date'], "unix", "sql")."000000",
                 ];
-                $latest = $asc ? max($latest, (int) $i['edition']) : min($latest, (int) $i['edition']);
+                $latest = $latest ? ($asc ? max($latest, (int) $i['edition']) : min($latest, (int) $i['edition'])) : $i['edition'];
             }
         }
         $out = ['itemRefs' => $out];
