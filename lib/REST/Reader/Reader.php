@@ -337,7 +337,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      */
     protected function itemIdDecode($itemId): int {
         if (is_int($itemId)) {
-            return $itemId;
+            return $itemId; // @codeCoverageIgnore
         } elseif (is_string($itemId) && preg_match('/^tag:google.com,2005:reader\/item\/([0-7][0-9a-fA-F]{15})$/', $itemId, $m)) {
             // NOTE: Reader IDs are signed, but because the database will
             //   never use negative IDs, we can safely reject negative IDs and
@@ -1169,15 +1169,15 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#stream-contents */
     protected function itemContents(string $target, array $query, array $body, string $format): ResponseInterface {
         // determine the list of articles
-        if ($body['i']) {
-            $articles = $body['i'];
-        } elseif ($query['i']) {
-            $articles = $query['i'];
+        if ($body['i'] ?? []) {
+            $articles = array_map([$this, "itemIdDecode"], $body['i']);
+        } elseif ($query['i'] ?? []) {
+            $articles = array_map([$this, "itemIdDecode"], $query['i']);
         } else {
             return self::respError(["ParameterRequired", "i"]);
         }
         // fetch the articles
-        $context = (new Context())->articles($articles);
+        $context = (new Context)->articles($articles);
         return self::respond($format, $this->articleFetch($context, $query, false));
     }
 
