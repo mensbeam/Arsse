@@ -1095,20 +1095,21 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#stream-items-count */
     protected function itemCount(string $target, array $query, array $body, string $format): ResponseInterface {
         $out = 0;
+        if (!isset($query['s'])) {
+            return self::respError(["ParameterRequired", "s"]);
+        }
         // convert the stream ID to a context
         if ($c = $this->streamContext($query['s'])) {
-            try {
-                $tr = Arsse::$db->begin();
-                // get the count of articles matched by the context
-                $out += Arsse::$db->articleCount(Arsse::$user->id, $c);
-                // if the most recent date is requested as well, jump through some hoops to get it
-                if ($query['a']) {
-                    $c->limit(1);
-                    $date = Arsse::$db->articleList(Arsse::$user->id, $c, ["modified_date"], ["modified_date desc"])->getValue();
-                    $out = $out."#".Date::transform($date, "F j, Y", "sql");
-                }
-            } catch (ExceptionInput $e) {
-                // TODO: What do we do about errors?
+            $tr = Arsse::$db->begin();
+            // get the count of articles matched by the context
+            $out += Arsse::$db->articleCount(Arsse::$user->id, $c);
+            // if the most recent date is requested as well, jump through some hoops to get it
+            if ($out && $query['a']) {
+                // this is quite inefficient, but it's a non-default option of a function FreshRSS doesn't even implement, so there's little reason to optimize for it
+                // NOTE: FeedHQ appears to have a bug whereby a count of zero will still blindly get the date from index 0. We simply skip the whole thing instead
+                $c = (clone $c)->limit(1);
+                $date = Arsse::$db->articleList(Arsse::$user->id, $c, ["modified_date"], ["modified_date desc"])->getValue();
+                $out = $out."#".Date::transform($date, "F d, Y", "sql"); // FeedHQ's Python format string is "%B %d, %Y"
             }
         }
         return HTTP::respText("$out");

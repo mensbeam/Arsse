@@ -1007,6 +1007,36 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertMessage($exp, $act);
     }
 
+    #[DataProvider("provideArticleCounts")]
+    public function testCountArticles(string $query, ?Context $context, bool $latest, ResponseInterface $exp): void {
+        $user = "john.doe@example.com";
+        \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result([['modified_date' => "2000-01-01 00:00:00"]]));
+        \Phake::when(Arsse::$db)->articleCount(\Phake::anyParameters())->thenReturn(2112);
+        $act = $this->req("GET", "/stream/items/count?$query", "", $user);
+        $this->assertMessage($exp, $act);
+        if ($context) {
+            \Phake::verify(Arsse::$db)->articleCount($user, $context);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->articleCount(\Phake::anyParameters());
+        }
+        if ($latest) {
+            \Phake::verify(Arsse::$db)->articleList($user, (clone $context)->limit(1), ["modified_date"], ["modified_date desc"]);
+        } else {
+            \Phake::verify(Arsse::$db, \Phake::never())->articleList(\Phake::anyParameters());
+        }
+    }
+
+    public static function provideArticleCounts(): iterable {
+        self::clearData(); // initializes string formatter
+        $c = new Context;
+        return [
+            ["s=feed/1",                                   (clone $c)->subscription(1), false, HTTP::respText("2112")],
+            ["s=feed/1&a=true",                            (clone $c)->subscription(1), true,  HTTP::respText("2112#January 01, 2000")],
+            ["",                                           null,                        false, self::respError(["ParameterRequired", "s"])],
+            ["s=user/-/state/com.google/broadcast&a=true", null,                        false, HTTP::respText("0")],
+        ];
+    }
+
     public function testListSubscriptions(): void {
         $user = "john.doe@example.com";
         \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result([
