@@ -1366,7 +1366,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         //   it would not pass muster in the face of generic data,
         //   but we'll assume our code produces only well-ordered
         //   indexed arrays
-        $object = is_object($data) || !isset($data[0]);
+        $object = is_object($data) || ($data && !isset($data[0]));
         $p = $d->createElement($object ? "object" : "list");
         foreach ($data as $k => $v) {
             if (is_string($v)) {
@@ -1375,6 +1375,9 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                 $pp = $d->createElement("number", (string) $v);
             } elseif (is_array($v) || is_object($v)) {
                 $pp = self::makeXML($v, $d);
+            } elseif ($v === null) {
+                // FeedHQ doesn't seem to handle nulls, so this may be wrong
+                $pp = $d->createElement("null");
             } else {
                 throw new \Exception("Unsupported type for XML output"); // @codeCoverageIgnore
             }
