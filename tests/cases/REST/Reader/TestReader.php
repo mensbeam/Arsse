@@ -46,6 +46,8 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         Arsse::$db = \Phake::mock(Database::class);
         \Phake::when(Arsse::$db)->begin(\Phake::anyParameters())->thenReturn(\Phake::mock(Transaction::class));
         \Phake::when(Arsse::$db)->tokenCreate(\Phake::anyParameters())->thenReturn("12345");
+        \Phake::when(Arsse::$db)->tokenLookup(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->tokenLookup("reader.post", "12345", "john.doe@example.com")->thenReturn([]);
         // create the reader class, with authentication stubbed out; for mysterious reasons Phake does not work reliably when mocking this class
         $this->h = $this->createPartialMock(Reader::class, ["authenticate", "shouldChallenge", "now"]);
         $this->h->method("authenticate")->willReturn(true);
@@ -134,8 +136,6 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideMarkings")]
     public function testMarkArticles(string $body, ?array $data, ?Context $c, ResponseInterface $exp): void {
         $user = "john.doe@example.com";
-        \Phake::when(Arsse::$db)->tokenLookup(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->tokenLookup("reader.post", "12345", $user)->thenReturn([]);
         \Phake::when(Arsse::$db)->articleMark(\Phake::anyParameters())->thenReturn(1);
         $act = $this->req("POST", "/edit-tag", $body, $user);
         $this->assertMessage($exp, $act);
@@ -166,13 +166,12 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["i=9&T=12345",                                                null,                 null,                           self::respError(["ParameterRequiredOneOfTwo", "a", "r"])],
             ["i=1&i=2&i=&a=user/-/state/com.google/read&T=12345",          ['read' => true],     (new Context)->articles([1,2]), $success],
             ["i=1&a=user/-/state/com.google/read",                         null,                 null,                           self::respError("TokenRequired", 400)],
+            ["i=1&a=user/-/state/com.google/read&T=56789",                 null,                 null,                           self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"])],
         ];
     }
 
     public function testMarkArticlesMultipleWays(): void {
         $user = "john.doe@example.com";
-        \Phake::when(Arsse::$db)->tokenLookup(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->tokenLookup("reader.post", "12345", $user)->thenReturn([]);
         \Phake::when(Arsse::$db)->articleMark(\Phake::anyParameters())->thenReturn(1);
         $body = "T=12345&i=1&i=2&r=user/-/state/com.google/starred&a=user/-/state/com.google/read";
         $c = (new Context)->articles([1, 2]);
@@ -205,14 +204,15 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData(); // initializes string formatter
         $success = HTTP::respText("OK");
         return [
-            ["T=12345&s=feed/1&ts=0000000",          (new Context)->subscription(1)->modifiedRange(null, "1970-01-01T00:00:00"), true,   $success],
-            ["T=12345&s=feed/1&ts=0",                (new Context)->subscription(1)->modifiedRange(null, "1970-01-01T00:00:00"), true,   $success],
-            ["T=12345&s=feed/1&ts=1784195407000000", (new Context)->subscription(1)->modifiedRange(null, "2026-07-16T09:50:07"), true,   $success],
-            ["T=12345&s=feed/1&ts=1784195407",       (new Context)->subscription(1)->modifiedRange(null, "1970-01-01T00:29:44"), true,   $success],
-            ["T=12345&s=feed/1",                     (new Context)->subscription(1),                                             true,   $success],
-            ["T=12345&s=feed/1&ts=1784195407",       (new Context)->subscription(1)->modifiedRange(null, "1970-01-01T00:29:44"), false,  self::respError(new ExceptionInput("subjectMissing"))],
-            ["T=12345&ts=1784195407000000",          null,                                                                       true,   self::respError(["ParameterRequired", "s"])],
-            ["s=feed/1&ts=1784195407000000",         null,                                                                       true,   self::respError("TokenRequired")],
+            ["T=12345&s=feed/1&ts=0000000",          (new Context)->subscription(1)->modifiedRange(null, "1970-01-01T00:00:00"), true,  $success],
+            ["T=12345&s=feed/1&ts=0",                (new Context)->subscription(1)->modifiedRange(null, "1970-01-01T00:00:00"), true,  $success],
+            ["T=12345&s=feed/1&ts=1784195407000000", (new Context)->subscription(1)->modifiedRange(null, "2026-07-16T09:50:07"), true,  $success],
+            ["T=12345&s=feed/1&ts=1784195407",       (new Context)->subscription(1)->modifiedRange(null, "1970-01-01T00:29:44"), true,  $success],
+            ["T=12345&s=feed/1",                     (new Context)->subscription(1),                                             true,  $success],
+            ["T=12345&s=feed/1&ts=1784195407",       (new Context)->subscription(1)->modifiedRange(null, "1970-01-01T00:29:44"), false, self::respError(new ExceptionInput("subjectMissing"))],
+            ["T=12345&ts=1784195407000000",          null,                                                                       true,  self::respError(["ParameterRequired", "s"])],
+            ["s=feed/1&ts=1784195407000000",         null,                                                                       true,  self::respError("TokenRequired")],
+            ["T=56789&s=feed/1&ts=0",                null,                                                                       true,  self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"])],
         ];
     }
 
@@ -224,8 +224,6 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ['id' => 2, 'name' => "Eek"],
             ['id' => 3, 'name' => "Ack"],
         ];
-        \Phake::when(Arsse::$db)->tokenLookup(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
-        \Phake::when(Arsse::$db)->tokenLookup("reader.post", "12345", $user)->thenReturn([]);
         \Phake::when(Arsse::$db)->labelList(\Phake::anyParameters())->thenReturn(new Result($labels));
         \Phake::when(Arsse::$db)->labelAdd(\Phake::anyParameters())->thenReturn(4);
         \Phake::when(Arsse::$db)->labelArticlesSet(\Phake::anyParameters())->thenReturn(1);
@@ -253,6 +251,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["T=12345&i=1&i=2&a=user/2112/label/Ook", ["Ook", (new Context)->articles([1 ,2]), Database::ASSOC_ADD, true],     null,   $success],
             ["T=12345&i=1&i=2&a=user/-/label/Boop",   ["Boop", (new Context)->articles([1 ,2]), Database::ASSOC_ADD, true],    "Boop", $success],
             ["T=12345&i=1&i=2&r=user/-/label/Boop",   ["Boop", (new Context)->articles([1 ,2]), Database::ASSOC_REMOVE, true], null,   $success],
+            ["T=56789&i=1&i=2&r=user/-/label/Boop",   null,                                                                    null,   self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"])],
         ];
     }
 
@@ -324,6 +323,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["T=12345&t=Ook&dest=Foo",                              null,  null,  self::respError(["InvalidStream", "Foo"])],
             ["T=12345&s=Ook&dest=user/-/label/Foo",                 null,  null,  self::respError(["InvalidStream", "Ook"])],
             ["t=Ook&dest=user/-/label/Foo",                         null,  null,  self::respError("TokenRequired", 400)],
+            ["T=56789&t=Ook&dest=user/-/label/Foo",                 null,  null,  self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"])],
         ];
     }
 
@@ -359,6 +359,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["T=12345",                    null,  self::respError(["ParameterRequiredOneOfTwo", "s", "t"])],
             ["T=12345&s=Ook",              null,  self::respError(["InvalidStream", "Ook"])],
             ["s=user/-/label/Ook",         null,  self::respError("TokenRequired", 400)],
+            ["T=56789&s=user/-/label/Ook", null,  self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"])],
         ];
     }
 
@@ -501,6 +502,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["T=12345&quickadd=feed/http://example.org/", "http://example.org/", 4,    HTTP::respJson(['numResults' => 1, 'query' => "https://example.org/rss", 'streamId' => "feed/4", 'streamName' => ""], 200)],
             ["T=12345",                                   null,                  null, self::respError(["ParameterRequired", "quickadd"])],
             ["quickadd=http://example.com/",              null,                  null, self::respError(["TokenRequired"])],
+            ["T=56789&quickadd=http://example.com/",      null,                  null, self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"])],
         ];
     }
 
@@ -612,6 +614,7 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             ["T=12345&ac=edit&s=42&a=user/-/label/Ook",                                                     null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["InvalidValue", "s", "42"])],
             ["T=12345&ac=bogus&s=feed/42&a=user/-/label/Ook",                                               null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["InvalidValue", "ac", "bogus"])],
             ["ac=subscribe&s=feed/http://example.com/&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo",         null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError(["TokenRequired"])],
+            ["T=56789ac=subscribe&s=feed/http://example.com/&t=Ook&a=user/-/label/Eek&a=user/-/label/Foo",  null,                  null,                  null,    null,     null,      [],       [],           [],             self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"])],
         ];
     }
 
