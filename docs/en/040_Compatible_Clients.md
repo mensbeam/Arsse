@@ -5,24 +5,26 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <th rowspan="2">Name</th>
    <th rowspan="2">OS</th>
-   <th colspan="4">Protocol</th>
+   <th colspan="5">Protocol</th>
    <th rowspan="2">Notes</th>
   </tr>
   <tr>
    <th>Miniflux</th>
    <th>Nextcloud News</th>
+   <th>Reader</th>
    <th>Tiny Tiny RSS</th>
    <th>Fever</th>
   </tr>
  </thead>
  <tbody>
-   <th colspan="7">Web</th>
+   <th colspan="8">Web</th>
   <tr>
   </tr>
   <tr>
    <td><a href="https://github.com/electh/nextflux">Nextflux</a></td>
    <td></td>
    <td class="Y">✔</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
@@ -36,6 +38,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td>
    </td>
   </tr>
@@ -43,6 +46,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td><a href="https://github.com/reminiflux/reminiflux">reminiflux</a></td>
    <td></td>
    <td class="Y">✔</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
@@ -55,6 +59,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td></td>
    <td class="N">✘</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td>
@@ -64,13 +69,14 @@ The Arsse does not at this time have any first party clients. However, because T
  </tbody>
  <tbody>
   <tr>
-   <th colspan="7">Desktop</th>
+   <th colspan="8">Desktop</th>
   </tr>
   <tr>
    <td><a href="https://pbh.dev/cloudnews/">CloudNews</a></td>
    <td>macOS</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td>
@@ -80,6 +86,7 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <td><a href="https://github.com/jeena/feedthemonkey">FeedTheMonkey</a></td>
    <td>Windows, macOS, Linux</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
@@ -95,6 +102,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="Y">✔</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td class="Y">✔</td>
    <td>
    </td>
@@ -102,6 +110,7 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <td><a href="https://lzone.de/liferea/">Liferea</a></td>
    <td>Linux</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
@@ -115,6 +124,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Linux, macOS</td>
    <td class="Y">✔</td>
    <td class="Y">✔</td>
+   <td class="N">✘</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td>
@@ -127,6 +137,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td class="Y">✔</td>
    <td>
     <p>Successor to FeedReader. One of the best on any platform</p>
@@ -137,6 +148,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Windows, macOS, Linux</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
+   <td class="N">✘</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td>
@@ -149,6 +161,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Windows</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td>
@@ -158,13 +171,14 @@ The Arsse does not at this time have any first party clients. However, because T
  </tbody>
  <tbody>
   <tr>
-   <th colspan="7">Mobile</th>
+   <th colspan="8">Mobile</th>
   </tr>
   <tr>
    <td><a href="https://pbh.dev/cloudnews/">CloudNews</a></td>
    <td>iOS</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td>
@@ -177,6 +191,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Android</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td class="Y">✔</td>
    <td class="Y">✔</td>
    <td>
@@ -186,6 +201,7 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <td><a href="http://cocoacake.net/apps/fiery/">Fiery Feeds</a></td>
    <td>iOS</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
@@ -202,6 +218,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td class="Y">✔</td>
    <td>
    </td>
@@ -209,6 +226,7 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <td><a href="https://github.com/fbarthelery/geekttrss">Geekttrss</a></td>
    <td>Android</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
@@ -224,6 +242,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td>Requires token authentication.</td>
   </tr>
   <tr>
@@ -231,6 +250,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Android</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td>
@@ -243,12 +263,14 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td class="Y">✔</td>
    <td></td>
   </tr>
   <tr>
    <td><a href="http://tt-rss.org/">Tiny Tiny RSS</a></td>
    <td>Android</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
@@ -262,6 +284,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Android</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td>
@@ -271,6 +294,7 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <td><a href="https://www.goldenhillsoftware.com/unread/">Unread</a></td>
    <td>iOS</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
@@ -289,12 +313,13 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <th rowspan="2">Name</th>
    <th rowspan="2">OS</th>
-   <th colspan="4">Protocol</th>
+   <th colspan="5">Protocol</th>
    <th rowspan="2">Notes</th>
   </tr>
   <tr>
    <th>Miniflux</th>
    <th>Nextcloud News</th>
+   <th>Reader</th>
    <th>Tiny Tiny RSS</th>
    <th>Fever</th>
   </tr>
@@ -307,6 +332,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td>
     <p></p>
    </td>
@@ -314,6 +340,7 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <td><a href="https://github.com/mkiol/kaktus">Kaktus</a></td>
    <td>Sailfish, BlackBerry</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
@@ -329,6 +356,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td>
    </td>
   </tr>
@@ -339,12 +367,14 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td>
    </td>
   </tr>
   <tr>
    <td><a href="https://readkitapp.com/">ReadKit</a></td>
    <td>macOS, iOS</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
@@ -359,6 +389,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
+   <td class="N">✘</td>
    <td class="Y">✔</td>
    <td>
     <p>Requires manual configuration.</p>
@@ -367,6 +398,7 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <td><a href="http://www.pluchon.com/en/tiny_reader_rss.php">tiny Reader RSS</a></td>
    <td>iOS</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
@@ -378,6 +410,7 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <td><a href="https://github.com/cnlpete/ttrss">ttrss</a></td>
    <td>Sailfish</td>
+   <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
