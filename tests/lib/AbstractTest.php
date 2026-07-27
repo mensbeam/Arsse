@@ -207,6 +207,18 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         Arsse::$conf = (($force ? null : Arsse::$conf) ?? (new Conf))->import($defaults)->import($conf);
     }
 
+    /** Creates an instance of ServerRequestIn terface from components
+     * 
+     * @param $method The request method
+     * @param $url The absolute requestb URL path
+     * @param $urlPrefix The portion of the URL which is stripped by the general REST dispatcher
+     * @param $headers Extra HTTP header fields to send with the request
+     * @param $vars Keys to add to the $_SERVER array equivalent
+     * @param $body The request body
+     * @param $type The Content-Type of the request body, if any
+     * @param $params Parsed query parameters
+     * @param $user The result of HTTP Basic authentication. Null means no authentication was attempted; the empty string indicates failure
+     */
     protected function serverRequest(string $method, string $url, string $urlPrefix, array $headers = [], array $vars = [], $body = null, string $type = "", $params = [], ?string $user = null): ServerRequestInterface {
         $server = [
             'REQUEST_METHOD' => $method,

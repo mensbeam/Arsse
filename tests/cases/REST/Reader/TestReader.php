@@ -109,6 +109,40 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
+    #[DataProvider("provideAuthentications")]
+    public function testAuthenticate(?string $basicAuthResult, bool $sessionEnforced, $authorization, ResponseInterface $exp): void {
+        $user = "john.doe@example.com";
+        // set up a mock handler for POST token creation which always succeeds
+        $this->h = $this->createPartialMock(Reader::class, ["tokenCreate"]);
+        $this->h->method("tokenCreate")->willReturn(HTTP::respText("TOKEN\n"));
+        // set up mock protocol-level authentication
+        \Phake::when(Arsse::$db)->tokenLookup(\Phake::anyParameters())->thenThrow(new ExceptionInput("subjectMissing"));
+        \Phake::when(Arsse::$db)->tokenLookup("reader.login", "OPEN_SESAME")->thenReturn(['user' => $user]);
+        // confirm that the user name is not currently set
+        $this->assertNull(Arsse::$user->id);
+        // perform the test
+        $req = $this->serverRequest("GET", "/api/greader.php/reader/api/0/token", "/api/greader.php/reader/api/0", ['Authorization' => $authorization], [], null, "", [], $basicAuthResult);
+        Arsse::$conf->userSessionEnforced = $sessionEnforced;
+        $act = $this->h->dispatch($req);
+        $this->assertMessage($exp, $act);
+    }
+
+    public static function provideAuthentications(): iterable {
+        self::clearData(); // initializes string formatter
+        $user = "john.doe@example.com";
+        $success = HTTP::respText("TOKEN\n");
+        return [
+            [null,  true,  "GoogleLogin auth=OPEN_SESAME",   $success],
+            [null,  true,  "GoogleLogin  auth=OPEN_SESAME ", $success],
+            [$user, false, null,                             $success],
+            ["",    false, "GoogleLogin auth=OPEN_SESAME",   self::respError("401", 401)],
+            [$user, true,  null,                             self::respError("401", 401, ['WWW-Authenticate' => "GoogleLogin"])],
+            [null,  false, null,                             self::respError("401", 401, ['WWW-Authenticate' => ["GoogleLogin", 'Basic realm="The Advanced RSS Environment", charset="UTF-8"']])],
+            [null,  true,  "GoogleLogin auth=BOGUS",         self::respError("401", 401, ['WWW-Authenticate' => "GoogleLogin"])],
+            [null,  false, "GoogleLogin auth=BOGUS",         self::respError("401", 401, ['WWW-Authenticate' => ["GoogleLogin", 'Basic realm="The Advanced RSS Environment", charset="UTF-8"']])],
+        ];
+    }
+
     #[TestWith([true])]
     #[TestWith([false])]
     public function testIssuePostTokens(bool $existing): void {
@@ -969,6 +1003,27 @@ class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
 </object>
 XML_FILE;
         $exp = HTTP::respXml($exp);
+        $this->assertMessage($exp, $act);
+    }
+
+    public function testListArticlesAsAtom(): void {
+        $user = "john.doe@example.com";
+        $articles = [
+            ['id' => 1,  'edition' => 65, 'modified_date' => "2001-01-01 00:00:00", 'published_date' => "2000-01-01 00:00:00", 'edited_date' => "2000-01-02 00:00:00", 'subscription' => 1,  'subscription_url' => "http://example.com/", 'subscription_title' => "Sub 1",  'unread' => 1, 'starred' => 0, 'author' => "John Doe", 'title' => "Edition 65", 'url' => "http://example.com/65", 'content' => "Content 65", 'media_url' => null,                       'media_type' => null],
+            ['id' => 11, 'edition' => 32, 'modified_date' => "2001-01-05 00:00:00", 'published_date' => "2000-01-04 00:00:00", 'edited_date' => "2000-01-04 00:00:00", 'subscription' => 12, 'subscription_url' => "http://example.org/", 'subscription_title' => "Sub 12", 'unread' => 0, 'starred' => 1, 'author' => null,       'title' => "Edition 32", 'url' => "http://example.com/32", 'content' => "Content 32", 'media_url' => "http://example.com/audio", 'media_type' => "audio/vorbis"],
+        ];
+        \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result($articles));
+        \Phake::when(Arsse::$db)->tagSummarize(\Phake::anyParameters())->thenReturn(new Result([
+            ['name' => "Ook",  'subscription' => 1],
+            ['name' => "Dupe", 'subscription' => 12],
+        ]));
+        \Phake::when(Arsse::$db)->articleLabelsGet(\Phake::anyParameters())->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleLabelsGet($user, 1, true)->thenReturn(["Foo", "Bar"]);
+        \Phake::when(Arsse::$db)->articleLabelsGet($user, 11, true)->thenReturn(["Dupe"]);
+        \Phake::when(Arsse::$db)->articleCategoriesGet(\Phake::anyParameters())->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleCategoriesGet($user, 1)->thenReturn(["Alfa", "Bravo"]);
+        $act = $this->req("GET", "/stream/contents/?output=atom", "", $user);
+        $exp = self::respError("AtomNotImplemented");
         $this->assertMessage($exp, $act);
     }
 

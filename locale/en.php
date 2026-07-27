@@ -54,6 +54,7 @@ return [
     'API.Reader.Error.ParameterRequired'                                   => 'This operation requires the "{0}" parameter.',
     'API.Reader.Error.ParameterRequiredOneOfTwo'                           => 'This operation requires either the "{0}" or the "{1}" parameter.',
     'API.Reader.Error.DuplicateSubscription'                               => 'A subscription for "{url}" already exists.',
+    'API.Reader.Error.AtomNotImplemented'                                  => 'Atom output is not implemented.',
 
     'API.TTRSS.Category.Uncategorized'                                     => 'Uncategorized',
     'API.TTRSS.Category.Special'                                           => 'Special',

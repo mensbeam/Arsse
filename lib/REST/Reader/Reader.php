@@ -233,7 +233,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
      * - The requested output format ("json", "xml", "atom", or null)
      * - The used query parameters as an array, with allowed but unused members
      *   set to null or an empty array, as appropriate
-     * - The entity body, parsed the same as teh query unless requested otherwise
+     * - The entity body, parsed the same as the query unless requested otherwise
      */
     protected function parseInput(ServerRequestInterface $req, array $allowed, int $bodyMode): array {
         $token = null;
@@ -1351,7 +1351,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $d->appendChild(self::makeXML($data, $d));
             return HTTP::respXml($d->saveXML($d->documentElement, \LIBXML_NOEMPTYTAG));
         } elseif ($format === "atom") {
-            throw new \Exception("Atom output not yet implemented");
+            return self::respError("AtomNotImplemented");
         } else {
             return HTTP::respJson($data, $status, $headers);
         }
