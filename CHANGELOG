@@ -5,6 +5,9 @@ New features:
 - Support for the Google Reader protocol as implemented by FreshRSS; see the
   manual for details
 
+Bug fixes:
+- Use non-failing HTML parser to avoid blank article contents
+
 Changes:
 - PHP's uri extension is now used to normalize URLs
 
