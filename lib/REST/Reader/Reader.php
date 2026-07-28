@@ -220,7 +220,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function origin(): string {
         $p = $this->request->getServerParams();
-        $scheme = $p['HTTPS'] ? "https" : "http";
+        $scheme = ($p['HTTPS'] ?? "") ? "https" : "http";
         $host = $p['HTTP_HOST'] ?? $p['SERVER_NAME'] ?? "";
         $port = $p['SERVER_PORT'] ?? "";
         return URL::normalize("$scheme://$host:$port");
