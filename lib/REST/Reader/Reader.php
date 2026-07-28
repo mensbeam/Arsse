@@ -153,15 +153,8 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         $format = $format ?? self::FORMAT_MAP[MimeType::negotiate(self::OUTPUT_TYPES, $req->getHeaderLine("Accept")) ?? "application/xml"];
         $format = ($format === "atom" && !$atomAllowed) ? "xml" : $format;
         // check the POST token, if appropriate
-        if ($reqT && Arsse::$conf->userSessionEnforced) {
-            if (!isset($token)) {
-                return self::respError("TokenRequired", 400);
-            }
-            try {
-                Arsse::$db->tokenLookup("reader.post", $token, Arsse::$user->id);
-            } catch (ExceptionInput $e) {
-                return self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"]);
-            }
+        if ($reqT && Arsse::$conf->userSessionEnforced && !$this->tokenCheck($token)) {
+            return self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"]);
         }
         // handle the request
         try {
@@ -539,6 +532,19 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         return false;
+    }
+
+    protected function tokenCheck(?string $token): bool {
+        if (!isset($token) || $token === "" || $token === "x") {
+            // Various clients do not send any token at all; Reeder simply sends "x"
+            return true;
+        }
+        try {
+            Arsse::$db->tokenLookup("reader.post", $token, Arsse::$user->id);
+            return true;
+        } catch (ExceptionInput $e) {
+            return false;
+        }
     }
 
     protected function tokenCreate(string $target, array $query, array $body, string $format): ResponseInterface {
