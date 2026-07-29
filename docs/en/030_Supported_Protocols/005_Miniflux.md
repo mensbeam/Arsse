@@ -50,7 +50,7 @@ Miniflux version 2.2.7 is emulated, though not all features are implemented
 
 # Behaviour of feed filtering (block and keep) rules
 
-Miniflux accepts [Google's RE2 regular expression syntax](https://github.com/google/re2/wiki/Syntax) for feed filter rules. Being a PHP application, The Arsse instead accepts [PCRE2 syntax](https://www.pcre.org/current/doc/html/pcre2syntax.html)), specifically in UTF-8 mode. Delimiters should not be included, and slashes should not be escaped; anchors may be used if desired. For example `^(?i)RE/MAX$` is a valid pattern.
+Miniflux accepts [Google's RE2 regular expression syntax](https://github.com/google/re2/wiki/Syntax) for feed filter rules. Being a PHP application, The Arsse instead accepts [PCRE2 syntax](https://www.pcre.org/current/doc/html/pcre2syntax.html), specifically in UTF-8 mode. Delimiters should not be included, and slashes should not be escaped; anchors may be used if desired. For example `^(?i)RE/MAX$` is a valid pattern.
 
 For convenience the patterns are tested after collapsing whitespace. Unlike Miniflux, when filter rules are modified they are re-evaluated against all applicable articles immediately.
 

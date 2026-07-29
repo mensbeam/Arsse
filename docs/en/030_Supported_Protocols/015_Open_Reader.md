@@ -28,6 +28,6 @@ However, there also exists [FeedHQ](https://feedhq.readthedocs.io/en/latest/), a
 - Multiple features omitted by FreshRSS but supported by FeedHQ have been implemented
 - XML output is supported; Atom output is not
 
-# Interaction with Folders
+# Interaction with folders
 
 Unlike most other protocols supported by The Arsse, Google Reader used "labels" (more commonly known as tags) to organize newsfeeds, which could have multiple labels associated to them. Unlike many other Open Reader implementations which allow only one label per newsfeed, The Arsse supports multiple labels per newsfeed, and they are exposed as categories in OPML import and export. They are treated separately from folders as used by most other protocols supported by The Arsse.
