@@ -101,7 +101,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Windows, macOS, Linux</td>
    <td class="Y">✔</td>
    <td class="Y">✔</td>
-   <td class="N">✘</td>
+   <td class="Y">✔</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
    <td>
@@ -124,7 +124,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Linux, macOS</td>
    <td class="Y">✔</td>
    <td class="Y">✔</td>
-   <td class="N">✘</td>
+   <td class="Y">✔</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td>
@@ -136,7 +136,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Linux</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
-   <td class="N">✘</td>
+   <td class="Y">✔</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
    <td>
@@ -148,11 +148,11 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Windows, macOS, Linux</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
-   <td class="N">✘</td>
+   <td class="Y">✔</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td>
-    <p>Very basic client.</p>
+    <p>Basic-looking but capable client.</p>
    </td>
   </tr>
   </tr>
