@@ -2,6 +2,7 @@ The Arsse was designed from the start as a server for multiple synchronization p
 
 - [Miniflux](Miniflux)
 - [Nextcloud News](Nextcloud_News)
+- [Open Reader](Open_Reader) (FreshRSS and FeedHQ)
 - [Tiny Tiny RSS](Tiny_Tiny_RSS)
 - [Fever](Fever)
 

@@ -76,6 +76,16 @@ class REST {
             'strip' => '/api/greader.php/accounts/ClientLogin',
             'class' => REST\Reader\Auth::class,
         ],
+        'feedhq' => [ // Google Reader as implemented by FeedHQ  https://feedhq.readthedocs.io/en/latest/api/index.html
+            'match' => '/reader/api/0/',
+            'strip' => '/reader/api/0',
+            'class' => REST\Reader\Reader::class,
+        ],
+        'feedhq-auth' => [ // User authentication for FeedHQ
+            'match' => '/accounts/ClientLogin',
+            'strip' => '/accounts/ClientLogin',
+            'class' => REST\Reader\Auth::class,
+        ],
         // Other candidates:
         // Microsub             https://indieweb.org/Microsub
         // Feedbin v2           https://github.com/feedbin/feedbin-api
