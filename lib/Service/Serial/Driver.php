@@ -21,9 +21,6 @@ class Driver implements \JKingWeb\Arsse\Service\Driver {
         return true;
     }
 
-    public function __construct() {
-    }
-
     public function queue(int ...$feeds): int {
         $this->queue = array_merge($this->queue, $feeds);
         return sizeof($this->queue);

@@ -11,9 +11,6 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\User\ExceptionConflict;
 
 class Driver implements \JKingWeb\Arsse\User\Driver {
-    public function __construct() {
-    }
-
     public static function driverName(): string {
         return Arsse::$lang->msg("Driver.User.Internal.Name");
     }

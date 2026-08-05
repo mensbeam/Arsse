@@ -14,9 +14,6 @@ use Psr\Http\Message\ResponseInterface;
 class Versions implements \JKingWeb\Arsse\REST\Handler {
     use Common;
 
-    public function __construct() {
-    }
-
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         if (!preg_match("<^/?$>D", $req->getRequestTarget())) {
             // if the request path is more than an empty string or a slash, the client is probably trying a version we don't support

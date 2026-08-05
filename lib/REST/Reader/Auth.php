@@ -13,9 +13,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
-    public function __construct() {
-    }
-
     /** Authenticates a user and creates a relatively long-lived session token
      * 
      * @see https://feedhq.readthedocs.io/en/latest/api/terminology.html#authentication

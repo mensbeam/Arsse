@@ -39,14 +39,14 @@ class V1_3 extends V1_2 {
             $this->paths[$path]['POST'] = $this->paths[$path]['PUT'];
             unset($this->paths[$path]['PUT']);
         }
-        // starring is, however, simplified
+        // starring is, simplified, no longer requiring two identifiers
         $this->paths['/items/1/star'] = $this->paths['/items/1/1/star'];
         unset($this->paths['/items/1/1/star']);
         $this->paths['/items/1/unstar'] = $this->paths['/items/1/1/unstar'];
         unset($this->paths['/items/1/1/unstar']);
     }
 
-    // mark a single article as read
+    // mark a single article as starred
     protected function articleMarkStarred(array $url, array $data): ResponseInterface {
         // initialize the matching context
         $c = new Context;
