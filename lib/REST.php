@@ -69,7 +69,7 @@ class REST {
         'freshrss' => [ // Google Reader as implemented by FreshRSS  https://freshrss.github.io/FreshRSS/en/developers/06_GoogleReader_API.html
             'match' => '/api/greader.php/reader/api/0/',
             'strip' => '/api/greader.php/reader/api/0',
-            'class' => REST\Reader\Reader::class,
+            'class' => REST\Reader\FreshRSS\Reader::class,
         ],
         'freshrss-auth' => [ // User authentication for FreshRSS
             'match' => '/api/greader.php/accounts/ClientLogin',
@@ -79,7 +79,7 @@ class REST {
         'feedhq' => [ // Google Reader as implemented by FeedHQ  https://feedhq.readthedocs.io/en/latest/api/index.html
             'match' => '/reader/api/0/',
             'strip' => '/reader/api/0',
-            'class' => REST\Reader\Reader::class,
+            'class' => REST\Reader\FeedHQ\Reader::class,
         ],
         'feedhq-auth' => [ // User authentication for FeedHQ
             'match' => '/accounts/ClientLogin',

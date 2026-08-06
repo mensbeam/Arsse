@@ -24,9 +24,11 @@ use MensBeam\Mime\MimeType;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
+abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     use Common;
 
+    protected const MODE_FRESHRSS = 1;
+    protected const MODE_FEEDHQ = 2;
     protected const BODY_IGNORE = 0;
     protected const BODY_READ = 1;
     protected const BODY_PARSE= 2;
@@ -128,6 +130,7 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     /** @var ServerRequestInterface */
     protected $request;
+    protected $mode;
 
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         $method = strtoupper($req->getMethod());
@@ -535,12 +538,12 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function tokenCheck(?string $token): bool {
-        if (!isset($token) || $token === "" || $token === "x") {
-            // Various clients do not send any token at all; Reeder simply sends "x"
+        if ($this->mode === self::MODE_FRESHRSS && (!isset($token) || $token === "" || $token === "x")) {
+            // Various FreshRSS clients do not send any token at all; Reeder simply sends "x"
             return true;
         }
         try {
-            Arsse::$db->tokenLookup("reader.post", $token, Arsse::$user->id);
+            Arsse::$db->tokenLookup("reader.post", $token ?? "", Arsse::$user->id);
             return true;
         } catch (ExceptionInput $e) {
             return false;
@@ -548,16 +551,20 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     protected function tokenCreate(string $target, array $query, array $body, string $format): ResponseInterface {
+        $token = null;
         // Contrary to the original Reader, FreshRSS creates POST tokens which
         //   never expire, and some implementations (such as Newsflash) assume
         //   therefore that tokens never expire and never re-authenticate; as a
         //   result we re-use existing tokens if one is requested, to avoid
         //   cluttering the database if there are implementations which do 
         //   re-authenticate regularly
-        $row = Arsse::$db->tokenList(Arsse::$user->id, "reader.post")->getRow();
-        if ($row) {
-            $token = $row['id'];
-        } else {
+        if ($this->mode === self::MODE_FRESHRSS) {
+            $row = Arsse::$db->tokenList(Arsse::$user->id, "reader.post")->getRow();
+            if ($row) {
+                $token = $row['id'];
+            } 
+        }
+        if (!$token) {
             // FreshRSS creates 57-character tokens (using "Z" for padding),
             //   and at least one source claims this is required, so we do
             //   the same, but with far less padding
@@ -565,10 +572,14 @@ class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             Arsse::$db->tokenCreate(Arsse::$user->id, "reader.post", $token);
         }
         // Note that the newline at the end of the response is required by at
-        //   least some implementations (again such as Newsflash) which strip
+        //   least some FreshRSS clients (again such as Newsflash) which strip
         //   the last character from the response before saving the token in
-        //   their database
-        return HTTP::respText("$token\n");
+        //   their database; Vienna in FeedHQ mode expects no newline, however
+        if ($this->mode === self::MODE_FRESHRSS) {
+            return HTTP::respText("$token\n");
+        } else {
+            return HTTP::respText("$token");
+        }
     }
 
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#user-info */

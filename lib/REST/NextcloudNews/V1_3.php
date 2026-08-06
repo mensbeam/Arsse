@@ -14,8 +14,6 @@ use JKingWeb\Arsse\Misc\HTTP;
 use Psr\Http\Message\ResponseInterface;
 
 class V1_3 extends V1_2 {
-    use Common;
-
     public function __construct() {
         // the 'items' input key has been renamed 'itemIds'
         $this->validInput['itemIds'] = $this->validInput['items'];
@@ -39,7 +37,7 @@ class V1_3 extends V1_2 {
             $this->paths[$path]['POST'] = $this->paths[$path]['PUT'];
             unset($this->paths[$path]['PUT']);
         }
-        // starring is, simplified, no longer requiring two identifiers
+        // starring is simplified, no longer requiring two identifiers
         $this->paths['/items/1/star'] = $this->paths['/items/1/1/star'];
         unset($this->paths['/items/1/1/star']);
         $this->paths['/items/1/unstar'] = $this->paths['/items/1/1/unstar'];
