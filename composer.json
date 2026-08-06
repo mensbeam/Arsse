@@ -57,7 +57,8 @@
     "autoload": {
         "psr-4": {
             "JKingWeb\\Arsse\\": "lib/"
-        }
+        },
+        "exclude-from-classmap": ["/vendor/symfony/polyfill-php80/Resources/stubs/ValueError.php"]
     },
     "autoload-dev": {
         "psr-4": {
