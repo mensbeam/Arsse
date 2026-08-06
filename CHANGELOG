@@ -2,11 +2,12 @@ Version 0.13.0 (20226-07-??)
 ===========================
 
 New features:
-- Support for the Google Reader protocol as implemented by FreshRSS; see the
-  manual for details
+- Support for the "Open Reader" protocol as implemented by FreshRSS and FeedHQ;
+  see the manual for details
 
 Bug fixes:
 - Use non-failing HTML parser to avoid blank article contents
+- Delete expired authentication tokens when performing automated clean-up
 
 Changes:
 - PHP's uri extension is now used to normalize URLs

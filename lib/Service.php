@@ -96,6 +96,8 @@ class Service {
         Arsse::$db->iconCleanup();
         // delete expired log-in sessions
         Arsse::$db->sessionCleanup();
+        // delete expired authentication tokens
+        Arsse::$db->tokenCleanup();
         return true;
     }
 

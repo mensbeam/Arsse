@@ -48,6 +48,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$db)->subscriptionCleanup(\Phake::anyParameters());
         \Phake::verify(Arsse::$db)->iconCleanup(\Phake::anyParameters());
         \Phake::verify(Arsse::$db)->sessionCleanup(\Phake::anyParameters());
+        \Phake::verify(Arsse::$db)->tokenCleanup(\Phake::anyParameters());
     }
 
     public function testPerformShortPostCleanup(): void {
