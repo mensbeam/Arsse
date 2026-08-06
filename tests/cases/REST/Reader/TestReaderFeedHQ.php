@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\REST\Reader;
 
 use JKingWeb\Arsse\Arsse;
+use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Test\Result;
 use JKingWeb\Arsse\Misc\HTTP;
 use JKingWeb\Arsse\REST\Reader\FeedHQ\Reader;
@@ -40,7 +41,7 @@ class TestReaderFeedHQ extends TestReader {
         \Phake::when(Arsse::$db)->tokenCreate(\Phake::anyParameters())->thenReturn($bogus);
         $act = $this->req("GET", "/token", "", $user);
         \Phake::verify(Arsse::$db, \Phake::never())->tokenList(\Phake::anyParameters());
-        \Phake::verify(Arsse::$db)->tokenCreate($user, "reader.post", \Phake::capture($random));
+        \Phake::verify(Arsse::$db)->tokenCreate($user, "reader.post", \Phake::capture($random), Date::add("PT30M", self::NOW));
         $exp = HTTP::respText($random);
         $this->assertNotEquals($token, $random);
         $this->assertNotEquals($bogus, $random);

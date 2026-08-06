@@ -44,7 +44,7 @@ class TestReaderFreshRSS extends TestReader {
             $exp = HTTP::respText("$token\n");
         } else {
             $random = "";
-            \Phake::verify(Arsse::$db)->tokenCreate($user, "reader.post", \Phake::capture($random));
+            \Phake::verify(Arsse::$db)->tokenCreate($user, "reader.post", \Phake::capture($random), null);
             $exp = HTTP::respText("$random\n");
             $this->assertNotEquals($token, $random);
             $this->assertNotEquals($bogus, $random);

@@ -552,6 +552,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function tokenCreate(string $target, array $query, array $body, string $format): ResponseInterface {
         $token = null;
+        $expiry = null;
         // Contrary to the original Reader, FreshRSS creates POST tokens which
         //   never expire, and some implementations (such as Newsflash) assume
         //   therefore that tokens never expire and never re-authenticate; as a
@@ -562,14 +563,16 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $row = Arsse::$db->tokenList(Arsse::$user->id, "reader.post")->getRow();
             if ($row) {
                 $token = $row['id'];
-            } 
+            }
+        } else {
+            $expiry = Date::add("PT30M", $this->now());
         }
         if (!$token) {
             // FreshRSS creates 57-character tokens (using "Z" for padding),
             //   and at least one source claims this is required, so we do
             //   the same, but with far less padding
             $token = base64_encode(random_bytes(42))."Z";
-            Arsse::$db->tokenCreate(Arsse::$user->id, "reader.post", $token);
+            Arsse::$db->tokenCreate(Arsse::$user->id, "reader.post", $token, $expiry);
         }
         // Note that the newline at the end of the response is required by at
         //   least some FreshRSS clients (again such as Newsflash) which strip
