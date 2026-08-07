@@ -1065,7 +1065,7 @@ XML_FILE;
         \Phake::when(Arsse::$db)->articleLabelsGet($user, 11, true)->thenReturn(["Dupe"]);
         \Phake::when(Arsse::$db)->articleCategoriesGet(\Phake::anyParameters())->thenReturn([]);
         \Phake::when(Arsse::$db)->articleCategoriesGet($user, 1)->thenReturn(["Alfa", "Bravo"]);
-        $items = "i=1&i=tag:google.com,2005:reader/item/000000000000000B&i=0000000000000010";
+        $items = "i=1&i=tag:google.com,2005:reader/item/000000000000000B&i=0000000000000010&i=tag:google.com,2005:reader/item/fff";
         if ($method === "GET") {
             $act = $this->req("GET", "/stream/items/contents?$items", "", $user);
         } else {
@@ -1140,7 +1140,7 @@ XML_FILE;
             ],
         ]);
         $this->assertMessage($exp, $act);
-        \Phake::verify(Arsse::$db)->articleList($user, (new Context)->articles([1, 11, 16]), ["id", 'edition', "modified_date", "published_date", "edited_date", "subscription", "subscription_url", "subscription_title", "unread", "starred", "author", "title", "url", "content", "media_url", "media_type"], ["edition desc"]);
+        \Phake::verify(Arsse::$db)->articleList($user, (new Context)->articles([1, 11, 16, 4095]), ["id", 'edition', "modified_date", "published_date", "edited_date", "subscription", "subscription_url", "subscription_title", "unread", "starred", "author", "title", "url", "content", "media_url", "media_type"], ["edition desc"]);
     }
 
     public function testFetchArticlesWithBadIdentifier(): void {

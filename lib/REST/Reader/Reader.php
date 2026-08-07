@@ -312,10 +312,12 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function itemIdDecode($itemId): int {
         if (is_int($itemId)) {
             return $itemId; // @codeCoverageIgnore
-        } elseif (is_string($itemId) && preg_match('/^tag:google.com,2005:reader\/item\/([0-7][0-9a-fA-F]{15})$/', $itemId, $m)) {
+        } elseif (is_string($itemId) && preg_match('/^tag:google.com,2005:reader\/item\/([0-7][0-9a-fA-F]{15}|[0-9a-fA-F]{1,15})$/', $itemId, $m)) {
             // NOTE: Reader IDs are signed, but because the database will
             //   never use negative IDs, we can safely reject negative IDs and
             //   save ourselves some complexity in dealing with signed values
+            // NetNewsWire will send unpadded tag IDs, so we accept these as
+            //   well in order for it to work
             $out = hexdec($m[1]);
             if ($out) {
                 // zero is also an invalid database ID, so only return if the value is not zero
