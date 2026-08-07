@@ -44,7 +44,7 @@ class TestReaderFreshRSS extends TestReader {
             $exp = HTTP::respText("$token\n");
         } else {
             $random = "";
-            \Phake::verify(Arsse::$db)->tokenCreate($user, "reader.post", \Phake::capture($random), null);
+            \Phake::verify(Arsse::$db)->tokenCreate($user, "reader.post", \Phake::capture($random));
             $exp = HTTP::respText("$random\n");
             $this->assertNotEquals($token, $random);
             $this->assertNotEquals($bogus, $random);
@@ -59,11 +59,15 @@ class TestReaderFreshRSS extends TestReader {
         $failure = self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"]);
         $routes = ["/disable-tag", "/edit-tag", "/mark-all-as-read", "/rename-tag", "/subscription/edit", "/subscription/quickadd"];
         foreach ($routes as $target) {
-            yield [Reader::class, $target, "T=12345", $success];
-            yield [Reader::class, $target, "",        $success];
-            yield [Reader::class, $target, "T=",      $success];
-            yield [Reader::class, $target, "T=x",     $success];
-            yield [Reader::class, $target, "T=56789", $failure];
+            yield [Reader::class, $target, "T=12345",   $success];
+            yield [Reader::class, $target, "T=12345\n", $success];
+            yield [Reader::class, $target, "",          $success];
+            yield [Reader::class, $target, "T=",        $success];
+            yield [Reader::class, $target, "T=x",       $success];
+            yield [Reader::class, $target, "T=56789",   $failure];
+            yield [Reader::class, $target, "T=\n",      $failure];
+            yield [Reader::class, $target, "T=x\n",     $failure];
+            yield [Reader::class, $target, "T=56789\n", $failure];
         }
     }
 }

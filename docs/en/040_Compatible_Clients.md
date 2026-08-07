@@ -83,6 +83,17 @@ The Arsse does not at this time have any first party clients. However, because T
     <p>Also available for iOS.</p>
    </td>
   </tr>
+   <td><a href="https://www.feedflow.dev/">FeedFlow</a></td>
+   <td>Windows, macOS, Linux</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>
+    <p>Advertised Miniflux support is actually via Reader API. Also available for Android and iOS.</p>
+   </td>
+  </tr>
   <tr>
    <td><a href="https://github.com/jeena/feedthemonkey">FeedTheMonkey</a></td>
    <td>Windows, macOS, Linux</td>
@@ -168,6 +179,18 @@ The Arsse does not at this time have any first party clients. However, because T
     <p>Does not deal well with expired sessions; discontinued.</p>
    </td>
   </tr>
+  <tr>
+   <td><a href="https://www.vienna-rss.com">Vienna</td>
+   <td>macOS</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>
+    <p>Works with either "FeedHQ" or "Other" selected as the service type.</p>
+   </td>
+  </tr>
  </tbody>
  <tbody>
   <tr>
@@ -184,6 +207,18 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>
     <p>Very bland looking application, but it functions well.</p>
     <p>Also available for macOS.</p>
+   </td>
+  </tr>
+  </tr>
+   <td><a href="https://www.feedflow.dev/">FeedFlow</a></td>
+   <td>Android, iOS</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>
+    <p>Advertised Miniflux support is actually via Reader API. Also available for Windows, macOS, and Linux.</p>
    </td>
   </tr>
   <tr>
