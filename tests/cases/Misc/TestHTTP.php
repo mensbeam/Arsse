@@ -82,4 +82,36 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
         // pass through a valid name
         yield ["john.doe@example.com", ""];
     }
+
+    public function testSniffJson(): void {
+        $this->assertTrue(HTTP::sniffJson(" {\n\"ook_Eek\" :"));
+        $this->assertFalse(HTTP::sniffJson(" {\n\"ook_Eek\" bogus :"));
+    }
+
+    public function testSniffParams(): void {
+        $this->assertTrue(HTTP::sniffParams("ook_Eek="));
+        $this->assertFalse(HTTP::sniffParams(" ook_Eek="));
+    }
+
+    public function testParseJson(): void {
+        $this->assertSame(['ook' => "eek"], HTTP::parseJson('{"ook":"eek"}'));
+    }
+
+    public function testParseInvalidJson(): void {
+        $this->expectException(\JsonException::class);
+        HTTP::parseJson("{");
+    }
+
+    public function testParseParams(): void {
+        $this->assertSame([], HTTP::parseParams("", false));
+        $exp = [
+            'a' => "a",
+            'b' => ["1", "2"],
+            'c' => "",
+            'd' => null,
+        ];
+        $this->assertSame($exp, HTTP::parseParams("a=a&b=1&c=&d&b=2", false));
+        $this->assertSame(['a+b' => "a+b"], HTTP::parseParams("a+b=a+b", false));
+        $this->assertSame(['a b' => "a b"], HTTP::parseParams("a+b=a+b", true));
+    }
 }

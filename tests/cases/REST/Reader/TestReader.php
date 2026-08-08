@@ -656,6 +656,7 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         // the stream ID is provided seaparately from the rest of the body because it is part of the URL for one of the routes
         $tests = [
             ["",                                                                            "",                                        false, $c],
+            ["",                                                                            "bogus=value",                             false, $c],
             ["",                                                                            "r=o",                                     true,  $c],
             ["",                                                                            "n=2112",                                  false, (clone $c)->limit(2112)],
             ["",                                                                            "n=10001",                                 false, (clone $c)->limit(10000)],
@@ -1029,7 +1030,7 @@ XML_FILE;
         \Phake::when(Arsse::$db)->tagSummarize(\Phake::anyParameters())->thenReturn(new Result([]));
         \Phake::when(Arsse::$db)->articleLabelsGet(\Phake::anyParameters())->thenReturn([]);
         \Phake::when(Arsse::$db)->articleCategoriesGet(\Phake::anyParameters())->thenReturn([]);
-        $act = json_decode($this->req("GET", $query, "", "john.doe@example.com")->getBody()->getContents(), true)['continuation'] ?? "";
+        $act = json_decode((string) $this->req("GET", $query, "", "john.doe@example.com")->getBody(), true)['continuation'] ?? "";
         $this->assertSame($exp, base64_decode($act));
     }
 

@@ -272,32 +272,41 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         // parse the string
-        foreach (explode("&", $query) as $q) {
-            [$k, $v] = array_pad(explode("=", $q, 2), 2, "");
-            $v = rawurldecode($v);
-            if ($k === "output" && $allowFormat && in_array($v, self::FORMAT_MAP)) {
+        foreach (HTTP::parseParams($query, $allowToken) as $k => $v) {
+            if ($v === null || $v === "") {
+                // if the value is empty, ignore it
+                continue;
+            } elseif ($k === "output" && $allowFormat) {
                 // handle the "output" parameter which may dictate the format of our output
-                $out[$k] = $v;
+                $v = is_array($v) ? array_pop($v) : $v;
+                if (in_array($v, self::FORMAT_MAP)) {
+                    $out[$k] = $v;
+                }
                 continue;
             } elseif ($k === "T" && $allowToken) {
                 // handle POST tokens
+                $v = is_array($v) ? array_pop($v) : $v;
                 $out[$k] = $v;
                 continue;
             } elseif (!isset($allowed[$k])) {
                 // the parameter is not allowed for this call, so can be ignored
                 continue;
-            } elseif ($v === "") {
-                // if the value is empty, ignore it
-                continue;
             }
             $t = $allowed[$k] & ~V::M_ARRAY;
             $a = $allowed[$k] >= V::M_ARRAY;
             if ($a) {
-                $out[$k][] = V::normalize($v, $t + V::M_DROP, "unix");
+                $v = is_array($v) ? $v : [$v];
+                // convert the values, filtering out empties
+                $out[$k] = array_values(array_map(function($v) use ($t) {
+                    return V::normalize($v, $t + V::M_DROP, "unix");
+                }, array_filter($v, function($v) {
+                    return $v !== null && $v !== "";
+                })));
             } else {
                 // NOTE: The last value is kept in case of duplicates; this is
                 //   what FreshRSS does because it's what PHP does with the
                 //   $_GET and $_POST superglobals
+                $v = is_array($v) ? array_pop($v) : $v;
                 $out[$k] = V::normalize($v, $t + V::M_DROP, "unix");
             }
         }

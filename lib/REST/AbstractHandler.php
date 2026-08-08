@@ -9,6 +9,9 @@ namespace JKingWeb\Arsse\REST;
 
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\Date;
+use JKingWeb\Arsse\Misc\HTTP;
+use MensBeam\Mime\MimeType;
+use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -58,5 +61,64 @@ abstract class AbstractHandler implements Handler {
             }
         }
         return $data;
+    }
+
+    public function bodyParse(MessageInterface $msg): array {
+        $type = MimeType::extract($msg->getHeaderLine("Content-Type"));
+        $body = (string) $msg->getBody();
+        if (!strlen($body)) {
+            return [];
+        }
+        switch ($type->essence ?? "") {
+            case "application/json":
+            case "text/json":
+                try {
+                    $out = HTTP::parseJson($body);
+                } catch (\JsonException $e) {
+                    throw new Exception400;
+                }
+                if (!is_array($out)) {
+                    throw new Exception422;
+                }
+                return $out;
+            case "application/x-www-form-urlencoded":
+                if (HTTP::sniffJson($body)) {
+                    try {
+                        return HTTP::parseJson($body);
+                    } catch (\JsonException $e) {
+                        throw new Exception422;
+                    }
+                }
+                return HTTP::parseParams($body, true);
+            case "multipart/form-data":
+                $out = HTTP::parseMultipart($body, $type->params['boundary'] ?? "");
+                if ($out === null) {
+                    throw new Exception400;
+                }
+                return $out;
+            case "":
+                if (HTTP::sniffJson($body)) {
+                    try {
+                        return HTTP::parseJson($body);
+                    } catch (\JsonException $e) {
+                        throw new Exception400;
+                    }
+                } elseif (HTTP::sniffParams($body)) {
+                    return HTTP::parseParams($body, true);
+                }
+                throw new Exception400;
+            default:
+                // other media types would normally be rejected, but 
+                //   if it happens to be mislabelled JSON we can accept
+                //   it; we will not try form data here, though,
+                //   because it's not a very distinct format; multipart
+                //   must also be rejected because we need the boundary
+                if (HTTP::sniffJson($body)) {
+                    try {
+                        return HTTP::parseJson($body);
+                    } catch (\JsonException $e) {}
+                }
+                throw new Exception415;
+        }
     }
 }

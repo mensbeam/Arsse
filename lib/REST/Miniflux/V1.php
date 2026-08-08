@@ -505,16 +505,12 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function normalizeQuery(string $query) {
         // fill an array with all valid keys
         $out = [];
-        $seen = [];
         foreach (self::VALID_QUERY as $k => $t) {
             $out[$k] = ($t >= V::M_ARRAY) ? [] : null;
             $seen[$k] = false;
         }
         // split the query string and normalize the values to their correct types
-        foreach (explode("&", $query) as $parts) {
-            $parts = explode("=", $parts, 2);
-            $k = rawurldecode($parts[0]);
-            $v = (isset($parts[1])) ? rawurldecode($parts[1]) : "";
+        foreach (HTTP::parseParams($query, false) as $k => $v) {
             if (!isset(self::VALID_QUERY[$k])) {
                 // ignore unknown keys
                 continue;
@@ -522,18 +518,26 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $t = self::VALID_QUERY[$k] & ~V::M_ARRAY;
             $a = self::VALID_QUERY[$k] >= V::M_ARRAY;
             try {
-                if ($seen[$k] && !$a) {
-                    // if the key has already been seen and it's not an array field, bail
+                if ($a) {
+                    // convert the values, filtering out empties
+                    $v = is_array($v) ? $v : [$v];
+                    $out[$k] = array_values(array_map(function($v) use ($t) {
+                        return V::normalize($v, $t + V::M_STRICT, "unix");
+                    }, array_filter($v, function($v) use ($t) {
+                        // if the value is empty we can discard the value; for
+                        //   numeric fields (which includes UNIX timestamps)
+                        //   any value less than one is also considered empty
+                        return $v !== null && $v !== "" && !(in_array($t, [V::T_INT, V::T_DATE]) && $v < 1);
+                    })));
+                } elseif (is_array($v)) {
+                    // if the value is an array and this is not expected, bail
                     // NOTE: Miniflux itself simply ignores duplicates entirely
                     return self::respError(["DuplicateInputValue", 'field' => $k], 400);
-                }
-                $seen[$k] = true;
-                if ($v === "" || (in_array($t, [V::T_INT, V::T_DATE]) && $v < 1)) {
-                    // if the value is empty we can discard the value, but subsequent values for the same non-array key are still considered duplicates
-                    // for numeric fields (which includes UNIX timestamps) any value less than one is also considered empty
+                } elseif ($v === null || $v === "" || (in_array($t, [V::T_INT, V::T_DATE]) && $v < 1)) {
+                    // if the value is empty we can discard the value; for
+                    //   numeric fields (which includes UNIX timestamps)
+                    //   any value less than one is also considered empty
                     continue;
-                } elseif ($a) {
-                    $out[$k][] = V::normalize($v, $t + V::M_STRICT, "unix");
                 } else {
                     $out[$k] = V::normalize($v, $t + V::M_STRICT, "unix");
                 }
@@ -541,8 +545,12 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
                 return self::respError(["InvalidInputValue", 'field' => $k], 400);
             }
             // perform additional validation
-            if (isset(self::VALID_ENUM[$k]) && !in_array($v, self::VALID_ENUM[$k])) {
-                return self::respError(["InvalidInputValue", 'field' => $k], 400);
+            if (isset(self::VALID_ENUM[$k])) {
+                foreach (is_array($v) ? $v : [$v] as $vv) {
+                    if (!in_array($vv, self::VALID_ENUM[$k])) {
+                        return self::respError(["InvalidInputValue", 'field' => $k], 400);
+                    }
+                }
             }
         }
         return $out;
