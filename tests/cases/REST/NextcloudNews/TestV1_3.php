@@ -131,53 +131,36 @@ class TestV1_3 extends TestV1_2 {
         \Phake::verify(Arsse::$db, \Phake::times(8))->articleMark($this->userId, \Phake::ignoreRemaining());
     }
 
-    public function testChangeMarksOfMultipleArticles(): void {
-        $read = ['read' => true];
-        $unread = ['read' => false];
-        $star = ['starred' => true];
-        $unstar = ['starred' => false];
-        $in = [
-            ["ook","eek","ack"],
-            range(100, 199),
-        ];
+    #[DataProvider("provideMultipleMarkings")]
+    public function testChangeMarksOfMultipleArticles(string $path, string $in, array $op, Context $context): void {
         \Phake::when(Arsse::$db)->articleMark($this->userId, $this->anything(), $this->anything())->thenReturn(42);
         \Phake::when(Arsse::$db)->articleMark($this->userId, $this->anything(), $this->equalTo((new Context)->editions([])))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
         \Phake::when(Arsse::$db)->articleMark($this->userId, $this->anything(), $this->equalTo((new Context)->articles([])))->thenThrow(new ExceptionInput("tooShort")); // data model function requires one valid integer for multiples
         $exp = HTTP::respEmpty(204);
-        $this->assertMessage($exp, $this->req("POST", "/items/read/multiple"));
-        $this->assertMessage($exp, $this->req("POST", "/items/unread/multiple"));
-        $this->assertMessage($exp, $this->req("POST", "/items/star/multiple"));
-        $this->assertMessage($exp, $this->req("POST", "/items/unstar/multiple"));
-        $this->assertMessage($exp, $this->req("POST", "/items/read/multiple", json_encode(['itemIds' => "ook"])));
-        $this->assertMessage($exp, $this->req("POST", "/items/unread/multiple", json_encode(['itemIds' => "ook"])));
-        $this->assertMessage($exp, $this->req("POST", "/items/star/multiple", json_encode(['itemIds' => "ook"])));
-        $this->assertMessage($exp, $this->req("POST", "/items/unstar/multiple", json_encode(['itemIds' => "ook"])));
-        $this->assertMessage($exp, $this->req("POST", "/items/read/multiple", json_encode(['itemIds' => []])));
-        $this->assertMessage($exp, $this->req("POST", "/items/unread/multiple", json_encode(['itemIds' => []])));
-        $this->assertMessage($exp, $this->req("POST", "/items/read/multiple", json_encode(['itemIds' => $in[0]])));
-        $this->assertMessage($exp, $this->req("POST", "/items/unread/multiple", json_encode(['itemIds' => $in[0]])));
-        $this->assertMessage($exp, $this->req("POST", "/items/read/multiple", json_encode(['itemIds' => $in[1]])));
-        $this->assertMessage($exp, $this->req("POST", "/items/unread/multiple", json_encode(['itemIds' => $in[1]])));
-        $this->assertMessage($exp, $this->req("POST", "/items/star/multiple", json_encode(['itemIds' => []])));
-        $this->assertMessage($exp, $this->req("POST", "/items/unstar/multiple", json_encode(['itemIds' => []])));
-        $this->assertMessage($exp, $this->req("POST", "/items/star/multiple", json_encode(['itemIds' => $in[0]])));
-        $this->assertMessage($exp, $this->req("POST", "/items/unstar/multiple", json_encode(['itemIds' => $in[0]])));
-        $this->assertMessage($exp, $this->req("POST", "/items/star/multiple", json_encode(['itemIds' => $in[1]])));
-        $this->assertMessage($exp, $this->req("POST", "/items/unstar/multiple", json_encode(['itemIds' => $in[1]])));
+        $this->assertMessage($exp, $this->req("POST", $path, $in));
         // ensure the data model was queried appropriately for read/unread
-        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark($this->userId, $read, $this->equalTo((new Context)->editions([])));
-        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark($this->userId, $read, $this->equalTo((new Context)->editions($in[0])));
-        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark($this->userId, $read, $this->equalTo((new Context)->editions($in[1])));
-        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark($this->userId, $unread, $this->equalTo((new Context)->editions([])));
-        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark($this->userId, $unread, $this->equalTo((new Context)->editions($in[0])));
-        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark($this->userId, $unread, $this->equalTo((new Context)->editions($in[1])));
-        // ensure the data model was queried appropriately for star/unstar
-        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark($this->userId, $star, $this->equalTo((new Context)->editions([])));
-        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark($this->userId, $star, $this->equalTo((new Context)->editions($in[0])));
-        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark($this->userId, $star, $this->equalTo((new Context)->editions($in[1])));
-        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark($this->userId, $unstar, $this->equalTo((new Context)->editions([])));
-        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark($this->userId, $unstar, $this->equalTo((new Context)->editions($in[0])));
-        \Phake::verify(Arsse::$db, \Phake::atLeast(1))->articleMark($this->userId, $unstar, $this->equalTo((new Context)->editions($in[1])));
+        \Phake::verify(Arsse::$db)->articleMark($this->userId, $op, $context);
+    }
+
+    public static function provideMultipleMarkings(): iterable {
+        $payloads = [
+            'read' => ['read' => true],
+            'unread' => ['read' => false],
+            'star' => ['starred' => true],
+            'unstar' => ['starred' => false],
+        ];
+        $in = [
+            ["ook","eek","ack"],
+            range(100, 199),
+        ];
+        $c = new Context;
+        foreach ($payloads as $k => $v) {
+            yield ["/items/$k/multiple", "",                                 $v, (clone $c)->editions([])];
+            yield ["/items/$k/multiple", json_encode(['itemIds' => []]),     $v, (clone $c)->editions([])];
+            yield ["/items/$k/multiple", json_encode(['itemIds' => "ook"]),  $v, (clone $c)->editions([])];
+            yield ["/items/$k/multiple", json_encode(['itemIds' => $in[0]]), $v, (clone $c)->editions($in[0])];
+            yield ["/items/$k/multiple", json_encode(['itemIds' => $in[1]]), $v, (clone $c)->editions($in[1])];
+        }
     }
 
     public function testQueryTheServerStatus(): void {

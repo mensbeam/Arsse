@@ -31,7 +31,7 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // get the login data, preferring GET data; which FreshRSS prefers
         //   depends on PHP configuration, for which the default is GET first
-        parse_str((string) $req->getBody(), $body);
+        $body = $this->bodyParse($req, true);
         parse_str((string) parse_url($target, \PHP_URL_QUERY), $query);
         $user = $query['Email'] ?? $body['Email'] ?? "";
         $pass = $query['Passwd'] ?? $body['Passwd'] ?? "";

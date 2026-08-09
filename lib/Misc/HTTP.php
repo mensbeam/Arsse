@@ -87,9 +87,60 @@ class HTTP {
         return $out;
     }
 
+    /** Parses a multipart/form-data entity
+     * 
+     * Severe shortcuts are taken, namely:
+     * 
+     * - Data is assumed to be all text fields
+     * - Data is assumed to be UTF-8 text
+     * - Parts' Content-Disposition is assumed to have the name as the first parameter
+     * - Field names are assumed not to require percent-decoding
+     * - Content-Transfer-Encoding is assumed not to be used
+     * 
+     * This is enough to handle known clients.
+     */
     public static function parseMultipart(string $data, string $boundary): array {
-        // STUB
-        return [];
+        $out = [];
+        if (!strlen($boundary )) {
+            return $out;
+        }
+        $data = preg_split("/\r\n/", $data);
+        while (strpos($data[0], "--$boundary") !== 0) {
+            array_shift($data);
+        }
+        $name = null;
+        $value = [];
+        $inBody = false;
+        foreach ($data as $l) {
+            if (strpos($l, "--$boundary") === 0) {
+                if ($name !== null) {
+                    $value = implode("\r\n", $value);
+                    if (!isset($out[$name])) {
+                        $out[$name] = $value;
+                    } elseif (!is_array($out[$name])) {
+                        $out[$name] = [$out[$name], $value];
+                    } else {
+                        $out[$name][] = $value;
+                    }
+                }
+                $name = null;
+                $inBody = false;
+                $value = [];
+                if (strpos($l, "--$boundary--") === 0) {
+                    break;
+                }
+            } elseif ($inBody) {
+                $value[] = $l;
+            } elseif ($l === "") {
+                $inBody = true;
+            } elseif (preg_match('/Content-Disposition:\s*form-data\s*;\s*name=("[^"]*"|[^ \t;]*)/i', $l, $m)) {
+                $name = $m[1];
+                if ($name[0] === '"') {
+                    $name = substr($name, 1, strlen($name) - 2);
+                }
+            }
+        }
+        return $out;
     }
 
     public static function parseJson(string $data) {

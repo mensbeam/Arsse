@@ -63,11 +63,12 @@ abstract class AbstractHandler implements Handler {
         return $data;
     }
 
-    public function bodyParse(MessageInterface $msg): array {
+    public function bodyParse(MessageInterface $msg, bool $flat = false): array {
         $type = MimeType::extract($msg->getHeaderLine("Content-Type"));
         $body = (string) $msg->getBody();
+        $out = [];
         if (!strlen($body)) {
-            return [];
+            return $out;
         }
         switch ($type->essence ?? "") {
             case "application/json":
@@ -89,13 +90,14 @@ abstract class AbstractHandler implements Handler {
                         throw new Exception422;
                     }
                 }
-                return HTTP::parseParams($body, true);
+                $out = HTTP::parseParams($body, true);
+                break;
             case "multipart/form-data":
                 $out = HTTP::parseMultipart($body, $type->params['boundary'] ?? "");
                 if ($out === null) {
-                    throw new Exception400;
+                    throw new Exception400; // @codeCoverageIgnore
                 }
-                return $out;
+                break;
             case "":
                 if (HTTP::sniffJson($body)) {
                     try {
@@ -104,9 +106,11 @@ abstract class AbstractHandler implements Handler {
                         throw new Exception400;
                     }
                 } elseif (HTTP::sniffParams($body)) {
-                    return HTTP::parseParams($body, true);
+                    $out = HTTP::parseParams($body, true);
+                } else {
+                    throw new Exception400;
                 }
-                throw new Exception400;
+                break;
             default:
                 // other media types would normally be rejected, but 
                 //   if it happens to be mislabelled JSON we can accept
@@ -120,5 +124,11 @@ abstract class AbstractHandler implements Handler {
                 }
                 throw new Exception415;
         }
+        if ($flat) {
+            $out = array_map(function($v) {
+                return is_array($v) ? array_pop($v) : $v;
+            }, $out);
+        }
+        return $out;
     }
 }

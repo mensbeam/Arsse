@@ -97,4 +97,16 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
             [true,  true,  true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
         ];
     }
+
+    public function testAuthenticateForm(): void {
+        // The following mimicks actual input from the Readrops Android client
+        $body = "--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9\r\nContent-Disposition: form-data; name=\"Email\"\r\nContent-Length: 20\r\n\r\njohn.doe@example.com\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9\r\nContent-Disposition: form-data; name=\"Passwd\"\r\nContent-Length: 6\r\n\r\nsecret\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9--";
+        $r = $this->serverRequest("POST", "/api/greader.php/accounts/ClientLogin", "/api/greader.php/accounts/ClientLogin", [], [], $body, "multipart/form-data; boundary=92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9");
+        \Phake::when(Arsse::$user)->auth(\Phake::anyParameters())->thenReturn(true);
+        $exp = HTTP::respText("SID=12345\nLSID=12345\nAuth=12345\nexpires_in=604800\n");
+        $act = $this->h->dispatch($r);
+        $this->assertMessage($exp, $act);
+        \Phake::verify(Arsse::$user)->auth("john.doe@example.com", "secret");
+        \Phake::verify(Arsse::$db)->tokenCreate("john.doe@example.com", "reader.login", null, Date::normalize(self::NOW)->add(new \DateInterval("P7D")));
+    }
 }

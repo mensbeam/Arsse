@@ -234,7 +234,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function parseInput(ServerRequestInterface $req, array $allowed, int $bodyMode): array {
         $token = null;
         // parse the query
-        $outG = $this->parseQuery(parse_url($req->getRequestTarget(), \PHP_URL_QUERY) ?? "", $allowed, true, false);
+        $outG = $this->filterInput(HTTP::parseParams(parse_url($req->getRequestTarget(), \PHP_URL_QUERY) ?? "", false), $allowed, true, false);
         $format = $outG['output'];
         unset($outG['output']);
         // handle the body
@@ -243,12 +243,11 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $outP = [];
         } else {
             // otherwise read it
-            $body = (string) $req->getBody();
             if ($bodyMode === self::BODY_READ) {
                 // but return it as-is if so requested (e.g. for OPML import)
-                $outP = $body;
+                $outP = (string) $req->getBody();
             } else {
-                $outP = $this->parseQuery($body, $allowed, false, true);
+                $outP = $this->filterInput($this->bodyParse($req), $allowed, false, true);
                 $token = $outP['T'];
                 unset($outP['T']);
             }
@@ -256,7 +255,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return [$format, $outG, $outP, $token];
     }
 
-    protected function parseQuery(string $query, array $allowed, bool $allowFormat, bool $allowToken): array {
+    protected function filterInput(array $data, array $allowed, bool $allowFormat, bool $allowToken): array {
         // fill an array with all allowed keys
         $out = array_fill_keys(self::ALLOWED, null);
         if ($allowFormat) {
@@ -272,7 +271,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             }
         }
         // parse the string
-        foreach (HTTP::parseParams($query, $allowToken) as $k => $v) {
+        foreach ($data as $k => $v) {
             if ($v === null || $v === "") {
                 // if the value is empty, ignore it
                 continue;
@@ -1318,7 +1317,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             //   continuation, so we simply take whatever is inside the
             //   continuation as authoritative; this ensures that constructing
             //   a new string for the next page later is accurate
-            $query = $this->parseQuery($ct, self::CONTINUATION_PARAMS, false, false);
+            $query = $this->filterInput(HTTP::parseParams($ct, false), self::CONTINUATION_PARAMS, false, false);
         }
         // set the sorting direction
         $asc = $query['r'] === "o";

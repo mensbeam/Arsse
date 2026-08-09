@@ -114,4 +114,21 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame(['a+b' => "a+b"], HTTP::parseParams("a+b=a+b", false));
         $this->assertSame(['a b' => "a b"], HTTP::parseParams("a+b=a+b", true));
     }
+
+    public function testParseMultipart(): void {
+        $in = "junk\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9\r\nContent-Disposition: form-data; name=\"Email\"\r\nContent-Length: 20\r\n\r\njohn.doe@example.com\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9\r\nContent-Disposition: form-data; name=Passwd\r\nContent-Length: 6\r\n\r\nsecret\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9--junk\r\nmore junk";
+        $this->assertSame([], HTTP::parseMultipart($in, ""));
+        $exp = [
+            'Email'  => "john.doe@example.com",
+            'Passwd' => "secret",
+        ];
+        $this->assertSame($exp, HTTP::parseMultipart($in, "92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9"));
+        $in = "junk\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9\r\nContent-Disposition: form-data; name=\"Email\"\r\nContent-Length: 20\r\n\r\njohn.doe@example.com\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9\r\nContent-Disposition: form-data; name=Passwd\r\nContent-Length: 6\r\n\r\nsecret\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9\r\nContent-Disposition: form-data; name=Passwd\r\nContent-Length: 6\r\n\r\nsuperman\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9\r\nContent-Disposition: form-data; name=Passwd\r\nContent-Length: 6\r\n\r\n12345\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9--junk\r\nmore junk";
+        $exp = [
+            'Email'  => "john.doe@example.com",
+            'Passwd' => ["secret", "superman", "12345"],
+        ];
+        $this->assertSame($exp, HTTP::parseMultipart($in, "92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9"));
+        
+    }
 }

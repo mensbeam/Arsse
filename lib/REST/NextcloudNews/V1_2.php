@@ -96,12 +96,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
             //   and multipart/form-data, because PHP accepts them. It's also
             //   possible that input is mislabelled, so we'll try different
             //   combinations till something works, or return an error status
-            $data = $this->bodyParse($req);
-            // clobber any array values, keeping only the last; this is what
-            //   PHP would do with e.g. parse_str()
-            $data = array_map(function($v) {
-                return is_array($v) ? array_pop($v) : $v;
-            }, $data);
+            $data = $this->bodyParse($req, true);
         } catch (Exception400|Exception422 $e) {
             return self::error(400, "ParseError");
         } catch (Exception415 $e) {
