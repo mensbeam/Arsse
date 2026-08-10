@@ -11,7 +11,6 @@ use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\HTTP;
 use MensBeam\Mime\MimeType;
-use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -63,7 +62,7 @@ abstract class AbstractHandler implements Handler {
         return $data;
     }
 
-    public function bodyParse(MessageInterface $msg, bool $flat = false): array {
+    public function bodyParse(ServerRequestInterface $msg, bool $flat = false): array {
         $type = MimeType::extract($msg->getHeaderLine("Content-Type"));
         $body = (string) $msg->getBody();
         $out = [];
@@ -93,10 +92,15 @@ abstract class AbstractHandler implements Handler {
                 $out = HTTP::parseParams($body, true);
                 break;
             case "multipart/form-data":
-                $out = HTTP::parseMultipart($body, $type->params['boundary'] ?? "");
-                if ($out === null) {
-                    throw new Exception400; // @codeCoverageIgnore
+                // PHP has automatic handling of multipart/form-data for POST
+                //   requests to populate the $_POST and $_FILES arrays. This
+                //   handling discards the request body, so we must rely on
+                //   PHP's non-conforming parsing here whether we like it or
+                //   not. This necessarily limits us to single-value keys.
+                if ($body === "" && $msg->getMethod() === "POST") {
+                    return $msg->getParsedBody(); // @codeCoverageIgnore
                 }
+                $out = HTTP::parseMultipart($body, $type->params['boundary'] ?? "");
                 break;
             case "":
                 if (HTTP::sniffJson($body)) {

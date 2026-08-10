@@ -133,7 +133,7 @@ class HTTP {
                 $value[] = $l;
             } elseif ($l === "") {
                 $inBody = true;
-            } elseif (preg_match('/Content-Disposition:\s*form-data\s*;\s*name=("[^"]*"|[^ \t;]*)/i', $l, $m)) {
+            } elseif (preg_match('/^Content-Disposition:\s*form-data\s*;\s*name=("[^"]*"|[^ \t;]*)/i', $l, $m)) {
                 $name = $m[1];
                 if ($name[0] === '"') {
                     $name = substr($name, 1, strlen($name) - 2);
