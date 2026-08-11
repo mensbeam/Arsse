@@ -66,12 +66,12 @@ abstract class AbstractHandler implements Handler {
         $type = MimeType::extract($msg->getHeaderLine("Content-Type"));
         $body = (string) $msg->getBody();
         $out = [];
-        if (!strlen($body)) {
-            return $out;
-        }
         switch ($type->essence ?? "") {
             case "application/json":
             case "text/json":
+                if ($body === "") {
+                    return $out;
+                }
                 try {
                     $out = HTTP::parseJson($body);
                 } catch (\JsonException $e) {
@@ -98,7 +98,7 @@ abstract class AbstractHandler implements Handler {
                 //   PHP's non-conforming parsing here whether we like it or
                 //   not. This necessarily limits us to single-value keys.
                 if ($body === "" && $msg->getMethod() === "POST") {
-                    return $msg->getParsedBody(); // @codeCoverageIgnore
+                    return (array) $msg->getParsedBody();
                 }
                 $out = HTTP::parseMultipart($body, $type->params['boundary'] ?? "");
                 break;
@@ -111,6 +111,8 @@ abstract class AbstractHandler implements Handler {
                     }
                 } elseif (HTTP::sniffParams($body)) {
                     $out = HTTP::parseParams($body, true);
+                } elseif ($body === "") {
+                    return $out; // @codeCoverageIgnore
                 } else {
                     throw new Exception400;
                 }

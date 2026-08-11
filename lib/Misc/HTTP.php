@@ -101,11 +101,11 @@ class HTTP {
      */
     public static function parseMultipart(string $data, string $boundary): array {
         $out = [];
-        if (!strlen($boundary )) {
+        if ($boundary === "" || $data === "") {
             return $out;
         }
         $data = preg_split("/\r\n/", $data);
-        while (strpos($data[0], "--$boundary") !== 0) {
+        while ($data && strpos($data[0], "--$boundary") !== 0) {
             array_shift($data);
         }
         $name = null;

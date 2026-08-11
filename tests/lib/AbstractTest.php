@@ -24,6 +24,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\Psr7\ServerRequest;
+use MensBeam\Mime\MimeType;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 #[CoversClass(Database::class)]
@@ -249,6 +250,12 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         if (isset($body)) {
             if (is_string($body) && in_array(strtolower($type), ["", "application/x-www-form-urlencoded"])) {
                 parse_str($body, $parsedBody);
+            } elseif (is_string($body) && strtoupper($method) === "POST" && preg_match('/^\s*multipart\/form-data\s*($|;)/i', $type)) {
+                // mimic PHP's internal multipart/form-data handling
+                $parsedBody = array_map(function($v) {
+                    return is_array($v) ? array_pop($v) : $v;
+                }, HTTP::parseMultipart($body, MimeType::parseBytes($type)->params['boundary'] ?? ""));
+                $body = null;
             } elseif (!is_string($body) && in_array(strtolower($type), ["application/json", "text/json"])) {
                 $body = json_encode($body, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
             } elseif (!is_string($body) && in_array(strtolower($type), ["", "application/x-www-form-urlencoded"])) {
@@ -266,7 +273,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
                 $req = $req->withAttribute("authenticationFailed", true);
             }
         }
-        if (strlen($type) && strlen($body ?? "")) {
+        if (strlen($type)) {
             $req = $req->withHeader("Content-Type", $type);
         }
         foreach ($headers as $key => $value) {
