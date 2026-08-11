@@ -34,6 +34,7 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
     abstract protected function req(string $method, string $target, string $data = "", ?string $user = null): ResponseInterface;
     abstract public function testIssuePostTokens(bool $existing): void;
     abstract public static function provideTokenChecks(): iterable;
+    abstract public function testGetUserInfo(): void;
 
     public function setUpTest(string $class): void {
         parent::setUp();
@@ -417,24 +418,6 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         $act = $this->req("GET", "/preference/stream/list", "", $user);
         $exp = HTTP::respJson( [
             'streamprefs' => new \stdClass,
-        ]);
-        $this->assertMessage($exp, $act);
-    }
-
-    public function testGetUserInfo(): void {
-        $user = "john.doe@example.com";
-        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn([
-            'num' => 2112,
-        ]);
-        $act = $this->req("GET", "/user-info", "", $user);
-        $exp = HTTP::respJson([
-            'userName' => "john.doe@example.com",
-            'userEmail' => "",
-            'userId' => "2112",
-            'userProfileId' => "2112",
-            'isBloggerUser' => false,
-            'signupTimeSec' => 1608592157,
-            'isMultiLoginEnabled' => false,
         ]);
         $this->assertMessage($exp, $act);
     }

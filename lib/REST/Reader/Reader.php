@@ -598,16 +598,25 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#user-info */
     protected function userGet(string $target, array $query, array $body, string $format): ResponseInterface {
         $user = Arsse::$user->id;
-        $meta = Arsse::$user->propertiesGet($user);
-        return self::respond($format, [
-            'userName'            => $user,
-            'userEmail'           => "",
-            'userId'              => (string) $meta['num'],
-            'userProfileId'       => (string) $meta['num'],
-            'isBloggerUser'       => false,
-            'signupTimeSec'       => V::normalize($this->now(), V::T_INT),
-            'isMultiLoginEnabled' => false,
-        ]);
+        if ($this->mode === self::MODE_FRESHRSS) {
+            return self::respond($format, [
+                'userId'              => $user,
+                'userName'            => $user,
+                'userProfileId'       => $user,
+                'userEmail'           => "",
+            ]);
+        } else {
+            $meta = Arsse::$user->propertiesGet($user);
+            return self::respond($format, [
+                'userName'            => $user,
+                'userEmail'           => "",
+                'userId'              => (string) $meta['num'],
+                'userProfileId'       => (string) $meta['num'],
+                'isBloggerUser'       => false,
+                'signupTimeSec'       => V::normalize($this->now(), V::T_INT),
+                'isMultiLoginEnabled' => false,
+            ]);
+        }
     }
 
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#friend-list */

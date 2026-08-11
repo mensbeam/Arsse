@@ -209,7 +209,6 @@ class Conf {
      * @param bool $full Whether to output all configuration options rather than only changed ones */
     public function exportFile(string $file, bool $full = false): bool {
         $arr = $this->export($full);
-        $conf = new \ReflectionObject($this);
         $out = "<?php return [".PHP_EOL;
         foreach ($arr as $prop => $value) {
             $match = null;

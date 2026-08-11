@@ -71,4 +71,22 @@ class TestReaderFeedHQ extends TestReader {
             yield [Reader::class, $target, "T=56789\n", $failure];
         }
     }
+
+    public function testGetUserInfo(): void {
+        $user = "john.doe@example.com";
+        \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn([
+            'num' => 2112,
+        ]);
+        $act = $this->req("GET", "/user-info", "", $user);
+        $exp = HTTP::respJson([
+            'userName' => "john.doe@example.com",
+            'userEmail' => "",
+            'userId' => "2112",
+            'userProfileId' => "2112",
+            'isBloggerUser' => false,
+            'signupTimeSec' => 1608592157,
+            'isMultiLoginEnabled' => false,
+        ]);
+        $this->assertMessage($exp, $act);
+    }
 }

@@ -70,4 +70,16 @@ class TestReaderFreshRSS extends TestReader {
             yield [Reader::class, $target, "T=56789\n", $failure];
         }
     }
+
+    public function testGetUserInfo(): void {
+        $user = "john.doe@example.com";
+        $act = $this->req("GET", "/user-info", "", $user);
+        $exp = HTTP::respJson([
+            'userId' => "john.doe@example.com",
+            'userName' => "john.doe@example.com",
+            'userProfileId' => "john.doe@example.com",
+            'userEmail' => "",
+        ]);
+        $this->assertMessage($exp, $act);
+    }
 }
