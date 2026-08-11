@@ -599,7 +599,8 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected function userGet(string $target, array $query, array $body, string $format): ResponseInterface {
         $user = Arsse::$user->id;
         if ($this->mode === self::MODE_FRESHRSS) {
-            return self::respond($format, [
+            // FreshRSS always responds with JSON
+            return self::respond("json", [
                 'userId'              => $user,
                 'userName'            => $user,
                 'userProfileId'       => $user,
