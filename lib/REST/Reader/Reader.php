@@ -155,6 +155,10 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         // perform content negotiation if a format is not specified in the query
         $format = $format ?? self::FORMAT_MAP[MimeType::negotiate(self::OUTPUT_TYPES, $req->getHeaderLine("Accept")) ?? "application/xml"];
         $format = ($format === "atom" && !$atomAllowed) ? "xml" : $format;
+        if ($this->mode === self::MODE_FRESHRSS) {
+            // FreshRSS only implements JSON output
+            $format = "json";
+        }
         // check the POST token, if appropriate
         if ($reqT && Arsse::$conf->userSessionEnforced && !$this->tokenCheck($token)) {
             return self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"]);
@@ -600,7 +604,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         $user = Arsse::$user->id;
         if ($this->mode === self::MODE_FRESHRSS) {
             // FreshRSS always responds with JSON
-            return self::respond("json", [
+            return self::respond($format, [
                 'userId'              => $user,
                 'userName'            => $user,
                 'userProfileId'       => $user,

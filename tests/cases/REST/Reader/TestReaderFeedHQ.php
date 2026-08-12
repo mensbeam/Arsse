@@ -89,4 +89,143 @@ class TestReaderFeedHQ extends TestReader {
         ]);
         $this->assertMessage($exp, $act);
     }
+
+    public function testListArticlesAsXml(): void {
+        $user = "john.doe@example.com";
+        $articles = [
+            ['id' => 1,  'edition' => 65, 'modified_date' => "2001-01-01 00:00:00", 'published_date' => "2000-01-01 00:00:00", 'edited_date' => "2000-01-02 00:00:00", 'subscription' => 1,  'subscription_url' => "http://example.com/", 'subscription_title' => "Sub 1",  'unread' => 1, 'starred' => 0, 'author' => "John Doe", 'title' => "Edition 65", 'url' => "http://example.com/65", 'content' => "Content 65", 'media_url' => null,                       'media_type' => null],
+            ['id' => 11, 'edition' => 32, 'modified_date' => "2001-01-05 00:00:00", 'published_date' => "2000-01-04 00:00:00", 'edited_date' => "2000-01-04 00:00:00", 'subscription' => 12, 'subscription_url' => "http://example.org/", 'subscription_title' => "Sub 12", 'unread' => 0, 'starred' => 1, 'author' => null,       'title' => "Edition 32", 'url' => "http://example.com/32", 'content' => "Content 32", 'media_url' => "http://example.com/audio", 'media_type' => "audio/vorbis"],
+        ];
+        \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result($articles));
+        \Phake::when(Arsse::$db)->tagSummarize(\Phake::anyParameters())->thenReturn(new Result([
+            ['name' => "Ook",  'subscription' => 1],
+            ['name' => "Dupe", 'subscription' => 12],
+        ]));
+        \Phake::when(Arsse::$db)->articleLabelsGet(\Phake::anyParameters())->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleLabelsGet($user, 1, true)->thenReturn(["Foo", "Bar"]);
+        \Phake::when(Arsse::$db)->articleLabelsGet($user, 11, true)->thenReturn(["Dupe"]);
+        \Phake::when(Arsse::$db)->articleCategoriesGet(\Phake::anyParameters())->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleCategoriesGet($user, 1)->thenReturn(["Alfa", "Bravo"]);
+        $act = $this->req("GET", "/stream/contents/?output=xml", "", $user);
+        $exp = <<<XML_FILE
+<object>
+  <string name="id">user/-/state/com.google/reading-list</string>
+  <number name="updated">1608592157</number>
+  <list name="items">
+    <object>
+      <string name="id">tag:google.com,2005:reader/item/0000000000000001</string>
+      <string name="crawlTimeMsec">978307200000</string>
+      <string name="timestampUsec">978307200000000</string>
+      <number name="published">946684800</number>
+      <number name="updated">946771200</number>
+      <string name="title">Edition 65</string>
+      <list name="canonical">
+        <object>
+          <string name="href">http://example.com/65</string>
+        </object>
+      </list>
+      <list name="alternate">
+        <object>
+          <string name="href">http://example.com/65</string>
+          <string name="type">text/html</string>
+        </object>
+      </list>
+      <list name="categories">
+        <string>user/-/state/com.google/reading-list</string>
+        <string>user/-/state/org.freshrss/main</string>
+        <string>user/-/state/com.google/unread</string>
+        <string>user/-/state/com.google/kept-unread</string>
+        <string>user/-/label/Ook</string>
+        <string>user/-/label/Foo</string>
+        <string>user/-/label/Bar</string>
+        <string>Alfa</string>
+        <string>Bravo</string>
+      </list>
+      <object name="origin">
+        <string name="streamId">feed/1</string>
+        <string name="htmlUrl">http://example.com/</string>
+        <string name="title">Sub 1</string>
+      </object>
+      <object name="summary">
+        <string name="content">Content 65</string>
+      </object>
+      <list name="enclosure"/>
+      <string name="author">John Doe</string>
+      <list name="linkingUsers"/>
+      <list name="comments"/>
+      <number name="commentsNum">-1</number>
+      <list name="annotations"/>
+    </object>
+    <object>
+      <string name="id">tag:google.com,2005:reader/item/000000000000000b</string>
+      <string name="crawlTimeMsec">978652800000</string>
+      <string name="timestampUsec">978652800000000</string>
+      <number name="published">946944000</number>
+      <number name="updated">946944000</number>
+      <string name="title">Edition 32</string>
+      <list name="canonical">
+        <object>
+          <string name="href">http://example.com/32</string>
+        </object>
+      </list>
+      <list name="alternate">
+        <object>
+          <string name="href">http://example.com/32</string>
+          <string name="type">text/html</string>
+        </object>
+      </list>
+      <list name="categories">
+        <string>user/-/state/com.google/reading-list</string>
+        <string>user/-/state/org.freshrss/main</string>
+        <string>user/-/state/com.google/read</string>
+        <string>user/-/state/com.google/starred</string>
+        <string>user/-/label/Dupe</string>
+      </list>
+      <object name="origin">
+        <string name="streamId">feed/12</string>
+        <string name="htmlUrl">http://example.org/</string>
+        <string name="title">Sub 12</string>
+      </object>
+      <object name="summary">
+        <string name="content">Content 32</string>
+      </object>
+      <list name="enclosure">
+        <object>
+          <string name="href">http://example.com/audio</string>
+          <string name="type">audio/vorbis</string>
+        </object>
+      </list>
+      <null name="author"/>
+      <list name="linkingUsers"/>
+      <list name="comments"/>
+      <number name="commentsNum">-1</number>
+      <list name="annotations"/>
+    </object>
+  </list>
+</object>
+XML_FILE;
+        $exp = HTTP::respXml($exp);
+        $this->assertMessage($exp, $act);
+    }
+
+    public function testListArticlesAsAtom(): void {
+        $user = "john.doe@example.com";
+        $articles = [
+            ['id' => 1,  'edition' => 65, 'modified_date' => "2001-01-01 00:00:00", 'published_date' => "2000-01-01 00:00:00", 'edited_date' => "2000-01-02 00:00:00", 'subscription' => 1,  'subscription_url' => "http://example.com/", 'subscription_title' => "Sub 1",  'unread' => 1, 'starred' => 0, 'author' => "John Doe", 'title' => "Edition 65", 'url' => "http://example.com/65", 'content' => "Content 65", 'media_url' => null,                       'media_type' => null],
+            ['id' => 11, 'edition' => 32, 'modified_date' => "2001-01-05 00:00:00", 'published_date' => "2000-01-04 00:00:00", 'edited_date' => "2000-01-04 00:00:00", 'subscription' => 12, 'subscription_url' => "http://example.org/", 'subscription_title' => "Sub 12", 'unread' => 0, 'starred' => 1, 'author' => null,       'title' => "Edition 32", 'url' => "http://example.com/32", 'content' => "Content 32", 'media_url' => "http://example.com/audio", 'media_type' => "audio/vorbis"],
+        ];
+        \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result($articles));
+        \Phake::when(Arsse::$db)->tagSummarize(\Phake::anyParameters())->thenReturn(new Result([
+            ['name' => "Ook",  'subscription' => 1],
+            ['name' => "Dupe", 'subscription' => 12],
+        ]));
+        \Phake::when(Arsse::$db)->articleLabelsGet(\Phake::anyParameters())->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleLabelsGet($user, 1, true)->thenReturn(["Foo", "Bar"]);
+        \Phake::when(Arsse::$db)->articleLabelsGet($user, 11, true)->thenReturn(["Dupe"]);
+        \Phake::when(Arsse::$db)->articleCategoriesGet(\Phake::anyParameters())->thenReturn([]);
+        \Phake::when(Arsse::$db)->articleCategoriesGet($user, 1)->thenReturn(["Alfa", "Bravo"]);
+        $act = $this->req("GET", "/stream/contents/?output=atom", "", $user);
+        $exp = self::respError("AtomNotImplemented");
+        $this->assertMessage($exp, $act);
+    }
 }
