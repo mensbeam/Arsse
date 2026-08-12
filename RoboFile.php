@@ -265,6 +265,7 @@ class RoboFile extends \Robo\Tasks {
                 $dir."composer.json",
                 $dir."composer.lock",
                 $dir.".php_cs.dist",
+                $dir.".php-cs-fixer.dist.php",
                 $dir."phpdoc.dist.xml",
                 $dir."build.xml",
                 $dir."RoboFile.php",
@@ -281,12 +282,40 @@ class RoboFile extends \Robo\Tasks {
                 $dir."postcss.config.js",
             ]));
             $t->addCode(function() use ($dir) {
-                // Remove files which lintian complains about; they're otherwise harmless
+                // Remove various files we don't need in dependencies
+                // Lintian complains about Git files, and the rest just take up space
                 $files = [];
-                foreach (new \CallbackFilterIterator(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir."vendor", \FilesystemIterator::CURRENT_AS_PATHNAME | \FilesystemIterator::SKIP_DOTS)), function($v, $k, $i) {
-                    return preg_match('/\/\.git(?:ignore|attributes|modules)$/D', $v);
-                }) as $f) {
-                    $files[] = $f;
+                $extra = [
+                    ".git",
+                    ".github",
+                    ".phan",
+                    "test",
+                    "tests",
+                    "examples",
+                    "scripts",
+                    "vendor-bin",
+                    ".editorconfig",
+                    ".gitignore",
+                    ".gitattributes",
+                    ".gitmodules",
+                    ".php-cs-fixer.dist.php",
+                    ".php_cs.dist",
+                    ".travis.yml",
+                    "composer.json",
+                    "composer.lock",
+                    "docker-compose.yaml",
+                    "picofeed",
+                    "phpunit.xml",
+                    "psalm.xml.dist",
+                    "robo",
+                    "robo.bat",
+                    "RoboFile.php",
+                    "test.php",
+                ];
+                foreach (glob($dir."vendor/*/*/{*,.[!.]*,..?*}", \GLOB_BRACE) as $f) {
+                    if (in_array(basename($f), $extra)) {
+                        $files[] = $f;
+                    }
                 }
                 return $this->taskFilesystemStack()->remove($files)->run();
             });
