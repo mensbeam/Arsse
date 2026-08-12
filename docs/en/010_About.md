@@ -8,7 +8,7 @@ The Advanced RSS Environment (affectionately called "The Arsse") is a news aggre
 
 The primary goal of The Arsse is to bridge the many isolated ecosystems of client software for the various news synchronization protocols currently in existence. We want people to be able to use the best client software for whatever operating system they use, regardless of the protocols the client supports.
 
-The Arsse currently supports several popular protocols; though several more are within scope for inclusion, no others are currently planned as none seem to have many popular clients.
+The Arsse currently supports several popular protocols; though more are within scope for inclusion, no others are currently planned as no other protocols seem to have a large clients ecosystem.
 
 At present the software should be considered in a "beta" state: besides a Web front-end, most features of similar software have been implemented, though bugs may remain. Areas of future work include:
 
