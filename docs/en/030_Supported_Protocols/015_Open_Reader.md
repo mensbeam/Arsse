@@ -25,8 +25,8 @@ However, there also exists [FeedHQ](https://feedhq.readthedocs.io/en/latest/), a
 
 - Values other than `o` for the common `r` sorting parameter are ignored
 - Splice streams (which appear to be a FeedHQ extension) are supported for all stream-related parameters.
-- Multiple features omitted by FreshRSS but supported by FeedHQ have been implemented
-- XML output is supported; Atom output is not
+- XML output is supported for the FeedHQ endpoint; Atom output is not
+- For compatibility some functionality differs between the FeedHQ and FreshRSS endpoints. Explicitly using the FreshRSS endpoint URL may be required by some FreshRSS clients
 
 # Interaction with folders
 
