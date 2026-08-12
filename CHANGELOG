@@ -1,4 +1,4 @@
-Version 0.13.0 (20226-08-12)
+Version 0.13.0 (2026-08-12)
 ===========================
 
 New features:
@@ -10,7 +10,7 @@ Bug fixes:
 - Delete expired authentication tokens when performing automated clean-up
 
 Changes:
-- PHP's uri extension is now used to normalize URLs
+- Use PHP's uri extension to normalize URLs where available
 
 Version 0.12.1 (2025-01-19)
 ===========================
