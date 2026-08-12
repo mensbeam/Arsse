@@ -85,13 +85,13 @@ The Arsse does not at this time have any first party clients. However, because T
   </tr>
    <td><a href="https://www.feedflow.dev/">FeedFlow</a></td>
    <td>Windows, macOS, Linux</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
    <td class="Y">✔</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
-   <td class="N">✘</td>
-   <td class="N">✘</td>
    <td>
-    <p>Advertised Miniflux support is actually via Reader API. Also available for Android and iOS.</p>
+    <p>Advertised Miniflux support is actually via Open Reader API. Also available for Android and iOS.</p>
    </td>
   </tr>
   <tr>
@@ -128,6 +128,18 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td>
     <p>Not compatible with HTTP authentication.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://netnewswire.com/">NetNewsWire</a></td>
+   <td>macOS</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>
+    <p>Also available for iOS.</p>
    </td>
   </tr>
   <tr>
@@ -197,6 +209,18 @@ The Arsse does not at this time have any first party clients. However, because T
    <th colspan="8">Mobile</th>
   </tr>
   <tr>
+   <td><a href="https://github.com/jocmp/capyreader">Capy Reader</a></td>
+   <td>Android</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>
+    <p></p>
+   </td>
+  </tr>
+  <tr>
    <td><a href="https://pbh.dev/cloudnews/">CloudNews</a></td>
    <td>iOS</td>
    <td class="N">✘</td>
@@ -218,7 +242,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td>
-    <p>Advertised Miniflux support is actually via Reader API. Also available for Windows, macOS, and Linux.</p>
+    <p>Advertised Miniflux support is actually via Open Reader API. Also available for Windows, macOS, and Linux.</p>
    </td>
   </tr>
   <tr>
@@ -226,7 +250,7 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Android</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
-   <td class="N">✘</td>
+   <td class="Y">✔</td>
    <td class="Y">✔</td>
    <td class="Y">✔</td>
    <td>
@@ -252,11 +276,21 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Android, iOS</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td><p>When using a FreshRSS acount the full FreshRSS endpoint (<code>/api/greader.php/</code>) must be used for any write operations to succeed.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://play.google.com/store/apps/details?id=allen.town.focus.reader">FocusReader</a></td>
+   <td>Android</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
-   <td>
-   </td>
+   <td class="Y">✔</td>
+   <td class="Y">✔</td>
+   <td></td>
   </tr>
   <tr>
    <td><a href="https://github.com/fbarthelery/geekttrss">Geekttrss</a></td>
@@ -281,6 +315,18 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Requires token authentication.</td>
   </tr>
   <tr>
+   <td><a href="https://netnewswire.com/">NetNewsWire</a></td>
+   <td>iOS</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td>
+    <p>Also available for macOS.</p>
+   </td>
+  </tr>
+  <tr>
    <td><a href="https://github.com/nextcloud/news-android/">Nextcloud News</a></td>
    <td>Android</td>
    <td class="N">✘</td>
@@ -297,10 +343,20 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>Android</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td>Does not work with the "Google Reader" account type; use the "FreshRSS" account type instead.</td>
+  </tr>
+  <tr>
+   <td><a href="https://github.com/ReadYouApp/ReadYou">Read You</a></td>
+   <td>Android</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
-   <td></td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td><p>Fever account type does not seem to work properly.</p></td>
   </tr>
   <tr>
    <td><a href="http://tt-rss.org/">Tiny Tiny RSS</a></td>
@@ -337,6 +393,16 @@ The Arsse does not at this time have any first party clients. However, because T
    <td>
     <p>Trialware with one-time purchase.</p>
    </td>
+  </tr>
+  <tr>
+   <td><a href="https://yournews.app">Your News</a></td>
+   <td>Android, iOS</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
+   <td></td>
   </tr>
  </tbody>
 </table>
@@ -385,6 +451,18 @@ The Arsse does not at this time have any first party clients. However, because T
    </td>
   </tr>
   <tr>
+   <td><a href="https://lireapp.com/">lire</a></td>
+   <td>macOS, iOS</td>
+   <td class="Y">✔</td>
+   <td class="Y">✔</td>
+   <td class="Y">✔</td>
+   <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td>
+    <p>Requires purchase. Presumed to work.</p>
+   </td>
+  </tr>
+  <tr>
    <td><a href="https://open-store.io/app/newsie.martinferretti">Newsie</a></td>
    <td>Ubuntu Touch</td>
    <td class="N">✘</td>
@@ -409,11 +487,23 @@ The Arsse does not at this time have any first party clients. However, because T
   <tr>
    <td><a href="https://readkitapp.com/">ReadKit</a></td>
    <td>macOS, iOS</td>
+   <td class="Y">✔</td>
    <td class="N">✘</td>
-   <td class="N">✘</td>
+   <td class="Y">✔</td>
+   <td class="Y">✔</td>
+   <td class="Y">✔</td>
+   <td>
+    <p>Requires purchase. Presumed to work.</p>
+   </td>
+  </tr>
+  <tr>
+   <td><a href="https://www.reederapp.com/classic/">Reeder Classic</a></td>
+   <td>macOS, iOS</td>
    <td class="N">✘</td>
    <td class="N">✘</td>
    <td class="Y">✔</td>
+   <td class="N">✘</td>
+   <td class="N">✘</td>
    <td>
     <p>Requires purchase. Presumed to work.</p>
    </td>
