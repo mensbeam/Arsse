@@ -1172,10 +1172,15 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             $tr = Arsse::$db->begin();
             foreach (Arsse::$db->articleList(Arsse::$user->id, $context, ["id", 'edition', "modified_date"], $sort) as $i) {
                 // prepare the entry
-                $out[] = [
-                    'id' => (string) $i['id'], // FreshRSS returns the ID as a string, so we do the same
-                    'timestampUsec' => Date::transform($i['modified_date'], "unix", "sql")."000000",
-                ];
+                if ($this->mode === self::MODE_FRESHRSS) {
+                    // The Readrops Android client requires that only the 'id' key be present
+                    $out[] = ['id' => (string) $i['id']];
+                } else {
+                    $out[] = [
+                        'id' => (string) $i['id'], // FreshRSS returns the ID as a string, so we do the same
+                        'timestampUsec' => Date::transform($i['modified_date'], "unix", "sql")."000000",
+                    ];
+                }
                 $latest = $latest ? ($asc ? max($latest, (int) $i['edition']) : min($latest, (int) $i['edition'])) : $i['edition'];
             }
         }

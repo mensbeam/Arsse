@@ -35,6 +35,7 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
     abstract public function testIssuePostTokens(bool $existing): void;
     abstract public static function provideTokenChecks(): iterable;
     abstract public function testGetUserInfo(): void;
+    abstract public function testListItemIdentifiers(): void;
     abstract public function testListArticlesAsXml(): void;
     abstract public function testListArticlesAsAtom(): void;
 
@@ -799,29 +800,6 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         $user = "john.doe@example.com";
         $act = $this->req("GET", "/stream/contents/?c=!", "", $user);
         $exp = HTTP::respText('The supplied continuation string is not valid.', 400);
-        $this->assertMessage($exp, $act);
-    }
-
-    public function testListItemIdentifiers(): void {
-        $user = "john.doe@example.com";
-        $articles = [
-            ['id' => 1,  'edition' => 65, 'modified_date' => "2001-01-01 00:00:00"],
-            ['id' => 11, 'edition' => 32, 'modified_date' => "2001-01-05 00:00:00"],
-        ];
-        \Phake::when(Arsse::$db)->articleList(\Phake::anyParameters())->thenReturn(new Result($articles));
-        $act = $this->req("GET", "/stream/items/ids", "", $user);
-        $exp = HTTP::respJson([
-            'itemRefs' => [
-                [
-                    'id' => "1",
-                    'timestampUsec' => Date::transform($articles[0]['modified_date'], "unix")."000000",
-                ],
-                [
-                    'id' => "11",
-                    'timestampUsec' => Date::transform($articles[1]['modified_date'], "unix")."000000",
-                ],
-            ],
-        ]);
         $this->assertMessage($exp, $act);
     }
 
