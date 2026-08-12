@@ -19,8 +19,11 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
      */
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         $target = $req->getRequestTarget();
-        // ensure the URL is correct; the full path is already stripped by the global handler, so we should have no path remaining
-        if ((parse_url($target, \PHP_URL_PATH) ?? "") !== "") {
+        // ensure the URL is correct; the full path is already stripped by
+        //   the global handler, so we should have no path remaining, but
+        //   FreshRSS does allow a trailing slash, and the FocusReader client
+        //   requires this to be allowed.
+        if (!in_array((parse_url($target, \PHP_URL_PATH) ?? ""), ["", "/"])) {
             return HTTP::respEmpty(404);
         } elseif (!in_array($req->getMethod(), ["GET", "POST"])) {
             return HTTP::respEmpty(405);
