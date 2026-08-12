@@ -42,10 +42,9 @@ class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
         if (Arsse::$user->auth($user, $pass)) {
             $now = $this->now();
             $then = $now->add(new \DateInterval("P7D"));
-            $lifetime = $then->getTimestamp() - $now->getTimestamp();
             // successful authentication creates a long-lived token which can be used to authenticate other requests
             $token = Arsse::$db->tokenCreate($user, "reader.login", null, $then);
-            return HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=$lifetime\n");
+            return HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n");
         } else {
             // NOTE: FreshRSS uses a different error response, but this seems
             //   to be what all other Reader implementations do. Additionally,
