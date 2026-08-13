@@ -27,6 +27,10 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         'arsse_tag_members'   => ["tag", "subscription", "assigned"],
     ];
 
+    public static function setUpBeforeClass(): void {
+        static::startMockServer();
+    }
+
     public function setUp(): void {
         parent::setUp();
         // create a mock user manager

@@ -35,7 +35,8 @@
         "mensbeam/uri": "^1.0"
     },
     "require-dev": {
-        "bamarni/composer-bin-plugin": "*"
+        "bamarni/composer-bin-plugin": "*",
+        "donatj/mock-webserver": "^2.10"
     },
     "suggest": {
         "ext-pcntl": "To respond to signals, particularly to reload configuration via SIGHUP"

@@ -60,6 +60,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         static::$interface = null;
         self::clearData(true);
+        parent::tearDownAfterClass();
     }
 
     protected function exec($q): bool {

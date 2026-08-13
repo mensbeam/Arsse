@@ -66,6 +66,7 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
         // create the database interface with the suitable driver and apply the latest schema
         Arsse::$db = new Database(static::$drv);
         Arsse::$db->driverSchemaUpdate();
+        self::startMockServer();
     }
 
     public function setUp(): void {
@@ -111,5 +112,6 @@ abstract class AbstractTest extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         static::$failureReason = "";
         static::clearData();
+        parent::tearDownAfterClass();
     }
 }

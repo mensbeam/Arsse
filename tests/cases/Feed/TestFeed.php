@@ -92,10 +92,11 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         ],
     ];
 
+    public static function setUpBeforeClass(): void {
+        static::startMockServer();
+    }
+
     public function setUp(): void {
-        if (!@file_get_contents(self::$host."IsUp")) {
-            $this->markTestSkipped("Test Web server is not accepting requests");
-        }
         $this->base = self::$host."Feed/";
         parent::setUp();
         self::setConf();

@@ -43,6 +43,7 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         static::$interface = null;
         self::clearData(true);
+        parent::tearDownAfterClass();
     }
 
     public function testConstructStatement(): void {

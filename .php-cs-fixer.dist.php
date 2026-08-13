@@ -17,7 +17,6 @@ $paths = [
     BASE."tests/cases",
     BASE."tests/lib",
     BASE."tests/bootstrap.php",
-    BASE."tests/server.php",
 ];
 $rules = [
     // PSR standard to apply

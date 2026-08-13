@@ -159,6 +159,10 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         return $this->h->dispatch($req);
     }
 
+    public static function setUpBeforeClass(): void {
+        static::startMockServer();
+    }
+
     public function setUp(): void {
         parent::setUp();
         self::setConf();

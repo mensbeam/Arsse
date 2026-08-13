@@ -26,9 +26,12 @@ use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MensBeam\Mime\MimeType;
 use PHPUnit\Framework\Attributes\CoversClass;
+use donatj\MockWebServer\MockWebServer;
 
 #[CoversClass(Database::class)]
 abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
+    /** @var \donatj\MockWebServer\MockWebServer */
+    protected static $server;
     protected const COL_DEFS = [
         'arsse_meta' => [
             'key'   => "str",
@@ -208,7 +211,22 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         Arsse::$conf = (($force ? null : Arsse::$conf) ?? (new Conf))->import($defaults)->import($conf);
     }
 
-    /** Creates an instance of ServerRequestIn terface from components
+    protected static function startMockServer(): void {
+        $server = new MockWebServer(50034, "localhost");
+        $server->start();
+        $server->setDefaultResponse(new MockResponse);
+        static::$server = $server;
+    }
+
+    public static function tearDownAfterClass(): void {
+        if (static::$server) {
+            static::$server->stop();
+            static::$server = null;
+        }
+    }
+
+
+    /** Creates an instance of ServerRequestInterface from components
      * 
      * @param $method The request method
      * @param $url The absolute requestb URL path

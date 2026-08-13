@@ -58,6 +58,7 @@ abstract class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         static::$interface = null;
         self::clearData(true);
+        parent::tearDownAfterClass();
     }
 
     public function testLoadMissingFile(): void {

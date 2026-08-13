@@ -130,6 +130,10 @@ LONG_STRING;
         return $value;
     }
 
+    public static function setUpBeforeClass(): void {
+        static::startMockServer();
+    }
+
     public function setUp(): void {
         parent::setUp();
         self::setConf();
