@@ -215,10 +215,10 @@ trait SeriesSubscription {
 
     public function testReserveASubscriptionWithDiscovery(): void {
         $exp = $this->nextID("arsse_subscriptions");
-        $act = Arsse::$db->subscriptionReserve($this->user, "http://localhost:8000/Feed/Discovery/Valid");
+        $act = Arsse::$db->subscriptionReserve($this->user, "http://localhost:50034/Feed/Discovery/Valid");
         $this->assertSame($exp, $act);
         $state = $this->primeExpectations($this->data, ['arsse_subscriptions' => ["id", "owner", "url", "deleted", "modified"]]);
-        $state['arsse_subscriptions']['rows'][] = [$exp, $this->user, "http://localhost:8000/Feed/Discovery/Feed", 1, Date::transform("now", "sql")];
+        $state['arsse_subscriptions']['rows'][] = [$exp, $this->user, "http://localhost:50034/Feed/Discovery/Feed", 1, Date::transform("now", "sql")];
         $this->compareExpectations(static::$drv, $state);
     }
 

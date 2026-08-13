@@ -65,12 +65,12 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             'arsse_subscriptions' => [
                 'columns' => ["id", "owner", "folder", "feed_title", "title", "url", "deleted"],
                 'rows'    => [
-                    [1, "john.doe@example.com", 2,    "NASA JPL",       "NASA JPL",       "http://localhost:8000/Import/nasa-jpl",  0],
-                    [2, "john.doe@example.com", 5,    "Toronto Star",   "Toronto Star",   "http://localhost:8000/Import/torstar",   0],
-                    [3, "john.doe@example.com", 1,    "Ars Technica",   "Ars Technica",   "http://localhost:8000/Import/ars",       0],
-                    [4, "john.doe@example.com", 6,    "CBC News",       "CBC News",       "http://localhost:8000/Import/cbc",       0],
-                    [5, "john.doe@example.com", 6,    "Ottawa Citizen", "Ottawa Citizen", "http://localhost:8000/Import/citizen",   0],
-                    [6, "john.doe@example.com", null, "Eurogamer",      "Eurogamer",      "http://localhost:8000/Import/eurogamer", 0],
+                    [1, "john.doe@example.com", 2,    "NASA JPL",       "NASA JPL",       "http://localhost:50034/Import/nasa-jpl",  0],
+                    [2, "john.doe@example.com", 5,    "Toronto Star",   "Toronto Star",   "http://localhost:50034/Import/torstar",   0],
+                    [3, "john.doe@example.com", 1,    "Ars Technica",   "Ars Technica",   "http://localhost:50034/Import/ars",       0],
+                    [4, "john.doe@example.com", 6,    "CBC News",       "CBC News",       "http://localhost:50034/Import/cbc",       0],
+                    [5, "john.doe@example.com", 6,    "Ottawa Citizen", "Ottawa Citizen", "http://localhost:50034/Import/citizen",   0],
+                    [6, "john.doe@example.com", null, "Eurogamer",      "Eurogamer",      "http://localhost:50034/Import/eurogamer", 0],
                 ],
             ],
             'arsse_tags' => [
@@ -139,12 +139,12 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testMakeNoEffectiveChanges(): void {
         $in = [[
-            ['url' => "http://localhost:8000/Import/nasa-jpl",  'title' => "NASA JPL",       'folder' => 3, 'tags' => ["tech"]],
-            ['url' => "http://localhost:8000/Import/ars",       'title' => "Ars Technica",   'folder' => 2, 'tags' => ["frequent", "tech"]],
-            ['url' => "http://localhost:8000/Import/torstar",   'title' => "Toronto Star",   'folder' => 5, 'tags' => ["news", "canada", "toronto"]],
-            ['url' => "http://localhost:8000/Import/citizen",   'title' => "Ottawa Citizen", 'folder' => 6, 'tags' => ["news", "canada"]],
-            ['url' => "http://localhost:8000/Import/eurogamer", 'title' => "Eurogamer",      'folder' => 0, 'tags' => ["gaming", "frequent"]],
-            ['url' => "http://localhost:8000/Import/cbc",       'title' => "CBC News",       'folder' => 6, 'tags' => ["news", "canada"]],
+            ['url' => "http://localhost:50034/Import/nasa-jpl",  'title' => "NASA JPL",       'folder' => 3, 'tags' => ["tech"]],
+            ['url' => "http://localhost:50034/Import/ars",       'title' => "Ars Technica",   'folder' => 2, 'tags' => ["frequent", "tech"]],
+            ['url' => "http://localhost:50034/Import/torstar",   'title' => "Toronto Star",   'folder' => 5, 'tags' => ["news", "canada", "toronto"]],
+            ['url' => "http://localhost:50034/Import/citizen",   'title' => "Ottawa Citizen", 'folder' => 6, 'tags' => ["news", "canada"]],
+            ['url' => "http://localhost:50034/Import/eurogamer", 'title' => "Eurogamer",      'folder' => 0, 'tags' => ["gaming", "frequent"]],
+            ['url' => "http://localhost:50034/Import/cbc",       'title' => "CBC News",       'folder' => 6, 'tags' => ["news", "canada"]],
         ], [1      =>
             ['id' => 1, 'name' => "Photography", 'parent' => 0],
             ['id' => 2, 'name' => "Science",     'parent' => 0],
@@ -163,12 +163,12 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testModifyASubscription(): void {
         $in = [[
-            ['url' => "http://localhost:8000/Import/nasa-jpl",  'title' => "NASA JPL",       'folder' => 3, 'tags' => ["tech"]],
-            ['url' => "http://localhost:8000/Import/ars",       'title' => "Ars Technica",   'folder' => 2, 'tags' => ["frequent", "tech"]],
-            ['url' => "http://localhost:8000/Import/torstar",   'title' => "Toronto Star",   'folder' => 5, 'tags' => ["news", "canada", "toronto"]],
-            ['url' => "http://localhost:8000/Import/citizen",   'title' => "Ottawa Citizen", 'folder' => 6, 'tags' => ["news", "canada"]],
-            ['url' => "http://localhost:8000/Import/eurogamer", 'title' => "Eurogamer",      'folder' => 0, 'tags' => ["gaming", "frequent"]],
-            ['url' => "http://localhost:8000/Import/cbc",       'title' => "CBC",            'folder' => 0, 'tags' => ["news", "canada"]], // moved to root and renamed
+            ['url' => "http://localhost:50034/Import/nasa-jpl",  'title' => "NASA JPL",       'folder' => 3, 'tags' => ["tech"]],
+            ['url' => "http://localhost:50034/Import/ars",       'title' => "Ars Technica",   'folder' => 2, 'tags' => ["frequent", "tech"]],
+            ['url' => "http://localhost:50034/Import/torstar",   'title' => "Toronto Star",   'folder' => 5, 'tags' => ["news", "canada", "toronto"]],
+            ['url' => "http://localhost:50034/Import/citizen",   'title' => "Ottawa Citizen", 'folder' => 6, 'tags' => ["news", "canada"]],
+            ['url' => "http://localhost:50034/Import/eurogamer", 'title' => "Eurogamer",      'folder' => 0, 'tags' => ["gaming", "frequent"]],
+            ['url' => "http://localhost:50034/Import/cbc",       'title' => "CBC",            'folder' => 0, 'tags' => ["news", "canada"]], // moved to root and renamed
         ], [1      =>
             ['id' => 1, 'name' => "Photography", 'parent' => 0],
             ['id' => 2, 'name' => "Science",     'parent' => 0],
@@ -181,19 +181,19 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when($this->proc)->parse(\Phake::anyParameters())->thenReturn($in);
         $this->proc->import("john.doe@example.com", "", false, true);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
-        $exp['arsse_subscriptions']['rows'][3] = [4, "john.doe@example.com", null, "CBC News", "CBC", "http://localhost:8000/Import/cbc", 0];
+        $exp['arsse_subscriptions']['rows'][3] = [4, "john.doe@example.com", null, "CBC News", "CBC", "http://localhost:50034/Import/cbc", 0];
         $exp['arsse_folders']['rows'][] = [7, "john.doe@example.com", null, "Nature"];
         $this->compareExpectations($this->drv, $exp);
     }
 
     public function testImportAFeed(): void {
         $in = [[
-            ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => ["frequent", "cryptic"]], //one existing tag and one new one
+            ['url' => "http://localhost:50034/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => ["frequent", "cryptic"]], //one existing tag and one new one
         ], []];
         \Phake::when($this->proc)->parse(\Phake::anyParameters())->thenReturn($in);
         $this->proc->import("john.doe@example.com", "", false, false);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
-        $exp['arsse_subscriptions']['rows'][] = [7, "john.doe@example.com", null, "Some feed", "Some Feed", "http://localhost:8000/Import/some-feed", 0];
+        $exp['arsse_subscriptions']['rows'][] = [7, "john.doe@example.com", null, "Some feed", "Some Feed", "http://localhost:50034/Import/some-feed", 0];
         $exp['arsse_tags']['rows'][] = [7, "john.doe@example.com", "cryptic"];
         $exp['arsse_tag_members']['rows'][] = [2, 7, 1];
         $exp['arsse_tag_members']['rows'][] = [7, 7, 1];
@@ -202,7 +202,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testImportAFeedWithAnInvalidTag(): void {
         $in = [[
-            ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => [""]],
+            ['url' => "http://localhost:50034/Import/some-feed", 'title' => "Some Feed", 'folder' => 0, 'tags' => [""]],
         ], []];
         \Phake::when($this->proc)->parse(\Phake::anyParameters())->thenReturn($in);
         $this->assertException("invalidTagName", "ImportExport");
@@ -211,7 +211,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testReplaceData(): void {
         $in = [[
-            ['url' => "http://localhost:8000/Import/some-feed", 'title' => "Some Feed", 'folder' => 1, 'tags' => ["frequent", "cryptic"]],
+            ['url' => "http://localhost:50034/Import/some-feed", 'title' => "Some Feed", 'folder' => 1, 'tags' => ["frequent", "cryptic"]],
         ], [1 =>
             ['id' => 1, 'name' => "Photography", 'parent' => 0],
         ]];
@@ -219,8 +219,8 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->proc->import("john.doe@example.com", "", false, true);
         $exp = $this->primeExpectations($this->data, $this->checkTables);
         $exp['arsse_subscriptions']['rows'] = [
-            [7, "john.doe@example.com", 4,    "Some feed", "Some Feed", "http://localhost:8000/Import/some-feed", 0],
-            [6, "john.doe@example.com", null, "Eurogamer", "Eurogamer", "http://localhost:8000/Import/eurogamer", 1],
+            [7, "john.doe@example.com", 4,    "Some feed", "Some Feed", "http://localhost:50034/Import/some-feed", 0],
+            [6, "john.doe@example.com", null, "Eurogamer", "Eurogamer", "http://localhost:50034/Import/eurogamer", 1],
         ];
         $exp['arsse_tags']['rows'] = [[2, "john.doe@example.com", "frequent"], [7, "john.doe@example.com", "cryptic"]];
         $exp['arsse_tag_members']['rows'] = [[2, 7, 1], [7, 7, 1], [2, 6, 0]];

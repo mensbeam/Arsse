@@ -4,10 +4,10 @@ $body = <<<MESSAGE_BODY
 <rss version="2.0">
 <channel>
     <title>$title</title>
-    <link>http://localhost:8000/</link>
+    <link>http://localhost:50034/</link>
     <description>User agent test</description>
     <item>
-        <guid>http://localhost:8000/Feed/Scraping/Cookie</guid>
+        <guid>http://localhost:50034/Feed/Scraping/Cookie</guid>
         <title>Example article</title>
         <description>Partial content</description>
     </item>

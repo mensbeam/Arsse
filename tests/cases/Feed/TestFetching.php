@@ -17,7 +17,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('slow')]
 #[CoversClass(\JKingWeb\Arsse\Feed::class)]
 class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
-    protected static $host = "http://localhost:8000/";
+    protected static $host = "http://localhost:50034/";
     protected $base = "";
 
     public function setUp(): void {
@@ -70,7 +70,7 @@ class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testHandleACertificateError(): void {
         $this->assertException("invalidCertificate", "Feed");
-        new Feed(null, "https://localhost:8000/");
+        new Feed(null, "https://localhost:50034/");
     }
 
     public function testHandleATimeout(): void {

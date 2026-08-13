@@ -6,11 +6,11 @@ if (($_SERVER['PHP_AUTH_USER'] ?? "") === "user" && ($_SERVER['PHP_AUTH_PW'] ?? 
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
 <channel>
     <title>Test feed</title>
-    <link>http://localhost:8000/</link>
+    <link>http://localhost:50034/</link>
     <description>Example newsfeed title</description>
 
     <item>
-        <guid>http://localhost:8000/Feed/Scraping/DocumentPW</guid>
+        <guid>http://localhost:50034/Feed/Scraping/DocumentPW</guid>
         <title>Example article</title>
         <description>Partial content</description>
     </item>

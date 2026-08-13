@@ -21,7 +21,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[CoversClass(\JKingWeb\Arsse\Feed::class)]
 #[Group('slow')]
 class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
-    protected static $host = "http://localhost:8000/";
+    protected static $host = "http://localhost:50034/";
     protected $base = "";
     protected $latest = [
         [

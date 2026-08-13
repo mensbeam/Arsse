@@ -35,26 +35,26 @@ trait SeriesFeed {
             'arsse_icons' => [
                 'columns' => ["id", "url", "type", "data"],
                 'rows'    => [
-                    [1,'http://localhost:8000/Icon/PNG','image/png',base64_decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==")],
-                    [2,'http://localhost:8000/Icon/GIF','image/gif',base64_decode("R0lGODlhAQABAIABAAAAAP///yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")],
+                    [1,'http://localhost:50034/Icon/PNG','image/png',base64_decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMjHxIGmVAAAADUlEQVQYV2NgYGBgAAAABQABijPjAAAAAABJRU5ErkJggg==")],
+                    [2,'http://localhost:50034/Icon/GIF','image/gif',base64_decode("R0lGODlhAQABAIABAAAAAP///yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")],
                     // this actually contains the data of SVG2, which will lead to a row update when retieved
-                    [3,'http://localhost:8000/Icon/SVG1','image/svg+xml','<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#ED2939"/><rect width="600" height="600" fill="#fff"/><rect width="300" height="600" fill="#002395"/></svg>'],
+                    [3,'http://localhost:50034/Icon/SVG1','image/svg+xml','<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#ED2939"/><rect width="600" height="600" fill="#fff"/><rect width="300" height="600" fill="#002395"/></svg>'],
                 ],
             ],
             'arsse_subscriptions' => [
                 'columns' => ["id", "owner", "keep_rule", "block_rule", "url", "feed_title", "err_count", "err_msg", "last_mod", "next_fetch", "size", "icon"],
                 'rows'    => [
-                    [1, 'john.doe@example.com',null,         '^Sport$',"http://localhost:8000/Feed/Matching/3",                     "Ook",  0,"",                            $past,$past,  0,null],
-                    [2, 'john.doe@example.com',"",           null,     "http://localhost:8000/Feed/Matching/1",                     "Eek",  5,"There was an error last time",$past,$future,0,null],
-                    [3, 'john.doe@example.com','\w+',        null,     "http://localhost:8000/Feed/Fetching/Error?code=404",        "Ack",  0,"",                            $past,$now,   0,null],
-                    [4, 'john.doe@example.com','\w+',        "[",      "http://localhost:8000/Feed/NextFetch/NotModified?t=".time(),"Ooook",0,"",                            $past,$past,  0,null], // invalid rule leads to both rules being ignored
-                    [5, 'john.doe@example.com',null,         'and/or', "http://localhost:8000/Feed/Parsing/Valid",                  "Ooook",0,"",                            $past,$future,0,null],
-                    [6, 'jane.doe@example.com','^(?i)[a-z]+','3|6',    "http://localhost:8000/Feed/Matching/3",                     "Ook",  0,"",                            $past,$past,  0,null],
+                    [1, 'john.doe@example.com',null,         '^Sport$',"http://localhost:50034/Feed/Matching/3",                     "Ook",  0,"",                            $past,$past,  0,null],
+                    [2, 'john.doe@example.com',"",           null,     "http://localhost:50034/Feed/Matching/1",                     "Eek",  5,"There was an error last time",$past,$future,0,null],
+                    [3, 'john.doe@example.com','\w+',        null,     "http://localhost:50034/Feed/Fetching/Error?code=404",        "Ack",  0,"",                            $past,$now,   0,null],
+                    [4, 'john.doe@example.com','\w+',        "[",      "http://localhost:50034/Feed/NextFetch/NotModified?t=".time(),"Ooook",0,"",                            $past,$past,  0,null], // invalid rule leads to both rules being ignored
+                    [5, 'john.doe@example.com',null,         'and/or', "http://localhost:50034/Feed/Parsing/Valid",                  "Ooook",0,"",                            $past,$future,0,null],
+                    [6, 'jane.doe@example.com','^(?i)[a-z]+','3|6',    "http://localhost:50034/Feed/Matching/3",                     "Ook",  0,"",                            $past,$past,  0,null],
                     // these feeds all test icon caching
-                    [16,'jane.doe@example.org',null,         null,     "http://localhost:8000/Feed/WithIcon/PNG",                   null,   0,"",                            $past,$future,0,1], // no change when updated
-                    [17,'jane.doe@example.org',null,         null,     "http://localhost:8000/Feed/WithIcon/GIF",                   null,   0,"",                            $past,$future,0,1], // icon ID 2 will be assigned to feed when updated
-                    [18,'jane.doe@example.org',null,         null,     "http://localhost:8000/Feed/WithIcon/SVG1",                  null,   0,"",                            $past,$future,0,3], // icon ID 3 will be modified when updated
-                    [19,'jane.doe@example.org',null,         null,     "http://localhost:8000/Feed/WithIcon/SVG2",                  null,   0,"",                            $past,$future,0,null], // icon ID 4 will be created and assigned to feed when updated
+                    [16,'jane.doe@example.org',null,         null,     "http://localhost:50034/Feed/WithIcon/PNG",                   null,   0,"",                            $past,$future,0,1], // no change when updated
+                    [17,'jane.doe@example.org',null,         null,     "http://localhost:50034/Feed/WithIcon/GIF",                   null,   0,"",                            $past,$future,0,1], // icon ID 2 will be assigned to feed when updated
+                    [18,'jane.doe@example.org',null,         null,     "http://localhost:50034/Feed/WithIcon/SVG1",                  null,   0,"",                            $past,$future,0,3], // icon ID 3 will be modified when updated
+                    [19,'jane.doe@example.org',null,         null,     "http://localhost:50034/Feed/WithIcon/SVG2",                  null,   0,"",                            $past,$future,0,null], // icon ID 4 will be created and assigned to feed when updated
                 ],
             ],
             'arsse_articles' => [
@@ -212,12 +212,12 @@ trait SeriesFeed {
             'arsse_subscriptions' => ["id","err_count","err_msg"],
         ]);
         $state['arsse_subscriptions']['rows'][1] = [2,0,""];
-        $state['arsse_subscriptions']['rows'][2] = [3,1,'Feed URL "http://localhost:8000/Feed/Fetching/Error?code=404" is invalid'];
+        $state['arsse_subscriptions']['rows'][2] = [3,1,'Feed URL "http://localhost:50034/Feed/Fetching/Error?code=404" is invalid'];
         $this->compareExpectations(static::$drv, $state);
         // update the bad feed again, twice
         Arsse::$db->subscriptionUpdate(null, 3);
         Arsse::$db->subscriptionUpdate(null, 3);
-        $state['arsse_subscriptions']['rows'][2] = [3,3,'Feed URL "http://localhost:8000/Feed/Fetching/Error?code=404" is invalid'];
+        $state['arsse_subscriptions']['rows'][2] = [3,3,'Feed URL "http://localhost:50034/Feed/Fetching/Error?code=404" is invalid'];
         $this->compareExpectations(static::$drv, $state);
     }
 
@@ -308,7 +308,7 @@ trait SeriesFeed {
             'arsse_subscriptions' => ["id", "icon"],
         ]);
         $state['arsse_subscriptions']['rows'][9][1] = 4;
-        $state['arsse_icons']['rows'][] = [4,'http://localhost:8000/Icon/SVG2','image/svg+xml','<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#ED2939"/><rect width="600" height="600" fill="#fff"/><rect width="300" height="600" fill="#002395"/></svg>'];
+        $state['arsse_icons']['rows'][] = [4,'http://localhost:50034/Icon/SVG2','image/svg+xml','<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#ED2939"/><rect width="600" height="600" fill="#fff"/><rect width="300" height="600" fill="#002395"/></svg>'];
         $this->compareExpectations(static::$drv, $state);
     }
 

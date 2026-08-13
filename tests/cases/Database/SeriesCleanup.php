@@ -61,9 +61,9 @@ trait SeriesCleanup {
             'arsse_icons' => [
                 'columns' => ["id", "url", "orphaned"],
                 'rows'    => [
-                    [1,'http://localhost:8000/Icon/PNG',$daybefore],
-                    [2,'http://localhost:8000/Icon/GIF',$daybefore],
-                    [3,'http://localhost:8000/Icon/SVG1',null],
+                    [1,'http://localhost:50034/Icon/PNG',$daybefore],
+                    [2,'http://localhost:50034/Icon/GIF',$daybefore],
+                    [3,'http://localhost:50034/Icon/SVG1',null],
                 ],
             ],
             'arsse_subscriptions' => [

@@ -702,7 +702,7 @@ LONG_STRING;
         $in = array_merge(['op' => "subscribeToFeed", 'sid' => "PriestsOfSyrinx"], $in);
         $action = ($out instanceof \Exception) ? "thenThrow" : "thenReturn";
         $list = [
-            ['id' => 1, 'url' => "http://localhost:8000/Feed/Discovery/Feed"],
+            ['id' => 1, 'url' => "http://localhost:50034/Feed/Discovery/Feed"],
             ['id' => 2, 'url' => "http://example.com/0"],
             ['id' => 3, 'url' => "http://example.com/3"],
             ['id' => 4, 'url' => "http://example.com/9"],
@@ -729,8 +729,8 @@ LONG_STRING;
             [['feed_url' => "http://example.com/1", 'category_id' => 42],            [self::$userId, "http://example.com/1", true, ['username' => null, 'password' => null]],                         new FeedException("unauthorized"),         self::respGood(['code' => 5, 'message' => (new FeedException("unauthorized"))->getMessage()])],
             [['feed_url' => "http://example.com/2", 'category_id' => 2112],          null,                                                                                                            null,                                      self::respGood(['code' => 1, 'feed_id' => 0])],
             [['feed_url' => "http://example.com/3"],                                 [self::$userId, "http://example.com/3", true, ['username' => null, 'password' => null]],                         new ExceptionInput("constraintViolation"), self::respGood(['code' => 0, 'feed_id' => 3])],
-            [['feed_url' => "http://localhost:8000/Feed/Discovery/Valid"],           [self::$userId, "http://localhost:8000/Feed/Discovery/Valid", true, ['username' => null, 'password' => null]],   new ExceptionInput("constraintViolation"), self::respGood(['code' => 0, 'feed_id' => 1])],
-            [['feed_url' => "http://localhost:8000/Feed/Discovery/Invalid"],         [self::$userId, "http://localhost:8000/Feed/Discovery/Invalid", true, ['username' => null, 'password' => null]], new ExceptionInput("constraintViolation"), self::respGood(['code' => 3, 'message' => (new FeedException("subscriptionNotFound", ['url' => "http://localhost:8000/Feed/Discovery/Invalid"]))->getMessage()])],
+            [['feed_url' => "http://localhost:50034/Feed/Discovery/Valid"],           [self::$userId, "http://localhost:50034/Feed/Discovery/Valid", true, ['username' => null, 'password' => null]],   new ExceptionInput("constraintViolation"), self::respGood(['code' => 0, 'feed_id' => 1])],
+            [['feed_url' => "http://localhost:50034/Feed/Discovery/Invalid"],         [self::$userId, "http://localhost:50034/Feed/Discovery/Invalid", true, ['username' => null, 'password' => null]], new ExceptionInput("constraintViolation"), self::respGood(['code' => 3, 'message' => (new FeedException("subscriptionNotFound", ['url' => "http://localhost:50034/Feed/Discovery/Invalid"]))->getMessage()])],
             [['feed_url' => "http://example.com/6"],                                 [self::$userId, "http://example.com/6", true, ['username' => null, 'password' => null]],                         new FeedException("invalidUrl"),           self::respGood(['code' => 2, 'message' => (new FeedException("invalidUrl"))->getMessage()])],
             [['feed_url' => "http://example.com/7"],                                 [self::$userId, "http://example.com/7", true, ['username' => null, 'password' => null]],                         new FeedException("malformedXml"),         self::respGood(['code' => 6, 'message' => (new FeedException("malformedXml"))->getMessage()])],
             [['feed_url' => "http://example.com/8", 'category_id' => 47],            [self::$userId, "http://example.com/8", true, ['username' => null, 'password' => null]],                         4,                                         self::respGood(['code' => 1, 'feed_id' => 4])],

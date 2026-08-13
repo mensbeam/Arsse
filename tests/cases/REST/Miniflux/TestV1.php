@@ -289,13 +289,13 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function provideDiscoveries(): iterable {
         self::clearData();
         $discovered = [
-            ['title' => "Feed", 'type' => "rss", 'url' => "http://localhost:8000/Feed/Discovery/Feed"],
-            ['title' => "Feed", 'type' => "rss", 'url' => "http://localhost:8000/Feed/Discovery/Missing"],
+            ['title' => "Feed", 'type' => "rss", 'url' => "http://localhost:50034/Feed/Discovery/Feed"],
+            ['title' => "Feed", 'type' => "rss", 'url' => "http://localhost:50034/Feed/Discovery/Missing"],
         ];
         return [
-            ["http://localhost:8000/Feed/Discovery/Valid",   HTTP::respJson($discovered)],
-            ["http://localhost:8000/Feed/Discovery/Invalid", HTTP::respJson([])],
-            ["http://localhost:8000/Feed/Discovery/Missing", V1::respError("Fetch404", 502)],
+            ["http://localhost:50034/Feed/Discovery/Valid",   HTTP::respJson($discovered)],
+            ["http://localhost:50034/Feed/Discovery/Invalid", HTTP::respJson([])],
+            ["http://localhost:50034/Feed/Discovery/Missing", V1::respError("Fetch404", 502)],
             [1,                                              V1::respError(["InvalidInputType", 'field' => "url", 'expected' => "string", 'actual' => "integer"], 422)],
             ["Not a URL",                                    V1::respError(["InvalidInputValue", 'field' => "url"], 422)],
             [null,                                           V1::respError(["MissingInputValue", 'field' => "url"], 422)],
@@ -1167,8 +1167,8 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public static function provideScrapings(): iterable {
-        $base = "http://localhost:8000/Feed";
-        $basePW = "http://user:pass@localhost:8000/Feed";
+        $base = "http://localhost:50034/Feed";
+        $basePW = "http://user:pass@localhost:50034/Feed";
         return [
             [new ExceptionInput("subjectMissing"),                           [],                                                                           V1::respError("404", 404)],
             [[['url' => "$base/Scraping/Document", 'subscription' => 4400]], ['url' => "$base/Scraping/Feed",     'user_agent' => null, 'cookie' => null], HTTP::respJson(['content'=> "<p>Partial content, followed by more content</p>"])],
