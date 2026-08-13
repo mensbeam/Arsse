@@ -59,18 +59,18 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function provideAuthentications(): iterable {
         $token = "12345";
         return [
-            ["GET",  "ClientLogin?Email=ook&Passwd=eek", "",                     ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
-            ["GET",  "ClientLogin",                      "Email=ook&Passwd=eek", ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
-            ["GET",  "ClientLogin?Email=ook",            "Passwd=eek",           ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
-            ["GET",  "ClientLogin?Passwd=eek",           "Email=ook",            ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
-            ["GET",  "ClientLogin?Email=a%20b",          "Passwd=c%40d",         ["a b", "c@d"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
-            ["GET",  "ClientLogin?Email=ook&Passwd=eek", "",                     ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
+            ["GET",  "ClientLogin?Email=ook&Passwd=eek", "",                     ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n")],
+            ["GET",  "ClientLogin",                      "Email=ook&Passwd=eek", ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n")],
+            ["GET",  "ClientLogin?Email=ook",            "Passwd=eek",           ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n")],
+            ["GET",  "ClientLogin?Passwd=eek",           "Email=ook",            ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n")],
+            ["GET",  "ClientLogin?Email=a%20b",          "Passwd=c%40d",         ["a b", "c@d"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n")],
+            ["GET",  "ClientLogin?Email=ook&Passwd=eek", "",                     ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n")],
             ["GET",  "ClientLogin?Email=ook&Passwd=eek", "",                     ["ook", "eek"], false, HTTP::respText("Error=BadAuthentication", 400)],
             ["GET",  "ClientLogin/bad",                  "Email=ook&Passwd=eek", null,           false, HTTP::respEmpty(404)],
-            ["POST", "ClientLogin",                      "Email=ook&Passwd=eek", ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
-            ["POST", "ClientLogin?Email=ook",            "Passwd=eek",           ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
-            ["POST", "ClientLogin?Passwd=eek",           "Email=ook",            ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
-            ["POST", "ClientLogin?Email=a%20b",          "Passwd=c%40d",         ["a b", "c@d"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
+            ["POST", "ClientLogin",                      "Email=ook&Passwd=eek", ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n")],
+            ["POST", "ClientLogin?Email=ook",            "Passwd=eek",           ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n")],
+            ["POST", "ClientLogin?Passwd=eek",           "Email=ook",            ["ook", "eek"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n")],
+            ["POST", "ClientLogin?Email=a%20b",          "Passwd=c%40d",         ["a b", "c@d"], true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n")],
             ["POST", "ClientLogin?Email=ook&Passwd=eek", "",                     ["ook", "eek"], false, HTTP::respText("Error=BadAuthentication", 400)],
             ["POST", "ClientLogin/bad",                  "Email=ook&Passwd=eek", null,           false, HTTP::respEmpty(404)],
             ["PUT",  "ClientLogin",                      "Email=ook&Passwd=eek", null,           false, HTTP::respEmpty(405)],
@@ -89,12 +89,12 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function provideBasicAuthentications(): iterable {
         $token = "12345";
         return [
-            [false, false, false, HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
+            [false, false, false, HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n")],
             [false, true,  false, HTTP::respEmpty(401)],
-            [false, true,  true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
+            [false, true,  true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n")],
             [true,  false, false, HTTP::respEmpty(401)],
             [true,  true,  false, HTTP::respEmpty(401)],
-            [true,  true,  true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\nexpires_in=604800\n")],
+            [true,  true,  true,  HTTP::respText("SID=$token\nLSID=$token\nAuth=$token\n")],
         ];
     }
 
@@ -104,7 +104,7 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
         $body = "--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9\r\nContent-Disposition: form-data; name=\"Email\"\r\nContent-Length: 20\r\n\r\njohn.doe@example.com\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9\r\nContent-Disposition: form-data; name=\"Passwd\"\r\nContent-Length: 6\r\n\r\nsecret\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9--";
         $r = $this->serverRequest("POST", "/api/greader.php/accounts/ClientLogin", "/api/greader.php/accounts/ClientLogin", [], [], $body, "multipart/form-data; boundary=92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9");
         \Phake::when(Arsse::$user)->auth(\Phake::anyParameters())->thenReturn(true);
-        $exp = HTTP::respText("SID=12345\nLSID=12345\nAuth=12345\nexpires_in=604800\n");
+        $exp = HTTP::respText("SID=12345\nLSID=12345\nAuth=12345\n");
         $act = $this->h->dispatch($r);
         $this->assertMessage($exp, $act);
         \Phake::verify(Arsse::$user)->auth("john.doe@example.com", "secret");
@@ -117,7 +117,7 @@ class TestAuth extends \JKingWeb\Arsse\Test\AbstractTest {
         $body = "--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9\r\nContent-Disposition: form-data; name=\"Email\"\r\nContent-Length: 20\r\n\r\njohn.doe@example.com\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9\r\nContent-Disposition: form-data; name=\"Passwd\"\r\nContent-Length: 6\r\n\r\nsecret\r\n--92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9--";
         $r = $this->serverRequest("GET", "/api/greader.php/accounts/ClientLogin", "/api/greader.php/accounts/ClientLogin", [], [], $body, "multipart/form-data; boundary=92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9");
         \Phake::when(Arsse::$user)->auth(\Phake::anyParameters())->thenReturn(true);
-        $exp = HTTP::respText("SID=12345\nLSID=12345\nAuth=12345\nexpires_in=604800\n");
+        $exp = HTTP::respText("SID=12345\nLSID=12345\nAuth=12345\n");
         $act = $this->h->dispatch($r);
         $this->assertMessage($exp, $act);
         \Phake::verify(Arsse::$user)->auth("john.doe@example.com", "secret");
