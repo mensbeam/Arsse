@@ -38,11 +38,11 @@ class Arsse {
 
     public static function load(Conf $conf): void {
         static::$obj = static::$obj ?? new Factory;
-        static::$lang = static::$lang ?? new Lang;
+        static::$lang = static::$lang ?? static::$obj->get(Lang::class);
         static::$conf = $conf;
         static::$lang->set($conf->lang);
-        static::$db = static::$db ?? new Database;
-        static::$user = static::$user ?? new User;
+        static::$db = static::$db ?? static::$obj->get(Database::class);
+        static::$user = static::$user ?? static::$obj->get(User::class);
     }
 
     /** Checks whether the specified extensions are loaded and throws an exception if any are not */

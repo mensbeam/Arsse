@@ -61,7 +61,7 @@ class Service {
 
     public function reload(): void {
         $this->reload = false;
-        Arsse::$user = Arsse::$db = Arsse::$conf = Arsse::$lang = Arsse::$obj = $this->drv = null;
+        Arsse::$user = Arsse::$db = Arsse::$conf = Arsse::$lang = $this->drv = null;
         Arsse::bootstrap();
         $this->__construct();
     }
