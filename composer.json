@@ -43,7 +43,8 @@
     },
     "config": {
         "platform": {
-            "php": "7.3.33"
+            "php": "7.3.33",
+            "ext-sockets": "7.3.33"
         },
         "allow-plugins": {
             "bamarni/composer-bin-plugin": true
@@ -51,7 +52,7 @@
     },
     "extra": {
         "bamarni-bin": {
-            "bin-links": false,
+            "bin-links": true,
             "forward-command": true
         }
     },
@@ -76,5 +77,15 @@
             "type": "vcs",
             "url": "https://github.com/JKingweb/laminas-xml/"
         }
-    ]
+    ],
+    "scripts": {
+        "test": ["./scripts/test test"],
+        "test:quick": ["./scripts/test test:quick"],
+        "test:full": ["./scripts/test test:full"],
+        "coverage": ["./scripts/test coverage"],
+        "coverage:full": ["./scripts/test coverage:full"],
+        "manual": ["./vendor/bin/daux generate -d manual -q", "rm -rf manual/daux_libraries manual/theme manual/themes/src @no_additional_args"],
+        "manual:live": ["Composer\\Config::disableProcessTimeout", "./vendor/bin/daux serve"],
+        "package:generic": ["./scripts/make-tarball"]
+    }
 }

@@ -1,0 +1,223 @@
+#!/usr/bin/env php
+<?php
+const AUTHOR_NAME = "J. King";
+const AUTHOR_MAIL = "jking@jkingweb.ca";
+
+$version = $argv[1] ?? "";
+$format = $argv[2] ?? "";
+if (!preg_match('/^\d+\.\d+\.\d+(?:-\d+-.+)?$/', $version) || !in_array($format, ["parsed", "debian", "rpm", "silent"])) {
+    echo <<<INFO
+Usage: changelog <version> <format>
+
+The <version> is the expected x.y.z tripartate version string for the latest
+release. This is used to check that version numbers and dates have been
+updated when preparing a release.
+
+The <format> is one of the following:
+    - parsed: A variable dump of the parsed changelog
+    - debian: The changelog in Debian changelog format
+    - rpm: The changelog in RPM changelog format
+    - silent: Prints to changelog, only reporting parsing errors
+
+INFO;
+    exit(1);
+}
+$text = file_get_contents(__DIR__."/../CHANGELOG");
+try {
+    $parsed = changelogParse($text, $version);
+    switch ($format) {
+        case "parsed":
+            var_export($parsed);
+            echo "\n";
+            break;
+        case "debian":
+            echo trim(changelogDebian($parsed, $version))."\n";
+            break;
+        case "rpm":
+            echo trim(changelogRPM($parsed, $version))."\n";
+            break;
+        case "silent":
+            break;
+        default:
+            throw new \Exception("CHANGELOG: Changelog format '$format' not implemented");
+    }
+} catch (\Exception $e) {
+    fwrite(\STDERR, $e->getMessage()."\n");
+    exit(2);
+}
+
+/** Parses the contents of the CHANGELOG file into an array structure
+ *
+ * This is done line-by-line and tends to be quite strict.
+ * The parsed output can be used to generate changelogs in other formats,
+ * such as a Debian changelog or RPM changelog.
+ *
+ * @param string $text The text of the CHANGELOG file
+ * @param string $targetVersion The x.y.z version number of the latest release. This is used to check that version numbers and dates have been updated when preparing a release
+ */
+function changelogParse(string $text, string $targetVersion): array {
+    $lines = preg_split('/\r?\n/', $text);
+    $version = "";
+    $section = "";
+    $out = [];
+    $entry = [];
+    $expected = ["version"];
+    for ($a = 0; $a < sizeof($lines);) {
+        $l = rtrim($lines[$a++]);
+        if (in_array("version", $expected) && preg_match('/^Version ([\d\?]+(?:\.[\d\?]+)*) \(([\d\?]{4}-[\d\?]{2}-[\d\?]{2})\)\s*$/D', $l, $m)) {
+            $version = $m[1];
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/D', $m[2])) {
+                // uncertain dates are allowed only for the top version, and only if it does not match the target version (otherwise we have forgotten to set the correct date before tagging)
+                if (!$out && $targetVersion !== $version) {
+                    // use today's date; local time is fine
+                    $date = date("Y-m-d");
+                } else {
+                    throw new \Exception("CHANGELOG: Date at line $a is incomplete");
+                }
+            } else {
+                $date = $m[2];
+            }
+            if ($entry) {
+                $out[] = $entry;
+            }
+            $entry = ['version' => $version, 'date' => $date, 'features' => [], 'fixes' => [], 'changes' => []];
+            $expected = ["separator"];
+        } elseif (in_array("separator", $expected) && preg_match('/^=+/', $l)) {
+            $length = strlen($lines[$a - 2]);
+            if (strlen($l) !== $length) {
+                throw new \Exception("CHANGELOG: Separator at line $a is of incorrect length");
+            }
+            $expected = ["blank line"];
+            $section = "";
+        } elseif (in_array("blank line", $expected) && $l === "") {
+            $expected = [
+                ''         => ["features section", "fixes section", "changes section"],
+                'features' => ["fixes section", "changes section", "version"],
+                'fixes'    => ["changes section", "version"],
+                'changes'  => ["version"],
+            ][$section];
+            $expected[] = "end-of-file";
+        } elseif (in_array("features section", $expected) && $l === "New features:") {
+            $section = "features";
+            $expected = ["item"];
+        } elseif (in_array("fixes section", $expected) && $l === "Bug fixes:") {
+            $section = "fixes";
+            $expected = ["item"];
+        } elseif (in_array("changes section", $expected) && $l === "Changes:") {
+            $section = "changes";
+            $expected = ["item"];
+        } elseif (in_array("item", $expected) && preg_match('/^- (\w.*)$/D', $l, $m)) {
+            $entry[$section][] = $m[1];
+            $expected = ["item", "continuation", "blank line"];
+        } elseif (in_array("continuation", $expected) && preg_match('/^  (\S.*)$/D', $l, $m)) {
+            $last = sizeof($entry[$section]) - 1;
+            $entry[$section][$last] .= "\n".$m[1];
+        } else {
+            if (sizeof($expected) > 1) {
+                throw new \Exception("CHANGELOG: Expected one of [".implode(", ", $expected)."] at line $a");
+            } else {
+                throw new \Exception("CHANGELOG: Expected ".$expected[0]." at line $a");
+            }
+        }
+    }
+    if (!in_array("end-of-file", $expected)) {
+        if (sizeof($expected) > 1) {
+            throw new \Exception("CHANGELOG: Expected one of [".implode(", ", $expected)."] at end of file");
+        } else {
+            throw new \Exception("CHANGELOG: Expected ".$expected[0]." at end of file");
+        }
+    }
+    $out[] = $entry;
+    return $out;
+}
+
+/** Produce a Debian changelog from a parsed CHANGELOG file
+ *
+ * The Debian changelog format is extremely specific with certain tokens
+ * having special meaning and leading whitespace also being significant.
+ * Modifying this function should be done with extreme care.
+ *
+ * @param array $log The parsed chaneglog, output by changelogParse()
+ * @param string $targetVersion The second output of commitVersion()
+ */
+function changelogDebian(array $log, string $targetVersion): string {
+    $latest = $log[0]['version'];
+    $baseVersion = preg_replace('/^(\d+(?:\.\d+)*).*/', "$1", $targetVersion);
+    if ($baseVersion !== $targetVersion && version_compare($latest, $baseVersion, ">")) {
+        // if the changelog contains an entry for a future version, change its version number to match the target version instead of using the future version
+        $log[0]['version'] = $targetVersion;
+        $log[0]['distribution'] = "UNRELEASED";
+    } elseif ($baseVersion !== $targetVersion) {
+        // otherwise synthesize a changelog entry for the changes since the last tag
+        array_unshift($log, ['version' => $targetVersion, 'date' => date("Y-m-d"), 'features' => [], 'fixes' => [], 'changes' => ["Unspecified changes"], 'distribution' => "UNRELEASED"]);
+    }
+    $out = "";
+    foreach ($log as $entry) {
+        // normalize the version string
+        preg_match('/^(\d+(?:\.\d+)*)(?:-(\d+)-.+)?$/D', $entry['version'], $m);
+        $version = $m[1]."-".(($m[2] ?? "") ?: "1");
+        // output the entry
+        $out .= "arsse ($version) ".($entry['distribution'] ?? "unstable")."; urgency=low\n";
+        if ($entry['features']) {
+            $out .= "\n";
+            foreach ($entry['features'] as $item) {
+                $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
+            }
+        }
+        if ($entry['fixes']) {
+            $out .= "\n";
+            foreach ($entry['fixes'] as $item) {
+                $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
+            }
+        }
+        if ($entry['changes']) {
+            $out .= "\n";
+            foreach ($entry['changes'] as $item) {
+                $out .= "  * ".trim(preg_replace("/^/m", "    ", $item))."\n";
+            }
+        }
+        $out .= "\n -- ".AUTHOR_NAME." <".AUTHOR_MAIL.">  ".\DateTimeImmutable::createFromFormat("Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D, d M Y")." 00:00:00 +0000\n\n";
+    }
+    return $out;
+}
+
+/** Produce a Debian changelog from a parsed CHANGELOG file
+ *
+ * The Debian changelog format is extremely specific with certain tokens
+ * having special meaning and leading whitespace also being significant.
+ * Modifying this function should be done with extreme care.
+ *
+ * @param array $log The parsed chaneglog, output by changelogParse()
+ * @param string $targetVersion The second output of commitVersion()
+ */
+function changelogRPM(array $log, string $targetVersion): string {
+    $latest = $log[0]['version'];
+    $baseVersion = preg_replace('/^(\d+(?:\.\d+)*).*/', "$1", $targetVersion);
+    if ($baseVersion !== $targetVersion && version_compare($latest, $baseVersion, ">")) {
+        // if the changelog contains an entry for a future version, change its version number to match the target version instead of using the future version
+        $log[0]['version'] = $targetVersion;
+    } elseif ($baseVersion !== $targetVersion) {
+        // otherwise synthesize a changelog entry for the changes since the last tag
+        array_unshift($log, ['version' => $targetVersion, 'date' => date("Y-m-d"), 'features' => [], 'fixes' => [], 'changes' => ["Unspecified changes"]]);
+    }
+    $out = "";
+    foreach ($log as $entry) {
+        $out .= "* ";
+        $out .= DateTimeImmutable::createFromFormat("!Y-m-d", $entry['date'], new \DateTimeZone("UTC"))->format("D M d Y");
+        $out .= " ";
+        $out .= AUTHOR_NAME." <".AUTHOR_MAIL.">";
+        $out .= " ";
+        $out .= "{$entry['version']}\n";
+        foreach ($entry['features'] as $item) {
+            $out .= "- ".trim(preg_replace("/^/m", "  ", $item))."\n";
+        }
+        foreach ($entry['fixes'] as $item) {
+            $out .= "- ".trim(preg_replace("/^/m", "  ", $item))."\n";
+        }
+        foreach ($entry['changes'] as $item) {
+            $out .= "- ".trim(preg_replace("/^/m", "  ", $item))."\n";
+        }
+        $out .= "\n";
+    }
+    return "\n\n%changelog\n".trim($out)."\n";
+}
