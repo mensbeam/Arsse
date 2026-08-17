@@ -34,5 +34,5 @@ if [ "$type" == "coverage" -o "$type" == "coverage:full" ]; then
     fi
     php_args+=("-d" "zend.extension=xdebug" "-d" "xdebug.mode=coverage")
 fi
-
+# run the requested tests
 "$PHP" "${php_args[@]}" "$prj_dir/vendor/bin/phpunit" "${phpunit_args[@]}" "$@"

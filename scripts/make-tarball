@@ -42,6 +42,9 @@ fi
 $tarball = "$prj_dir/release/$version/arsse-$version.tar.gz"
 # create a temporary worktree
 tmp_dir="$(mktemp -d)"
+if [ $? -gt 0 ]; then
+    err "Unable to create temporary directory"
+fi
 wrk_dir="$tmp_dir/arsse"
 mkdir -p "$wrk_dir"
 git -C "$prj_dir" worktree add "$wrk_dir" "$commit"

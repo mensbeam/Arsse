@@ -86,6 +86,7 @@
         "coverage:full": ["./scripts/test coverage:full"],
         "manual": ["./vendor/bin/daux generate -d manual -q", "rm -rf manual/daux_libraries manual/theme manual/themes/src @no_additional_args"],
         "manual:live": ["Composer\\Config::disableProcessTimeout", "./vendor/bin/daux serve"],
-        "package:generic": ["./scripts/make-tarball"]
+        "package:generic": ["./scripts/make-tarball"],
+        "package:debsrc": ["./scripts/make-debsrc"]
     }
 }
