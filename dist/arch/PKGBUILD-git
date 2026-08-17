@@ -1,6 +1,6 @@
 # Maintainer: J. King <jking@jkingweb.ca>
 pkgname="arsse-git"
-pkgver=0.11.0
+pkgver=0.13.0
 pkgrel=1
 epoch=
 pkgdesc="Multi-protocol RSS/Atom newsfeed synchronization server, bugfix-testing version"
@@ -40,8 +40,8 @@ pkgver() {
 build() {
     cd "$srcdir/arsse"
     composer install --ignore-platform-reqs
-    ./robo manual
-    composer install --ignore-platform-reqs   --no-dev -o --no-scripts
+    composer manual
+    composer install --ignore-platform-reqs --no-dev -o --no-scripts
     php arsse.php conf save-defaults config.defaults.php
     rm -r vendor/bin
 }
