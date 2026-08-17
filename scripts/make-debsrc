@@ -15,20 +15,23 @@ for tool in git tar php composer; do
         err "The $tool command is required for this script to function"
     fi
 done
-if if [ "$(grep -c '^[0-9]\+\.[0-9]\+\.[0-9]\+\(-[0-9]\+-.\+\)\?$' <<< "$1")" != "1" ]; then
-    echo "Usage: $0 <git-commit-ish>"
+if [ "$1" == "--help" ]; then
+    echo "Usage: $0 [<git-commit-ish>]"
     echo ""
     echo "The <git-commit-ish> argument may be any valid Git commit-ish"
     echo "reference. For more details see the Git documentation here:"
     echo "https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-commit-ishalsocommittish"
     echo ""
     echo "Note that commits predating the 0.10.0 tag may not work correctly or at all."
-    exit 1
+    exit
 fi
 
 prj_dir="$(dirname $(dirname "$0"))"
 # validate the commit
 commit="$1"
+if [ -z "$commit" ]; then
+    commit="HEAD"
+fi
 version="$(git -C "$prj_dir" describe --tags "$commit" 2>/dev/null)"
 if [ -z "$version"]; then
     err "The supplied Git commit-ish is invalid"

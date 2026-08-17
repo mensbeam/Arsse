@@ -87,6 +87,7 @@
         "manual": ["./vendor/bin/daux generate -d manual -q", "rm -rf manual/daux_libraries manual/theme manual/themes/src @no_additional_args"],
         "manual:live": ["Composer\\Config::disableProcessTimeout", "./vendor/bin/daux serve"],
         "package:generic": ["./scripts/make-tarball"],
-        "package:debsrc": ["./scripts/make-debsrc"]
+        "package:debsrc": ["./scripts/make-debsrc"],
+        "package": ["@package:generic", "@package:debsrc"]
     }
 }
