@@ -31,7 +31,7 @@ class TestV1_3 extends TestV1_2 {
         $exp = HTTP::respJson([
             'version'       => V1_3::VERSION,
             'arsse_version' => Arsse::VERSION,
-            ]);
+        ]);
         $this->assertMessage($exp, $this->req("GET", "/version"));
     }
 

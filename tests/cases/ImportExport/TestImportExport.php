@@ -121,21 +121,14 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testImportWithInvalidFolder(): void {
-        $in = [[
-        ], [1 =>
-            ['id' => 1, 'name' => "", 'parent' => 0],
-        ]];
+        $in = [[], [1 => ['id' => 1, 'name' => "", 'parent' => 0]]];
         \Phake::when($this->proc)->parse(\Phake::anyParameters())->thenReturn($in);
         $this->assertException("invalidFolderName", "ImportExport");
         $this->proc->import("john.doe@example.com", "", false, false);
     }
 
     public function testImportWithDuplicateFolder(): void {
-        $in = [[
-        ], [1 =>
-            ['id' => 1, 'name' => "New", 'parent' => 0],
-            ['id' => 2, 'name' => "New", 'parent' => 0],
-        ]];
+        $in = [[], [1 => ['id' => 1, 'name' => "New", 'parent' => 0], ['id' => 2, 'name' => "New", 'parent' => 0]]];
         \Phake::when($this->proc)->parse(\Phake::anyParameters())->thenReturn($in);
         $this->assertException("invalidFolderCopy", "ImportExport");
         $this->proc->import("john.doe@example.com", "", false, false);
@@ -149,7 +142,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['url' => "http://localhost:50034/Import/citizen",   'title' => "Ottawa Citizen", 'folder' => 6, 'tags' => ["news", "canada"]],
             ['url' => "http://localhost:50034/Import/eurogamer", 'title' => "Eurogamer",      'folder' => 0, 'tags' => ["gaming", "frequent"]],
             ['url' => "http://localhost:50034/Import/cbc",       'title' => "CBC News",       'folder' => 6, 'tags' => ["news", "canada"]],
-        ], [1      =>
+        ], [1 =>
             ['id' => 1, 'name' => "Photography", 'parent' => 0],
             ['id' => 2, 'name' => "Science",     'parent' => 0],
             ['id' => 3, 'name' => "Rocketry",    'parent' => 2],
@@ -173,7 +166,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
             ['url' => "http://localhost:50034/Import/citizen",   'title' => "Ottawa Citizen", 'folder' => 6, 'tags' => ["news", "canada"]],
             ['url' => "http://localhost:50034/Import/eurogamer", 'title' => "Eurogamer",      'folder' => 0, 'tags' => ["gaming", "frequent"]],
             ['url' => "http://localhost:50034/Import/cbc",       'title' => "CBC",            'folder' => 0, 'tags' => ["news", "canada"]], // moved to root and renamed
-        ], [1      =>
+        ], [1 =>
             ['id' => 1, 'name' => "Photography", 'parent' => 0],
             ['id' => 2, 'name' => "Science",     'parent' => 0],
             ['id' => 3, 'name' => "Rocketry",    'parent' => 2],
@@ -214,11 +207,7 @@ class TestImportExport extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testReplaceData(): void {
-        $in = [[
-            ['url' => "http://localhost:50034/Import/some-feed", 'title' => "Some Feed", 'folder' => 1, 'tags' => ["frequent", "cryptic"]],
-        ], [1 =>
-            ['id' => 1, 'name' => "Photography", 'parent' => 0],
-        ]];
+        $in = [[['url' => "http://localhost:50034/Import/some-feed", 'title' => "Some Feed", 'folder' => 1, 'tags' => ["frequent", "cryptic"]]], [1 => ['id' => 1, 'name' => "Photography", 'parent' => 0]]];
         \Phake::when($this->proc)->parse(\Phake::anyParameters())->thenReturn($in);
         $this->proc->import("john.doe@example.com", "", false, true);
         $exp = $this->primeExpectations($this->data, $this->checkTables);

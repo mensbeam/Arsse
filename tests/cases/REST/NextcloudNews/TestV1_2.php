@@ -494,7 +494,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = HTTP::respJson([
             'version'       => V1_2::VERSION,
             'arsse_version' => Arsse::VERSION,
-            ]);
+        ]);
         $this->assertMessage($exp, $this->req("GET", "/version"));
     }
 

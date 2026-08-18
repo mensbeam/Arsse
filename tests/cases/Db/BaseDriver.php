@@ -22,7 +22,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         'dbTimeoutExec'    => 0.5,
         'dbTimeoutLock'    => 0.001,
         'dbSQLite3Timeout' => 0,
-      //'dbSQLite3File' => "(temporary file)",
+        //'dbSQLite3File'  => "(temporary file)",
     ];
 
     public static function setUpBeforeClass(): void {

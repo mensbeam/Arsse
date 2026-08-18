@@ -7,5 +7,4 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\Db;
 
-class ExceptionRetry extends \JKingWeb\Arsse\AbstractException {
-}
+class ExceptionRetry extends \JKingWeb\Arsse\AbstractException {}

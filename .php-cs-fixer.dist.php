@@ -19,16 +19,9 @@ $paths = [
 ];
 $rules = [
     // PSR standard to apply
-    '@PSR12'                                    => true,
-    // house rules where PSR series is silent
+    '@PER-CS3x0'                                => true,
+    // house rules where standard is silent
     'align_multiline_comment'                   => ['comment_type' => "phpdocs_only"],
-    'array_syntax'                              => ['syntax' => "short"],
-    'binary_operator_spaces'                    => [
-        'default'   => "single_space",
-        'operators' => ['=>' => "align_single_space"],
-    ],
-    'cast_spaces'                               => ['space' => "single"],
-    'concat_space'                              => ['spacing' => "none"],
     'list_syntax'                               => ['syntax' => "short"],
     'magic_constant_casing'                     => true,
     'magic_method_casing'                       => true,
@@ -56,7 +49,8 @@ $rules = [
     'trailing_comma_in_multiline'               => ['elements' => ["arrays"]],
     'unary_operator_spaces'                     => true,
     'yoda_style'                                => false,
-    // house exceptions to PSR rules
+    'php_unit_attributes'                       => true,
+    // house exceptions to standard rules
     'braces_position'                     => [
         'functions_opening_brace' => "same_line",
         'classes_opening_brace'   => "same_line",
@@ -68,7 +62,11 @@ $rules = [
     ],
     'single_blank_line_before_namespace'        => false,
     'blank_line_after_opening_tag'              => false,
-    'php_unit_attributes'                       => true,
+    'concat_space'                              => ['spacing' => "none"],
+    'binary_operator_spaces'                    => [
+        'default'   => "single_space",
+        'operators' => ['=>' => "align_single_space"],
+    ],
 ];
 
 $finder = \PhpCsFixer\Finder::create();

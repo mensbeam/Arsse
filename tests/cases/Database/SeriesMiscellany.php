@@ -20,8 +20,7 @@ trait SeriesMiscellany {
         ]);
     }
 
-    protected function tearDownSeriesMiscellany(): void {
-    }
+    protected function tearDownSeriesMiscellany(): void {}
 
     public function testInitializeDatabase(): void {
         static::dbRaze(static::$drv);

@@ -7,5 +7,4 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\REST;
 
-class Exception415 extends \Exception {
-}
+class Exception415 extends \Exception {}

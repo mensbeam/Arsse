@@ -7,5 +7,4 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\Service;
 
-class Exception extends \JKingWeb\Arsse\AbstractException {
-}
+class Exception extends \JKingWeb\Arsse\AbstractException {}
