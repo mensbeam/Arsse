@@ -34,7 +34,7 @@ if [ "$1" == "--help" ]; then
     exit 1
 fi
 
-prj_dir="$(dirname $(dirname "$0"))"
+prj_dir="$(realpath "$(dirname "$(dirname "$0")")")"
 # validate the commit
 commit="$1"
 if [ -z "$commit" ]; then
@@ -52,7 +52,7 @@ if [ $? -gt 0 ]; then
 fi
 wrk_dir="$tmp_dir/arsse"
 mkdir -p "$wrk_dir"
-git -C "$prj_dir" worktree add "$wrk_dir" "$commit"
+git -C "$prj_dir" worktree add "$wrk_dir" "$commit" -q
 if [ "$?" -gt 0 ]; then
     err "Unable to create temporary Git worktree"
 fi
@@ -100,7 +100,7 @@ composer -d "$wrk_dir" install -o --no-dev --no-scripts -q
 for f in .git .gitignore .gitattributes dist/debian/.gitignore composer.json composer.lock .php_cs.dist .php-cs-fixer.dist.php phpdoc.dist.xml build.xml RoboFile.php CONTRIBUTING.md docs manpages tests vendor-bin vendor/bin robo robo.bat package.json yarn.lock postcss.config.js; do
     rm -rf "$wrk_dir/$f"
 done
-for d in "$tmpp_dir"/*/*; do
+for d in "$wrk_dir"/vendor/*/*; do
     for f in .git .github .phan test tests examples scripts vendor-bin .editorconfig .gitignore .gitattributes .gitmodules .php-cs-fixer.dist.php .php_cs.dist .travis.yml composer.json composer.lock docker-compose.yaml picofeed phpunit.xml psalm.xml.dist robo robo.bat RoboFile.php test.php; do
         rm -rf "$d/$f"
     done
@@ -108,7 +108,10 @@ done
 # generate a sample configuration file
 php "$wrk_dir/arsse.php" conf save-defaults "$wrk_dir/config.defaults.php"
 # remove any existing tarball
+mkdir -p "$(dirname "$tarball")"
 rm -f "$tarball"
 # package it all up and clean up
-GZIP=-9 tar czf "$tarball" "$wrk_dir"
+pushd "$tmp_dir" >/dev/null
+GZIP=-9 tar czf "$tarball" "arsse"
+popd >/dev/null
 cleanup
