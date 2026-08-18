@@ -96,7 +96,7 @@ class Database {
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
         $out = "";
         foreach ($trace as $step) {
-            if (($step['class'] ?? "")  === __CLASS__) {
+            if (($step['class'] ?? "") === __CLASS__) {
                 $out = $step['function'];
             } else {
                 break;
@@ -498,7 +498,7 @@ class Database {
     }
 
     /** Look up data associated with a token
-     * 
+     *
      * @param string $class The type of token
      * @param string $id The token ID
      * @param ?string $user The user to whom the token belongs, if relevant. This parameter is useful for e.g. privilege tokens as opposed to login tokens
@@ -776,8 +776,8 @@ class Database {
     }
 
     /** Adds a subscription to a newsfeed, and returns the numeric identifier of the added subscription
-     * 
-     * This is an all-in-one operation which reserves an ID, sets the subscription's 
+     *
+     * This is an all-in-one operation which reserves an ID, sets the subscription's
      * properties, and based on whether the feed is fetched successfully, either makes
      * the subscription available to the user, or deletes the reservation.
      *
@@ -804,10 +804,10 @@ class Database {
 
     /** Adds a subscription to the database without exposing it to the user, returning its ID
      *
-     * If the subscription already exists in the database an exception is thrown, unless the 
-     * subscription was soft-deleted; in this case the the existing ID is returned without 
+     * If the subscription already exists in the database an exception is thrown, unless the
+     * subscription was soft-deleted; in this case the the existing ID is returned without
      * clearing the delete flag
-     * 
+     *
      * This function can used  with `subscriptionUpdate` and `subscriptionReveal` to simulate
      * atomic addition (or rollback) of multiple newsfeeds, something which is not normally
      * practical due to network retrieval and processing times
@@ -848,7 +848,7 @@ class Database {
     }
 
     /** Clears the soft-delete flag from one or more subscriptions, making them visible to the user
-     * 
+     *
      * @param string $user The user whose subscriptions to reveal
      * @param int $id The numerical identifier(s) of the subscription(s) to reveal
      */
@@ -858,7 +858,7 @@ class Database {
     }
 
     /** Retrieves the ID of the subscription with the supplied URL for the given user, if any
-     * 
+     *
      * @param string $user The user whose subscription to look up
      * @param string $url The URL of the subscription. This should include username and password, where appropriate
      */
@@ -1335,7 +1335,7 @@ class Database {
             )->run(Feed::nextFetchOnError($f['err_count']), $e->getMessage(), $subID);
             if ($throwError) {
                 throw $e;
-            }   
+            }
             return false;
         }
         //prepare the necessary statements to perform the update
@@ -1358,7 +1358,7 @@ class Database {
                 "UPDATE arsse_articles SET \"read\" = 0, hidden = ?, url = ?, title = ?, author = ?, published = ?, edited = ?, modified = CURRENT_TIMESTAMP, guid = ?, url_title_hash = ?, url_content_hash = ?, title_content_hash = ? WHERE id = ?",
                 ["bool", "str", "str", "str", "datetime", "datetime", "str", "str", "str", "str", "int"]
             );
-            $qUpdateContent = $this->db->prepareArray("UPDATE arsse_article_contents set content = ? where id = ?", ["str", "int"]); 
+            $qUpdateContent = $this->db->prepareArray("UPDATE arsse_article_contents set content = ? where id = ?", ["str", "int"]);
         }
         // prepare the keep and block rules
         try {
@@ -1562,7 +1562,8 @@ class Database {
                 s.owner = coalesce(?, s.owner)
                 and s.deleted = 0
                 and i.id = ?",
-            "str", "int"
+            "str",
+            "int"
         )->run($user, $id)->getRow();
         if (!$out) {
             throw new Db\ExceptionInput("subjectMissing", ["action" => __FUNCTION__, "field" => "icon", 'id' => $id]);
@@ -2042,8 +2043,8 @@ class Database {
                     \"read\" = ?, 
                     touched = 1 
                 where 
-                    id in (select article from target_articles)", 
-                [$subq->getTypes(), "bool"], 
+                    id in (select article from target_articles)",
+                [$subq->getTypes(), "bool"],
                 [$subq->getValues(), $data['read']]
             );
             $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
@@ -2072,7 +2073,7 @@ class Database {
                         $set 
                     where 
                         id in (select article from target_articles)",
-                    [$subq->getTypes(), $setTypes], 
+                    [$subq->getTypes(), $setTypes],
                     [$subq->getValues(), $setValues]
                 );
                 $this->db->prepare($q->getQuery(), $q->getTypes())->run($q->getValues());
@@ -2793,7 +2794,8 @@ class Database {
                 join arsse_subscriptions as s on m.subscription = s.id and s.deleted = 0
             where assigned = 1 and $field = ? and t.owner = ?
             order by subscription",
-            $type, "str"
+            $type,
+            "str"
         )->run($id, $user)->getAll();
         if (!$out) {
             // if no results were returned, do a full validation on the tag ID

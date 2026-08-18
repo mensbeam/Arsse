@@ -49,7 +49,6 @@ class TestArsse extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertInstanceOf(User::class, Arsse::$user);
     }
 
-
     #[DataProvider('provideExtensionChecks')]
     public function testCheckForExtensions(array $ext, $exp): void {
         if ($exp instanceof \Exception) {

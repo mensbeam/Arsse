@@ -12,7 +12,6 @@ use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Db\Transaction;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\CoversMethod;
 
 #[CoversClass(Database::class)]
 class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
@@ -42,7 +41,6 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
         return $m->invoke($this->db, ...$arg);
     }
 
-    //#[CoversMethod(Database::class, "generateIn")]
     #[DataProvider('provideInClauses')]
     public function testGenerateInClause(string $clause, array $values, array $inV, string $inT): void {
         $types = array_fill(0, sizeof($values), $inT);
@@ -77,7 +75,6 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    //#[CoversMethod(Database::class, "generateSearch")]
     #[DataProvider('provideSearchClauses')]
     public function testGenerateSearchClause(string $clause, array $values, array $inV, array $inC, bool $inAny): void {
         // this is not an exhaustive test; integration tests already cover the ins and outs of the functionality
@@ -102,7 +99,6 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-    //#[CoversMethod(Database::class, "generateSet")]
     public function testGenerateSetClause(): void {
         $in = [
             'ook' => true,
@@ -124,12 +120,10 @@ class TestDatabase extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame($exp, $this->invoke("generateSet", $in, $valid));
     }
 
-    //#[CoversMethod(Database::class, "begin")]
     public function testBeginATransaction(): void {
         $this->assertInstanceOf(Transaction::class, $this->invoke("begin"));
     }
 
-    //#[CoversMethod(Database::class, "caller")]
     public function testReportCallingMethod(): void {
         $this->assertSame("caller", $this->invoke("caller"));
     }

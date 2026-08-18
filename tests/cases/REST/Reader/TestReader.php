@@ -267,10 +267,10 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData(); // initializes string formatter
         $success = HTTP::respText("OK");
         return [
-            ["T=12345&i=1&i=2&a=user/-/label/Ook",    ["Ook", (new Context)->articles([1 ,2]), Database::ASSOC_ADD, true],     null,   $success],
-            ["T=12345&i=1&i=2&a=user/2112/label/Ook", ["Ook", (new Context)->articles([1 ,2]), Database::ASSOC_ADD, true],     null,   $success],
-            ["T=12345&i=1&i=2&a=user/-/label/Boop",   ["Boop", (new Context)->articles([1 ,2]), Database::ASSOC_ADD, true],    "Boop", $success],
-            ["T=12345&i=1&i=2&r=user/-/label/Boop",   ["Boop", (new Context)->articles([1 ,2]), Database::ASSOC_REMOVE, true], null,   $success],
+            ["T=12345&i=1&i=2&a=user/-/label/Ook",    ["Ook", (new Context)->articles([1, 2]), Database::ASSOC_ADD, true],     null,   $success],
+            ["T=12345&i=1&i=2&a=user/2112/label/Ook", ["Ook", (new Context)->articles([1, 2]), Database::ASSOC_ADD, true],     null,   $success],
+            ["T=12345&i=1&i=2&a=user/-/label/Boop",   ["Boop", (new Context)->articles([1, 2]), Database::ASSOC_ADD, true],    "Boop", $success],
+            ["T=12345&i=1&i=2&r=user/-/label/Boop",   ["Boop", (new Context)->articles([1, 2]), Database::ASSOC_REMOVE, true], null,   $success],
             ["T=56789&i=1&i=2&r=user/-/label/Boop",   null,                                                                    null,   self::respError("401", 401, ['X-Reader-Google-Bad-Token' => "true"])],
         ];
     }
@@ -387,15 +387,15 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         $act = $this->req("GET", "/friend/list", "", $user);
         $exp = HTTP::respJson(['friends' => [
             [
-                'userIds' => ["2112"],
-                'profileIds' => ["2112"],
-                'contactId' => "-1",
-                'stream' => "user/2112/state/com.google/broadcast",
-                'flags' => 1,
-                'displayName' => "john.doe@example.com",
-                'givenName' => "john.doe@example.com",
-                'n' => "",
-                'p' => "",
+                'userIds'                 => ["2112"],
+                'profileIds'              => ["2112"],
+                'contactId'               => "-1",
+                'stream'                  => "user/2112/state/com.google/broadcast",
+                'flags'                   => 1,
+                'displayName'             => "john.doe@example.com",
+                'givenName'               => "john.doe@example.com",
+                'n'                       => "",
+                'p'                       => "",
                 'hasSharedItemsOnProfile' => false,
             ],
         ]]);
@@ -405,10 +405,10 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testListPrefs(): void {
         $user = "john.doe@example.com";
         $act = $this->req("GET", "/preference/list", "", $user);
-        $exp = HTTP::respJson( [
+        $exp = HTTP::respJson([
             'prefs' => [
                 [
-                    'id' => "lhn-prefs",
+                    'id'    => "lhn-prefs",
                     'value' => '{"subscriptions":{"ssa":"true"}}',
                 ],
             ],
@@ -419,7 +419,7 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testListPrefsStream(): void {
         $user = "john.doe@example.com";
         $act = $this->req("GET", "/preference/stream/list", "", $user);
-        $exp = HTTP::respJson( [
+        $exp = HTTP::respJson([
             'streamprefs' => new \stdClass,
         ]);
         $this->assertMessage($exp, $act);
@@ -448,7 +448,7 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         ]));
         $act = $this->req("GET", "/unread-count", "", $user);
         $exp = HTTP::respJson([
-            'max' => 17,
+            'max'          => 17,
             'unreadcounts' => [
                 ['id' => "feed/1",                                  'count' => 5,  'newestItemTimestampUsec' => "1767225600000000"],
                 ['id' => "feed/2",                                  'count' => 12, 'newestItemTimestampUsec' => "1767312000000000"],
@@ -459,8 +459,8 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
                 ['id' => "user/2112/label/Foo",                     'count' => 10, 'newestItemTimestampUsec' => "1768435200000000"],
                 ['id' => "user/2112/label/Bar",                     'count' => 6,  'newestItemTimestampUsec' => "1771113600000000"],
                 ['id' => "user/2112/label/Baz",                     'count' => 0,  'newestItemTimestampUsec' => null],
-                ['id' => "user/2112/state/com.google/reading-list", 'count' => 17, 'newestItemTimestampUsec' => "1767398400000000"]
-            ]
+                ['id' => "user/2112/state/com.google/reading-list", 'count' => 17, 'newestItemTimestampUsec' => "1767398400000000"],
+            ],
         ]);
         $this->assertMessage($exp, $act);
     }
@@ -708,11 +708,11 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$db)->articleCategoriesGet($user, 1)->thenReturn(["Alfa", "Bravo"]);
         $act = $this->req("GET", "/stream/contents/", "", $user);
         $exp = HTTP::respJson([
-            'id' => "user/-/state/com.google/reading-list",
+            'id'      => "user/-/state/com.google/reading-list",
             'updated' => Date::transform(self::NOW, "unix"),
-            'items' => [
+            'items'   => [
                 [
-                    'id' => "tag:google.com,2005:reader/item/0000000000000001",
+                    'id'            => "tag:google.com,2005:reader/item/0000000000000001",
                     'crawlTimeMsec' => Date::transform($articles[0]['modified_date'], "unix")."000",
                     'timestampUsec' => Date::transform($articles[0]['modified_date'], "unix")."000000",
                     'published'     => Date::transform($articles[0]['published_date'], "unix"),
@@ -736,16 +736,16 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
                         'htmlUrl'  => $articles[0]['subscription_url'],
                         'title'    => $articles[0]['subscription_title'],
                     ],
-                    'summary'      => ['content' => $articles[0]['content']],
-                    'enclosure'    => [],
-                    'author'       => $articles[0]['author'],
+                    'summary'       => ['content' => $articles[0]['content']],
+                    'enclosure'     => [],
+                    'author'        => $articles[0]['author'],
                     'linkingUsers'  => [],
                     'comments'      => [],
                     'commentsNum'   => -1,
                     'annotations'   => [],
                 ],
                 [
-                    'id' => "tag:google.com,2005:reader/item/000000000000000b",
+                    'id'            => "tag:google.com,2005:reader/item/000000000000000b",
                     'crawlTimeMsec' => Date::transform($articles[1]['modified_date'], "unix")."000",
                     'timestampUsec' => Date::transform($articles[1]['modified_date'], "unix")."000000",
                     'published'     => Date::transform($articles[1]['published_date'], "unix"),
@@ -765,9 +765,9 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
                         'htmlUrl'  => $articles[1]['subscription_url'],
                         'title'    => $articles[1]['subscription_title'],
                     ],
-                    'summary'      => ['content' => $articles[1]['content']],
-                    'enclosure'    => [['href' => $articles[1]['media_url'], 'type' => $articles[1]['media_type']]],
-                    'author'       => $articles[1]['author'],
+                    'summary'       => ['content' => $articles[1]['content']],
+                    'enclosure'     => [['href' => $articles[1]['media_url'], 'type' => $articles[1]['media_type']]],
+                    'author'        => $articles[1]['author'],
                     'linkingUsers'  => [],
                     'comments'      => [],
                     'commentsNum'   => -1,
@@ -782,9 +782,9 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         $user = "john.doe@example.com";
         $act = $this->req("GET", "/stream/contents/user/-/state/com.google/broadcast", "", $user);
         $exp = HTTP::respJson([
-            'id' => "user/-/state/com.google/reading-list",
+            'id'      => "user/-/state/com.google/reading-list",
             'updated' => Date::transform(self::NOW, "unix"),
-            'items' => [],
+            'items'   => [],
         ]);
         $this->assertMessage($exp, $act);
     }
@@ -897,11 +897,11 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
             $act = $this->req("POST", "/stream/items/contents", $items, $user);
         }
         $exp = HTTP::respJson([
-            'id' => "user/-/state/com.google/reading-list",
+            'id'      => "user/-/state/com.google/reading-list",
             'updated' => Date::transform(self::NOW, "unix"),
-            'items' => [
+            'items'   => [
                 [
-                    'id' => "tag:google.com,2005:reader/item/0000000000000001",
+                    'id'            => "tag:google.com,2005:reader/item/0000000000000001",
                     'crawlTimeMsec' => Date::transform($articles[0]['modified_date'], "unix")."000",
                     'timestampUsec' => Date::transform($articles[0]['modified_date'], "unix")."000000",
                     'published'     => Date::transform($articles[0]['published_date'], "unix"),
@@ -925,16 +925,16 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
                         'htmlUrl'  => $articles[0]['subscription_url'],
                         'title'    => $articles[0]['subscription_title'],
                     ],
-                    'summary'      => ['content' => $articles[0]['content']],
-                    'enclosure'    => [],
-                    'author'       => $articles[0]['author'],
+                    'summary'       => ['content' => $articles[0]['content']],
+                    'enclosure'     => [],
+                    'author'        => $articles[0]['author'],
                     'linkingUsers'  => [],
                     'comments'      => [],
                     'commentsNum'   => -1,
                     'annotations'   => [],
                 ],
                 [
-                    'id' => "tag:google.com,2005:reader/item/000000000000000b",
+                    'id'            => "tag:google.com,2005:reader/item/000000000000000b",
                     'crawlTimeMsec' => Date::transform($articles[1]['modified_date'], "unix")."000",
                     'timestampUsec' => Date::transform($articles[1]['modified_date'], "unix")."000000",
                     'published'     => Date::transform($articles[1]['published_date'], "unix"),
@@ -954,9 +954,9 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
                         'htmlUrl'  => $articles[1]['subscription_url'],
                         'title'    => $articles[1]['subscription_title'],
                     ],
-                    'summary'      => ['content' => $articles[1]['content']],
-                    'enclosure'    => [['href' => $articles[1]['media_url'], 'type' => $articles[1]['media_type']]],
-                    'author'       => $articles[1]['author'],
+                    'summary'       => ['content' => $articles[1]['content']],
+                    'enclosure'     => [['href' => $articles[1]['media_url'], 'type' => $articles[1]['media_type']]],
+                    'author'        => $articles[1]['author'],
                     'linkingUsers'  => [],
                     'comments'      => [],
                     'commentsNum'   => -1,
@@ -1027,39 +1027,39 @@ abstract class TestReader extends \JKingWeb\Arsse\Test\AbstractTest {
         ]));
         $exp = HTTP::respJson(['subscriptions' => [
             [
-                'id'    => "feed/42",
-                'title' => "Ook!",
+                'id'         => "feed/42",
+                'title'      => "Ook!",
                 'categories' => [
                     ['id' => 'user/-/label/Bar', 'label' => "Bar"],
                 ],
-                'url' => "http://ook.net/feed",
-                'htmlUrl' => "http://ook.net",
-                'iconUrl' => "http://ook.net/icon",
+                'url'           => "http://ook.net/feed",
+                'htmlUrl'       => "http://ook.net",
+                'iconUrl'       => "http://ook.net/icon",
                 'frss:priority' => "main",
-                'sortid' => "00000001",
+                'sortid'        => "00000001",
             ],
             [
-                'id'    => "feed/2112",
-                'title' => "Eek!",
+                'id'         => "feed/2112",
+                'title'      => "Eek!",
                 'categories' => [
                     ['id' => 'user/-/label/Foo', 'label' => "Foo"],
                     ['id' => 'user/-/label/Bar', 'label' => "Bar"],
                 ],
-                'url' => "http://eek.org/feed",
-                'htmlUrl' => "http://eek.org",
-                'iconUrl' => "http://eek.org/icon",
+                'url'           => "http://eek.org/feed",
+                'htmlUrl'       => "http://eek.org",
+                'iconUrl'       => "http://eek.org/icon",
                 'frss:priority' => "main",
-                'sortid' => "00000002",
+                'sortid'        => "00000002",
             ],
             [
-                'id'    => "feed/31337",
-                'title' => "Ack!",
-                'categories' => [],
-                'url' => "http://ack.com/feed",
-                'htmlUrl' => "http://ack.com",
-                'iconUrl' => "https://example.test/freshrss/default.png",
+                'id'            => "feed/31337",
+                'title'         => "Ack!",
+                'categories'    => [],
+                'url'           => "http://ack.com/feed",
+                'htmlUrl'       => "http://ack.com",
+                'iconUrl'       => "https://example.test/freshrss/default.png",
                 'frss:priority' => "main",
-                'sortid' => "00000003",
+                'sortid'        => "00000003",
             ],
         ]]);
         $act = $this->req("GET", "/subscription/list", "", $user);

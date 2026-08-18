@@ -136,7 +136,8 @@ class Feed {
         $icon = new Favicon(self::configure($userAgent, $cookie));
         try {
             $this->iconUrl = $icon->find($feed->siteUrl, $feed->getIcon());
-        } catch (GuzzleException $e) {}
+        } catch (GuzzleException $e) {
+        }
         $this->iconData = $icon->getContent();
         if (strlen($this->iconData)) {
             $this->iconType = $icon->getType();

@@ -9,10 +9,6 @@ declare(strict_types=1);
 namespace JKingWeb\Arsse\TestCase\Database;
 
 use JKingWeb\Arsse\Arsse;
-use JKingWeb\Arsse\Database;
-use JKingWeb\Arsse\Test\Result;
-use PHPUnit\Framework\Attributes\CoversMethod;
-use PHPUnit\Framework\Attributes\DataProvider;
 
 trait SeriesFeed {
     protected static $drv;
@@ -138,12 +134,10 @@ trait SeriesFeed {
         unset($this->data, $this->matches);
     }
 
-    //#[CoversMethod(Database::class, "feedMatchLatest")]
     public function testListLatestItems(): void {
         $this->assertResult($this->matches, Arsse::$db->subscriptionMatchLatest(1, 2));
     }
 
-    //#[CoversMethod(Database::class, "feedMatchIds")]
     public function testMatchItemsById(): void {
         $this->assertResult($this->matches, Arsse::$db->subscriptionMatchIds(1, ['804e517d623390e71497982c77cf6823180342ebcd2e7d5e32da1e55b09dd180','db3e736c2c492f5def5c5da33ddcbea1824040e9ced2142069276b0a6e291a41']));
         foreach ($this->matches as $m) {
@@ -155,7 +149,6 @@ trait SeriesFeed {
         $this->assertResult([['id' => 1]], Arsse::$db->subscriptionMatchIds(1, ['e433653cef2e572eee4215fa299a4a5af9137b2cefd6283c85bd69a32915beda'])); // this ID appears in both feed 1 and feed 2; only one result should be returned
     }
 
-    //#[CoversMethod(Database::class, "subscriptionUpdate")]
     public function testUpdateAFeed(): void {
         // update a valid feed with both new and changed items
         Arsse::$db->subscriptionUpdate(null, 1);
@@ -221,25 +214,21 @@ trait SeriesFeed {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "feedUpdate")]
     public function testUpdateAMissingFeed(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->subscriptionUpdate(null, 2112);
     }
 
-    //#[CoversMethod(Database::class, "feedUpdate")]
     public function testUpdateAnInvalidFeed(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->subscriptionUpdate(null, -1);
     }
 
-    //#[CoversMethod(Database::class, "feedUpdate")]
     public function testUpdateAFeedThrowingExceptions(): void {
         $this->assertException("invalidUrl", "Feed");
         Arsse::$db->subscriptionUpdate(null, 3, true);
     }
 
-    //#[CoversMethod(Database::class, "feedUpdate")]
     public function testUpdateAFeedWithEnclosuresAndCategories(): void {
         Arsse::$db->subscriptionUpdate(null, 5);
         $state = $this->primeExpectations($this->data, [
@@ -260,7 +249,6 @@ trait SeriesFeed {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "feedListStale")]
     public function testListStaleFeeds(): void {
         $this->assertEquals([1,3,4, 6], Arsse::$db->subscriptionListStale());
         Arsse::$db->subscriptionUpdate(null, 3);
@@ -268,7 +256,6 @@ trait SeriesFeed {
         $this->assertEquals([1, 6], Arsse::$db->subscriptionListStale());
     }
 
-    //#[CoversMethod(Database::class, "feedUpdate")]
     public function testCheckIconDuringFeedUpdate(): void {
         Arsse::$db->subscriptionUpdate(null, 16);
         $state = $this->primeExpectations($this->data, [
@@ -278,7 +265,6 @@ trait SeriesFeed {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "feedUpdate")]
     public function testAssignIconDuringFeedUpdate(): void {
         Arsse::$db->subscriptionUpdate(null, 17);
         $state = $this->primeExpectations($this->data, [
@@ -289,7 +275,6 @@ trait SeriesFeed {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "feedUpdate")]
     public function testChangeIconDuringFeedUpdate(): void {
         Arsse::$db->subscriptionUpdate(null, 18);
         $state = $this->primeExpectations($this->data, [
@@ -300,7 +285,6 @@ trait SeriesFeed {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "feedUpdate")]
     public function testAddIconDuringFeedUpdate(): void {
         Arsse::$db->subscriptionUpdate(null, 19);
         $state = $this->primeExpectations($this->data, [
@@ -312,7 +296,6 @@ trait SeriesFeed {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "feedUpdate")]
     public function testUpdateUnmodifiedFeed(): void {
         $this->markTestIncomplete("FIXME: there is a bug here around calculation of nextFetch date");
         $state = $this->primeExpectations($this->data, [

@@ -228,7 +228,6 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("http://example.com/1", $f->newItems[0]->url);
     }
 
-
     #[DataProvider('provide304ResponseURLs')]
     public function testHandleCacheHeadersOn304(string $url): void {
         // upon 304, the client should re-use the caching header values it supplied to the server
@@ -288,7 +287,6 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
             }
         }
     }
-
 
     #[DataProvider('provide304Timestamps')]
     public function testComputeNextFetchFrom304(string $t, string $exp): void {

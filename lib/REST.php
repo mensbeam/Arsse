@@ -143,7 +143,7 @@ class REST {
         $url = URL::normalize($url);
         // find a match
         foreach ($map as $id => ['match' => $match, 'strip' => $strip, 'class' => $class]) {
-            // try to find a match; this is careful to handle doubled slashes 
+            // try to find a match; this is careful to handle doubled slashes
             $pattern = str_replace("/", "/+", preg_quote($match));
             if (substr($match, -1) !== "/") {
                 // if the pattern does not end with a slash, make sure we're
@@ -152,7 +152,7 @@ class REST {
             }
             $pattern = "<^$pattern>D";
             if (preg_match($pattern, $url, $m)) {
-                // if it matches, strip off any defined prefix; 
+                // if it matches, strip off any defined prefix
                 if ($match === $strip) {
                     $target = substr($url, strlen($m[0]));
                 } elseif ($match === "$strip/") {

@@ -176,7 +176,7 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         // create the object factory as a mock
         Arsse::$obj = \Phake::mock(Factory::class);
         \Phake::when(Arsse::$obj)->get(\Phake::anyParameters())->thenReturnCallback(function(string $class) {
-            return new $class();
+            return new $class;
         });
     }
 
@@ -225,9 +225,8 @@ abstract class AbstractTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
-
     /** Creates an instance of ServerRequestInterface from components
-     * 
+     *
      * @param $method The request method
      * @param $url The absolute requestb URL path
      * @param $urlPrefix The portion of the URL which is stripped by the general REST dispatcher

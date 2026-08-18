@@ -20,11 +20,11 @@ trait MySQL {
     protected static $dbDriverClass = \JKingWeb\Arsse\Db\MySQL\Driver::class;
     protected static $stringOutput = false;
 
-    public static function dbInterface(): \mysqli {
+    public static function dbInterface(): ?\mysqli {
         if (!class_exists("mysqli")) {
             return null;
         }
-        $drv = new \mysqli_driver();
+        $drv = new \mysqli_driver;
         $drv->report_mode = \MYSQLI_REPORT_OFF;
         $d = mysqli_init();
         $d->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);

@@ -57,7 +57,6 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertNotEquals($pass1, $pass2);
     }
 
-
     #[DataProvider('provideAuthentication')]
     public function testAuthenticateAUser(bool $preAuth, string $user, string $password, bool $exp): void {
         Arsse::$conf->userPreAuth = $preAuth;
@@ -396,7 +395,6 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-
     #[DataProvider('provideProperties')]
     public function testGetThePropertiesOfAUser(array $exp, array $base, array $extra): void {
         $user = "john.doe@example.com";
@@ -414,9 +412,9 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
     public static function provideProperties(): iterable {
         $defaults = ['num' => 1, 'admin' => false, 'lang' => null, 'tz' => "Etc/UTC"];
         return [
-            [$defaults, $defaults, []],
-            [$defaults, $defaults, ['num' => 2112, 'blah' => "bloo"]],
-            [['num' => 1, 'admin' => true, 'lang' => "fr", 'tz' => "America/Toronto"], $defaults, ['admin' => true, 'lang' => "fr", 'tz' => "America/Toronto"]],
+            [$defaults,                                                                $defaults,                                                                []],
+            [$defaults,                                                                $defaults,                                                                ['num' => 2112, 'blah' => "bloo"]],
+            [['num' => 1, 'admin' => true, 'lang' => "fr", 'tz' => "America/Toronto"], $defaults,                                                                ['admin' => true, 'lang' => "fr", 'tz' => "America/Toronto"]],
             [['num' => 1, 'admin' => true, 'lang' => null, 'tz' => "America/Toronto"], ['num' => 1, 'admin' => true, 'lang' => "fr", 'tz' => "America/Toronto"], ['lang' => null]],
         ];
     }
@@ -452,7 +450,6 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
         }
     }
 
-
     #[DataProvider('providePropertyChanges')]
     public function testSetThePropertiesOfAUser(array $in, $out): void {
         $user = "john.doe@example.com";
@@ -471,7 +468,6 @@ class TestUser extends \JKingWeb\Arsse\Test\AbstractTest {
             \Phake::verify(Arsse::$db)->userExists($user);
         }
     }
-
 
     #[DataProvider('providePropertyChanges')]
     public function testSetThePropertiesOfAUserWeDoNotKnow(array $in, $out): void {

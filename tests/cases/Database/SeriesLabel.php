@@ -11,7 +11,6 @@ namespace JKingWeb\Arsse\TestCase\Database;
 use JKingWeb\Arsse\Arsse;
 use JKingWeb\Arsse\Database;
 use JKingWeb\Arsse\Context\Context;
-use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesLabel {
     protected static $drv;
@@ -49,7 +48,7 @@ trait SeriesLabel {
                     [2,  "john.doe@example.com", "http://example.com/2",  null, 0],
                     [3,  "john.doe@example.com", "http://example.com/3",     1, 0],
                     [4,  "john.doe@example.com", "http://example.com/4",     6, 0],
-                    [5,  "john.doe@example.com", "http://example.com/10"    ,5, 0],
+                    [5,  "john.doe@example.com", "http://example.com/10",    5, 0],
                     [6,  "jane.doe@example.com", "http://example.com/1",  null, 0],
                     [7,  "jane.doe@example.com", "http://example.com/10", null, 0],
                     [8,  "john.doe@example.org", "http://example.com/11", null, 0],
@@ -101,7 +100,7 @@ trait SeriesLabel {
             ],
             'arsse_article_contents' => [
                 'columns' => ["id", "content"],
-                'rows' => [
+                'rows'    => [
                     [1,   'First article'],
                     [2,   'Second article'],
                     [3,   'third article'],
@@ -230,8 +229,6 @@ trait SeriesLabel {
         unset($this->data, $this->checkLabels, $this->checkMembers, $this->user);
     }
 
-    //#[CoversMethod(Database::class, "labelAdd")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testAddALabel(): void {
         $user = "john.doe@example.com";
         $labelID = $this->nextID("arsse_labels");
@@ -241,35 +238,26 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "labelAdd")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testAddADuplicateLabel(): void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->labelAdd("john.doe@example.com", ['name' => "Interesting"]);
     }
 
-    //#[CoversMethod(Database::class, "labelAdd")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testAddALabelWithAMissingName(): void {
         $this->assertException("missing", "Db", "ExceptionInput");
         Arsse::$db->labelAdd("john.doe@example.com", []);
     }
 
-    //#[CoversMethod(Database::class, "labelAdd")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testAddALabelWithABlankName(): void {
         $this->assertException("missing", "Db", "ExceptionInput");
         Arsse::$db->labelAdd("john.doe@example.com", ['name' => ""]);
     }
 
-    //#[CoversMethod(Database::class, "labelAdd")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testAddALabelWithAWhitespaceName(): void {
         $this->assertException("whitespace", "Db", "ExceptionInput");
         Arsse::$db->labelAdd("john.doe@example.com", ['name' => " "]);
     }
 
-    //#[CoversMethod(Database::class, "labelList")]
     public function testListLabels(): void {
         $exp = [
             ['id' => 2, 'name' => "Fascinating", 'articles' => 3, 'read' => 1, 'article_modified' => "2010-01-01 00:00:00"],
@@ -285,8 +273,6 @@ trait SeriesLabel {
         $this->assertResult($exp, Arsse::$db->labelList("jane.doe@example.com", false));
     }
 
-    //#[CoversMethod(Database::class, "labelRemove")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testRemoveALabel(): void {
         $this->assertTrue(Arsse::$db->labelRemove("john.doe@example.com", 1));
         $state = $this->primeExpectations($this->data, $this->checkLabels);
@@ -294,8 +280,6 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "labelRemove")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testRemoveALabelByName(): void {
         $this->assertTrue(Arsse::$db->labelRemove("john.doe@example.com", "Interesting", true));
         $state = $this->primeExpectations($this->data, $this->checkLabels);
@@ -303,86 +287,62 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "labelRemove")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testRemoveAMissingLabel(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelRemove("john.doe@example.com", 2112);
     }
 
-    //#[CoversMethod(Database::class, "labelRemove")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testRemoveAnInvalidLabel(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelRemove("john.doe@example.com", -1);
     }
 
-    //#[CoversMethod(Database::class, "labelRemove")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testRemoveAnInvalidLabelByName(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelRemove("john.doe@example.com", [], true);
     }
 
-    //#[CoversMethod(Database::class, "labelRemove")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testRemoveALabelOfTheWrongOwner(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelRemove("john.doe@example.com", 3); // label ID 3 belongs to Jane
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesGet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testGetThePropertiesOfALabel(): void {
         $exp = [
             'id'               => 2,
             'name'             => "Fascinating",
             'articles'         => 3,
             'read'             => 1,
-            'article_modified' => "2010-01-01 00:00:00"
+            'article_modified' => "2010-01-01 00:00:00",
         ];
         $this->assertArraySubset($exp, Arsse::$db->labelPropertiesGet("john.doe@example.com", 2));
         $this->assertArraySubset($exp, Arsse::$db->labelPropertiesGet("john.doe@example.com", "Fascinating", true));
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesGet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testGetThePropertiesOfAMissingLabel(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesGet("john.doe@example.com", 2112);
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesGet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testGetThePropertiesOfAnInvalidLabel(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesGet("john.doe@example.com", -1);
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesGet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testGetThePropertiesOfAnInvalidLabelByName(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesGet("john.doe@example.com", [], true);
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesGet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testGetThePropertiesOfALabelOfTheWrongOwner(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesGet("john.doe@example.com", 3); // label ID 3 belongs to Jane
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testMakeNoChangesToALabel(): void {
         $this->assertFalse(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, []));
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testRenameALabel(): void {
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "Curious"]));
         $state = $this->primeExpectations($this->data, $this->checkLabels);
@@ -390,9 +350,6 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testRenameALabelByName(): void {
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", "Interesting", ['name' => "Curious"], true));
         $state = $this->primeExpectations($this->data, $this->checkLabels);
@@ -400,72 +357,46 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testRenameALabelToTheEmptyString(): void {
         $this->assertException("missing", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => ""]));
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testRenameALabelToWhitespaceOnly(): void {
         $this->assertException("whitespace", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "   "]));
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testRenameALabelToAnInvalidValue(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         $this->assertTrue(Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => []]));
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testCauseALabelCollision(): void {
         $this->assertException("constraintViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", 1, ['name' => "Fascinating"]);
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testSetThePropertiesOfAMissingLabel(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", 2112, ['name' => "Exciting"]);
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testSetThePropertiesOfAnInvalidLabel(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", -1, ['name' => "Exciting"]);
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testSetThePropertiesOfAnInvalidLabelByName(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", [], ['name' => "Exciting"], true);
     }
 
-    //#[CoversMethod(Database::class, "labelPropertiesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
-    //#[CoversMethod(Database::class, "labelValidateName")]
     public function testSetThePropertiesOfALabelForTheWrongOwner(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelPropertiesSet("john.doe@example.com", 3, ['name' => "Exciting"]); // label ID 3 belongs to Jane
     }
 
-    //#[CoversMethod(Database::class, "labelArticlesGet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testListLabelledArticles(): void {
         $exp = [1,19];
         $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", 1));
@@ -478,22 +409,16 @@ trait SeriesLabel {
         $this->assertEquals($exp, Arsse::$db->labelArticlesGet("john.doe@example.com", "Lonely", true));
     }
 
-    //#[CoversMethod(Database::class, "labelArticlesGet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testListLabelledArticlesForAMissingLabel(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->labelArticlesGet("john.doe@example.com", 3);
     }
 
-    //#[CoversMethod(Database::class, "labelArticlesGet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testListLabelledArticlesForAnInvalidLabel(): void {
         $this->assertException("typeViolation", "Db", "ExceptionInput");
         Arsse::$db->labelArticlesGet("john.doe@example.com", -1);
     }
 
-    //#[CoversMethod(Database::class, "labelArticlesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testApplyALabelToArticles(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([2,5]));
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -502,8 +427,6 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "labelArticlesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testClearALabelFromArticles(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([1,5]), Database::ASSOC_REMOVE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -511,8 +434,6 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "labelArticlesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testApplyALabelToArticlesByName(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", "Interesting", (new Context)->articles([2,5]), Database::ASSOC_ADD, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -521,8 +442,6 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "labelArticlesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testClearALabelFromArticlesByName(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", "Interesting", (new Context)->articles([1,5]), Database::ASSOC_REMOVE, true);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -530,24 +449,18 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "labelArticlesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testApplyALabelToNoArticles(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([10000]));
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "labelArticlesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testClearALabelFromNoArticles(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([10000]), Database::ASSOC_REMOVE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "labelArticlesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testReplaceArticlesOfALabel(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([2,5]), Database::ASSOC_REPLACE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -558,8 +471,6 @@ trait SeriesLabel {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "labelArticlesSet")]
-    //#[CoversMethod(Database::class, "labelValidateId")]
     public function testPurgeArticlesOfALabel(): void {
         Arsse::$db->labelArticlesSet("john.doe@example.com", 1, (new Context)->articles([10000]), Database::ASSOC_REPLACE);
         $state = $this->primeExpectations($this->data, $this->checkMembers);
@@ -572,33 +483,33 @@ trait SeriesLabel {
         $act = Arsse::$db->labelSummarize("john.doe@example.com");
         $exp = [
             [
-                'id' => 1,
-                'name' => 'Interesting',
+                'id'      => 1,
+                'name'    => 'Interesting',
                 'article' => 1,
             ],
             [
-                'id' => 1,
-                'name' => 'Interesting',
+                'id'      => 1,
+                'name'    => 'Interesting',
                 'article' => 19,
             ],
             [
-                'id' => 2,
-                'name' => 'Fascinating',
+                'id'      => 2,
+                'name'    => 'Fascinating',
                 'article' => 1,
             ],
             [
-                'id' => 2,
-                'name' => 'Fascinating',
+                'id'      => 2,
+                'name'    => 'Fascinating',
                 'article' => 5,
             ],
             [
-                'id' => 2,
-                'name' => 'Fascinating',
+                'id'      => 2,
+                'name'    => 'Fascinating',
                 'article' => 8,
             ],
             [
-                'id' => 2,
-                'name' => 'Fascinating',
+                'id'      => 2,
+                'name'    => 'Fascinating',
                 'article' => 20,
             ],
         ];

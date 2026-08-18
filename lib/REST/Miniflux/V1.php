@@ -63,17 +63,17 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'counts'           => V::T_BOOL,
     ];
     /** The list of valid JSON body keys and the types of their values
-     * 
+     *
      * If a type in the input does not match, the entire request is rejected,
      * so we compare against PHP type names instead of using our value
      * conversion infrastructure.
-     * 
+     *
      * Not all these properties are used by our implementation, but they are
      * treated with the same strictness as in Miniflux on the assumption this
      * will ease interoperability.
      */
     protected const VALID_JSON = [
-        // 
+
         'url'                                  => "string",
         'username'                             => "string",
         'password'                             => "string",
@@ -123,7 +123,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         'keep_filter_entry_rules'              => "string",
     ];
     /** The list of inputs which are enumerations, and their valid values
-     * 
+     *
      * This list includes both URL query keys and JSON body keys.
      */
     protected const VALID_ENUM = [
@@ -219,7 +219,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         "author", "fingerprint", "published_date",
         "added_date", "modified_date",
         "starred", "unread", "hidden",
-        "content", "media_url", "media_type"
+        "content", "media_url", "media_type",
     ];
     protected const CALLS = [                // handler method        Admin  Path   Body   Query  Required fields
         '/categories'                    => [
@@ -634,7 +634,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         return $out;
     }
-    
+
     protected function transformCategory(array $folder, int $uid): array {
         $out = [
             // always add 1 to the ID since the root folder will always be 1 instead of 0.
@@ -795,7 +795,7 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
             $out = [];
             foreach ($oldMap as $to => [$from, $type]) {
                 if (isset($prefs[$from])) {
-                    $out[$to] = V::normalize($prefs[$from] , $type);
+                    $out[$to] = V::normalize($prefs[$from], $type);
                 }
             }
             if (isset($out['entry_sorting_direction'])) {
@@ -1153,14 +1153,14 @@ class V1 extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     protected function createFeed(array $data): ResponseInterface {
         $properties = [
-            'folder' => ($data['category_id'] ?? 1) - 1, 
-            'scrape' => (bool) $data['crawler'], 
-            'keep_rule' => $data['keeplist_rules'], 
+            'folder'     => ($data['category_id'] ?? 1) - 1,
+            'scrape'     => (bool) $data['crawler'],
+            'keep_rule'  => $data['keeplist_rules'],
             'block_rule' => $data['blocklist_rules'],
-            'username' => $data['username'],
-            'password' => $data['password'],
+            'username'   => $data['username'],
+            'password'   => $data['password'],
             'user_agent' => $data['user_agent'],
-            'cookie'   => $data['cookie'],
+            'cookie'     => $data['cookie'],
         ];
         try {
             $id = Arsse::$db->subscriptionAdd(Arsse::$user->id, $data['feed_url'], false, $properties);

@@ -37,7 +37,6 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-
     #[DataProvider('provideTypedMessages')]
     public function testCreateResponses(string $type, array $params, ResponseInterface $exp): void {
         $act = call_user_func(["JKingWeb\\Arsse\\Misc\\HTTP", $type], ...$params);
@@ -58,12 +57,11 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testSendAuthenticationChallenges(): void {
         self::setConf();
-        $in = new Response();
+        $in = new Response;
         $exp = $in->withHeader("WWW-Authenticate", 'Basic realm="'.Arsse::$conf->httpRealm.'", charset="UTF-8"');
         $act = HTTP::challenge($in);
         $this->assertMessage($exp, $act);
     }
-
 
     #[DataProvider('provideUserNames')]
     public function testValidateUsernames(string $user, string $exp): void {
@@ -129,6 +127,5 @@ class TestHTTP extends \JKingWeb\Arsse\Test\AbstractTest {
             'Passwd' => ["secret", "superman", "12345"],
         ];
         $this->assertSame($exp, HTTP::parseMultipart($in, "92dfe96c-c86d-48c6-92a2-fb3b2bcb5fe9"));
-        
     }
 }

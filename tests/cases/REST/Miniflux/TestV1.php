@@ -300,9 +300,9 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
             ["http://localhost:50034/Feed/Discovery/Valid",   HTTP::respJson($discovered)],
             ["http://localhost:50034/Feed/Discovery/Invalid", HTTP::respJson([])],
             ["http://localhost:50034/Feed/Discovery/Missing", V1::respError("Fetch404", 502)],
-            [1,                                              V1::respError(["InvalidInputType", 'field' => "url", 'expected' => "string", 'actual' => "integer"], 422)],
-            ["Not a URL",                                    V1::respError(["InvalidInputValue", 'field' => "url"], 422)],
-            [null,                                           V1::respError(["MissingInputValue", 'field' => "url"], 422)],
+            [1,                                               V1::respError(["InvalidInputType", 'field'  => "url", 'expected' => "string", 'actual' => "integer"], 422)],
+            ["Not a URL",                                     V1::respError(["InvalidInputValue", 'field' => "url"], 422)],
+            [null,                                            V1::respError(["MissingInputValue", 'field' => "url"], 422)],
         ];
     }
 
@@ -513,7 +513,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testListCategoriesWithCounts(): void {
         \Phake::when(Arsse::$db)->folderList(\Phake::anyParameters())->thenReturn(new Result(self::v([
-            ['id' => 1,  'name' => "Science"   , 'feeds' => 0],
+            ['id' => 1,  'name' => "Science",    'feeds' => 0],
             ['id' => 20, 'name' => "Technology", 'feeds' => 3],
         ])));
         \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result(self::v([
@@ -609,7 +609,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     #[DataProvider("provideCategoryModifications")]
     public function testModifyACategory(int $id, array $in, array $dbIn, $out, ResponseInterface $exp): void {
         \Phake::when(Arsse::$user)->propertiesGet(\Phake::anyParameters())->thenReturn(['num' => 42, 'root_folder_name' => $in['title'] ?? "All"]);
-        \Phake::when(Arsse::$db)->folderPropertiesGet(\Phake::anyParameters())->thenReturn(['id' => $id -1, 'name' => $in['title'] ?? "Existing"]);
+        \Phake::when(Arsse::$db)->folderPropertiesGet(\Phake::anyParameters())->thenReturn(['id' => $id - 1, 'name' => $in['title'] ?? "Existing"]);
         if (is_string($out)) {
             \Phake::when(Arsse::$db)->folderPropertiesSet(\Phake::anyParameters())->thenThrow(new ExceptionInput($out));
         } else {
@@ -730,7 +730,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
         self::clearData();
         return [
             [['category_id' => 1],                                                                null,                                       V1::respError(["MissingInputValue", 'field' => "feed_url"], 422)],
-            [['feed_url' => "http://example.com/", 'category_id' => "1"],                         null,                                       V1::respError(["InvalidInputType", 'field' => "category_id", 'expected' => "integer", 'actual' => "string"], 422)],
+            [['feed_url' => "http://example.com/", 'category_id' => "1"],                         null,                                       V1::respError(["InvalidInputType", 'field'  => "category_id", 'expected' => "integer", 'actual' => "string"], 422)],
             [['feed_url' => "Not a URL", 'category_id' => 1],                                     null,                                       V1::respError(["InvalidInputValue", 'field' => "feed_url"], 422)],
             [['feed_url' => "http://example.com/", 'category_id' => 0],                           null,                                       V1::respError(["InvalidInputValue", 'field' => "category_id"], 422)],
             [['feed_url' => "http://example.com/", 'category_id' => 1, 'keeplist_rules' => "["],  null,                                       V1::respError(["InvalidInputValue", 'field' => "keeplist_rules"], 422)],
@@ -1243,7 +1243,7 @@ class TestV1 extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testRetrieveCountersWithNoFeeds(): void {
         \Phake::when(Arsse::$db)->subscriptionList(\Phake::anyParameters())->thenReturn(new Result([]));
         $exp = HTTP::respJson([
-            'reads' => new \stdClass,
+            'reads'   => new \stdClass,
             'unreads' => new \stdClass,
         ]);
         $this->assertMessage($exp, $this->req("GET", "/feeds/counters"));

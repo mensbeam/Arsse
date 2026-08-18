@@ -76,10 +76,10 @@ class TestReaderFreshRSS extends TestReader {
         $user = "john.doe@example.com";
         $act = $this->req("GET", "/user-info", "", $user);
         $exp = HTTP::respJson([
-            'userId' => "john.doe@example.com",
-            'userName' => "john.doe@example.com",
+            'userId'        => "john.doe@example.com",
+            'userName'      => "john.doe@example.com",
             'userProfileId' => "john.doe@example.com",
-            'userEmail' => "",
+            'userEmail'     => "",
         ]);
         $this->assertMessage($exp, $act);
     }
@@ -102,11 +102,11 @@ class TestReaderFreshRSS extends TestReader {
         \Phake::when(Arsse::$db)->articleCategoriesGet($user, 1)->thenReturn(["Alfa", "Bravo"]);
         $act = $this->req("GET", "/stream/contents/?output=xml", "", $user);
         $exp = HTTP::respJson([
-            'id' => "user/-/state/com.google/reading-list",
+            'id'      => "user/-/state/com.google/reading-list",
             'updated' => Date::transform(self::NOW, "unix"),
-            'items' => [
+            'items'   => [
                 [
-                    'id' => "tag:google.com,2005:reader/item/0000000000000001",
+                    'id'            => "tag:google.com,2005:reader/item/0000000000000001",
                     'crawlTimeMsec' => Date::transform($articles[0]['modified_date'], "unix")."000",
                     'timestampUsec' => Date::transform($articles[0]['modified_date'], "unix")."000000",
                     'published'     => Date::transform($articles[0]['published_date'], "unix"),
@@ -130,16 +130,16 @@ class TestReaderFreshRSS extends TestReader {
                         'htmlUrl'  => $articles[0]['subscription_url'],
                         'title'    => $articles[0]['subscription_title'],
                     ],
-                    'summary'      => ['content' => $articles[0]['content']],
-                    'enclosure'    => [],
-                    'author'       => $articles[0]['author'],
+                    'summary'       => ['content' => $articles[0]['content']],
+                    'enclosure'     => [],
+                    'author'        => $articles[0]['author'],
                     'linkingUsers'  => [],
                     'comments'      => [],
                     'commentsNum'   => -1,
                     'annotations'   => [],
                 ],
                 [
-                    'id' => "tag:google.com,2005:reader/item/000000000000000b",
+                    'id'            => "tag:google.com,2005:reader/item/000000000000000b",
                     'crawlTimeMsec' => Date::transform($articles[1]['modified_date'], "unix")."000",
                     'timestampUsec' => Date::transform($articles[1]['modified_date'], "unix")."000000",
                     'published'     => Date::transform($articles[1]['published_date'], "unix"),
@@ -159,9 +159,9 @@ class TestReaderFreshRSS extends TestReader {
                         'htmlUrl'  => $articles[1]['subscription_url'],
                         'title'    => $articles[1]['subscription_title'],
                     ],
-                    'summary'      => ['content' => $articles[1]['content']],
-                    'enclosure'    => [['href' => $articles[1]['media_url'], 'type' => $articles[1]['media_type']]],
-                    'author'       => $articles[1]['author'],
+                    'summary'       => ['content' => $articles[1]['content']],
+                    'enclosure'     => [['href' => $articles[1]['media_url'], 'type' => $articles[1]['media_type']]],
+                    'author'        => $articles[1]['author'],
                     'linkingUsers'  => [],
                     'comments'      => [],
                     'commentsNum'   => -1,
@@ -190,11 +190,11 @@ class TestReaderFreshRSS extends TestReader {
         \Phake::when(Arsse::$db)->articleCategoriesGet($user, 1)->thenReturn(["Alfa", "Bravo"]);
         $act = $this->req("GET", "/stream/contents/?output=atom", "", $user);
         $exp = HTTP::respJson([
-            'id' => "user/-/state/com.google/reading-list",
+            'id'      => "user/-/state/com.google/reading-list",
             'updated' => Date::transform(self::NOW, "unix"),
-            'items' => [
+            'items'   => [
                 [
-                    'id' => "tag:google.com,2005:reader/item/0000000000000001",
+                    'id'            => "tag:google.com,2005:reader/item/0000000000000001",
                     'crawlTimeMsec' => Date::transform($articles[0]['modified_date'], "unix")."000",
                     'timestampUsec' => Date::transform($articles[0]['modified_date'], "unix")."000000",
                     'published'     => Date::transform($articles[0]['published_date'], "unix"),
@@ -218,16 +218,16 @@ class TestReaderFreshRSS extends TestReader {
                         'htmlUrl'  => $articles[0]['subscription_url'],
                         'title'    => $articles[0]['subscription_title'],
                     ],
-                    'summary'      => ['content' => $articles[0]['content']],
-                    'enclosure'    => [],
-                    'author'       => $articles[0]['author'],
+                    'summary'       => ['content' => $articles[0]['content']],
+                    'enclosure'     => [],
+                    'author'        => $articles[0]['author'],
                     'linkingUsers'  => [],
                     'comments'      => [],
                     'commentsNum'   => -1,
                     'annotations'   => [],
                 ],
                 [
-                    'id' => "tag:google.com,2005:reader/item/000000000000000b",
+                    'id'            => "tag:google.com,2005:reader/item/000000000000000b",
                     'crawlTimeMsec' => Date::transform($articles[1]['modified_date'], "unix")."000",
                     'timestampUsec' => Date::transform($articles[1]['modified_date'], "unix")."000000",
                     'published'     => Date::transform($articles[1]['published_date'], "unix"),
@@ -247,9 +247,9 @@ class TestReaderFreshRSS extends TestReader {
                         'htmlUrl'  => $articles[1]['subscription_url'],
                         'title'    => $articles[1]['subscription_title'],
                     ],
-                    'summary'      => ['content' => $articles[1]['content']],
-                    'enclosure'    => [['href' => $articles[1]['media_url'], 'type' => $articles[1]['media_type']]],
-                    'author'       => $articles[1]['author'],
+                    'summary'       => ['content' => $articles[1]['content']],
+                    'enclosure'     => [['href' => $articles[1]['media_url'], 'type' => $articles[1]['media_type']]],
+                    'author'        => $articles[1]['author'],
                     'linkingUsers'  => [],
                     'comments'      => [],
                     'commentsNum'   => -1,

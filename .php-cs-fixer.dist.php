@@ -57,12 +57,12 @@ $rules = [
     'unary_operator_spaces'                     => true,
     'yoda_style'                                => false,
     // house exceptions to PSR rules
-    'curly_braces_position'                     => [
+    'braces_position'                     => [
         'functions_opening_brace' => "same_line",
         'classes_opening_brace'   => "same_line",
     ],
     'function_declaration'                      => ['closure_function_spacing' => "none"],
-    'new_with_braces'                           => [
+    'new_with_parentheses'                      => [
         'anonymous_class' => false,
         'named_class'     => false,
     ],

@@ -14,7 +14,7 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class Auth extends \JKingWeb\Arsse\REST\AbstractHandler {
     /** Authenticates a user and creates a relatively long-lived session token
-     * 
+     *
      * @see https://feedhq.readthedocs.io/en/latest/api/terminology.html#authentication
      */
     public function dispatch(ServerRequestInterface $req): ResponseInterface {

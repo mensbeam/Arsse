@@ -24,7 +24,7 @@ class TestV1_3 extends TestV1_2 {
     public function setUp(): void {
         parent::setUp();
         //initialize a handler
-        $this->h = new V1_3();
+        $this->h = new V1_3;
     }
 
     public function testRetrieveServerVersion(): void {
@@ -144,9 +144,9 @@ class TestV1_3 extends TestV1_2 {
 
     public static function provideMultipleMarkings(): iterable {
         $payloads = [
-            'read' => ['read' => true],
+            'read'   => ['read' => true],
             'unread' => ['read' => false],
-            'star' => ['starred' => true],
+            'star'   => ['starred' => true],
             'unstar' => ['starred' => false],
         ];
         $in = [
