@@ -1,4 +1,4 @@
- <?php
+<?php
 /** @license MIT
  * Copyright 2017 J. King, Dustin Wilson et al.
  * See LICENSE and AUTHORS files for details */
@@ -12,7 +12,6 @@ const BASE = __DIR__.DIRECTORY_SEPARATOR;
 $paths = [
     __FILE__,
     BASE."arsse.php",
-    BASE."RoboFile.php",
     BASE."lib",
     BASE."tests/cases",
     BASE."tests/lib",
