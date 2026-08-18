@@ -32,7 +32,8 @@ if [ "$type" == "coverage" -o "$type" == "coverage:full" ]; then
     if [ "$type" == "coverage" ]; then
         phpunit_args+=("--exclude-group=coverageOptional")
     fi
-    php_args+=("-d" "zend.extension=xdebug" "-d" "xdebug.mode=coverage")
+    php_args+=("-d" "zend_extension=xdebug" "-d" "xdebug.mode=coverage")
+    phpunit_args+=("--coverage-html" "$prj_dir/tests/coverage")
 fi
 # run the requested tests
 "$PHP" "${php_args[@]}" "$prj_dir/vendor/bin/phpunit" "${phpunit_args[@]}" "$@"
