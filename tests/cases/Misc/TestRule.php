@@ -31,7 +31,6 @@ class TestRule extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("", Rule::prep(""));
     }
 
-
     #[DataProvider('provideApplications')]
     public function testApplyRules(string $keepRule, string $blockRule, string $url, string $title, string $author, array $categories, $exp): void {
         $keepRule = Rule::prep($keepRule);

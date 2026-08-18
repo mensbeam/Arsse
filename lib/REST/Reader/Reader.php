@@ -31,7 +31,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     protected const MODE_FEEDHQ = 2;
     protected const BODY_IGNORE = 0;
     protected const BODY_READ = 1;
-    protected const BODY_PARSE= 2;
+    protected const BODY_PARSE = 2;
     protected const LABEL_PATTERN = "/^user\/[^\/]+\/label\/(.+)/";
     protected const STATE_PATTERN = "/^user\/[^\/]+\/state\/([^\/]+\/.+)/";
     protected const SUBSCRIPTION_PATTERN = "/^feed\/(\d+)$/";
@@ -55,17 +55,17 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         "quickadd",                  // a stream ID or bare URL for a feed to subscribe to in the subscription/quickadd route
     ];
     /** The list of URL matches for calls
-     * 
+     *
      * An asterisk in a URL is a stand-in for any stream ID. Resources may
      * allow GET or POST or both; entries with "T req" true require a POST
      * token, and those with "Atom" true allow output in the Atom format.
-     * 
+     *
      * The list of allowed parameters excludes "T" and "output", which are
      * handled specially when input is parsed.
-     * 
+     *
      * NOTE: The /stream/contents route ought not to allow POST, but the
      * Newsflash client requires this in order to function.
-    */
+     */
     protected const CALLS = [         // Handler method     GET    POST   T req  Atom   Allowed params
         '/disable-tag'            => ["tagDisable",         false, true,  true,  false, ['s' => V::T_STRING, 't' => V::T_STRING]],
         '/edit-tag'               => ["tagEdit",            false, true,  true,  false, ['i' => V::T_MIXED + V::M_ARRAY, 'a' => V::T_STRING + V::M_ARRAY, 'r' => V::T_STRING + V::M_ARRAY]],
@@ -73,7 +73,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         '/mark-all-as-read'       => ["streamMark",         false, true,  true,  false, ['s' => V::T_STRING, 'ts' => V::T_STRING]], // 'ts' is actually a datetime, but it's in an irregular format, so will require special handling
         '/preference/list'        => ["prefsGet",           true,  false, false, false, []],
         '/preference/stream/list' => ["prefsStreamGet",     true,  false, false, false, []],
-        '/rename-tag'             => ["tagRename",          false, true,  true,  false, ['s' => V::T_STRING, 't' => V::T_STRING, 'dest' =>V::T_STRING]],
+        '/rename-tag'             => ["tagRename",          false, true,  true,  false, ['s' => V::T_STRING, 't' => V::T_STRING, 'dest' => V::T_STRING]],
         '/stream/contents'        => ["streamContents",     true,  true,  false, true,  ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE]],
         '/stream/contents/*'      => ["streamContents",     true,  true,  false, true,  ['s' => V::T_STRING, 'r' => V::T_STRING, 'n' => V::T_INT, 'c' => V::T_STRING, 'xt' => V::T_STRING, 'it' => V::T_STRING, 'ot' => V::T_DATE, 'nt' => V::T_DATE]],
         '/stream/items/contents'  => ["itemContents",       true,  true,  false, true,  ['i' => V::T_STRING + V::M_ARRAY]],
@@ -146,7 +146,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         } elseif (!$this->authenticate($req)) {
             return $this->challenge(self::respError("401", 401));
         }
-        // save the request in case we need it later 
+        // save the request in case we need it later
         $this->request = $req;
         // parse body and query arguments (the body is not parsed for OPML import, only read from the request object)
         [$func, $params, $reqT, $atomAllowed] = $func;
@@ -206,7 +206,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                     }
                     if ($method === "OPTIONS") {
                         return HTTP::respEmpty(204, [
-                            'Allow' => implode(", ", $allowed),
+                            'Allow'  => implode(", ", $allowed),
                             'Accept' => implode(", ", $url === "/subscription/import" ? self::ACCEPTED_TYPES_OPML : ["x-www-form-urlencoded"]),
                         ]);
                     } else {
@@ -227,9 +227,9 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Extracts body and query input from a request
-     * 
+     *
      * Returns an indexed array containing three members:
-     * 
+     *
      * - The requested output format ("json", "xml", "atom", or null)
      * - The used query parameters as an array, with allowed but unused members
      *   set to null or an empty array, as appropriate
@@ -317,7 +317,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Converts an item ID (which could be a plain integer or a tag URN) into an internal database ID
-     * 
+     *
      * @see https://feedhq.readthedocs.io/en/latest/api/terminology.html#items
      * @param int|string $itemId
      */
@@ -346,7 +346,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Converts an internal database item ID into a Reader tag URN
-     * 
+     *
      * @see https://feedhq.readthedocs.io/en/latest/api/terminology.html#items
      */
     protected function itemIdEncode(int $itemId): string {
@@ -368,15 +368,15 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Converts a set of stream identifiers into a database context
-     * 
+     *
      * Because feed streams are identified by URL this procedure my require
      * database activity, but should nevertheless be fast and safe
-     * 
+     *
      * The three stream identifiers will ultimately be converted to an SQL
      * filter condition analogous to ($stream AND $include AND NOT $exclude)
-     * 
+     *
      * A null return value indicates a stream which will always return no articles
-     * 
+     *
      * @param ?string $stream The base stream identifier
      * @param ?string $include The filter stream identifier
      * @param ?string $exclude The exclusion stream identifier
@@ -519,12 +519,12 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Authenticates the user
-     * 
+     *
      * As with the rest of The Arsse, pre-authentication with Basic
      * authentication may be required, whereafter the protocol-level
      * authentication may be ignored; otherwise we follow the specification
      * as per FeedHQ
-     * 
+     *
      * @see https://feedhq.readthedocs.io/en/latest/api/terminology.html#authentication
      */
     protected function authenticate(ServerRequestInterface $req): bool {
@@ -575,7 +575,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         //   never expire, and some implementations (such as Newsflash) assume
         //   therefore that tokens never expire and never re-authenticate; as a
         //   result we re-use existing tokens if one is requested, to avoid
-        //   cluttering the database if there are implementations which do 
+        //   cluttering the database if there are implementations which do
         //   re-authenticate regularly; even FeedHQ clients such as Vienna seem
         //   to expect POST tokens never to expire
         $row = Arsse::$db->tokenList(Arsse::$user->id, "reader.post")->getRow();
@@ -642,23 +642,23 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                     'n'                       => '',
                     'p'                       => '',
                     'hasSharedItemsOnProfile' => false,
-                ]
-            ]
+                ],
+            ],
         ]);
     }
-    
+
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#preference-list */
     protected function prefsGet(string $target, array $query, array $body, string $format): ResponseInterface {
         return self::respond($format, [
             'prefs' => [
                 [
-                    'id' => "lhn-prefs",
+                    'id'    => "lhn-prefs",
                     'value' => '{"subscriptions":{"ssa":"true"}}',
                 ],
             ],
         ]);
     }
-    
+
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#preference-stream-list */
     protected function prefsStreamGet(string $target, array $query, array $body, string $format): ResponseInterface {
         return self::respond($format, ['streamprefs' => new \stdClass]);
@@ -666,7 +666,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
 
     /** Deletes a feed/article tag/label without deleting the feeds/articles
      *  it is associated with
-     * 
+     *
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#disable-tag
      */
     protected function tagDisable(string $target, array $query, array $body, string $format): ResponseInterface {
@@ -686,7 +686,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         //   likely to fail because they are apt to be used less frequently
         // NOTE: FreshRSS does not do things this way, instead trying to remove
         //   a matching feed tag or then a matching article label, and stopping
-        //   once one succeeds 
+        //   once one succeeds
         try {
             Arsse::$db->labelRemove(Arsse::$user->id, $name, true);
         } catch (ExceptionInput $e) {
@@ -706,7 +706,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Renames a tag for a feed or a label for an article (or both)
-     * 
+     *
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#rename-tag
      */
     protected function tagRename(string $target, array $query, array $body, string $format): ResponseInterface {
@@ -732,7 +732,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         //   error if only one fails
         // NOTE: FreshRSS does not do things this way, instead trying to rename
         //   a matching feed tag or then a matching article label, and stopping
-        //   once one succeeds 
+        //   once one succeeds
         $success = true;
         try {
             Arsse::$db->labelPropertiesSet(Arsse::$user->id, $old, ['name' => $new], true);
@@ -770,24 +770,24 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         // add all the feed tags (what Reader calls labels) which have associations to feeds
         foreach (Arsse::$db->tagList(Arsse::$user->id, false) as $t) {
             $out[] = [
-                'id' => "user/{$meta['num']}/label/".$t['name'],
+                'id'     => "user/{$meta['num']}/label/".$t['name'],
                 'sortid' => $this->makeSortId($sortId++),
-                'type' => "folder",
+                'type'   => "folder",
             ];
         }
         // add all the article labels which have associations to articles
         foreach (Arsse::$db->labelList(Arsse::$user->id, false) as $l) {
             $out[] = [
-                'id' => "user/{$meta['num']}/label/".$l['name'],
-                'sortid' => $this->makeSortId($sortId++),
-                'type' => "tag",
+                'id'           => "user/{$meta['num']}/label/".$l['name'],
+                'sortid'       => $this->makeSortId($sortId++),
+                'type'         => "tag",
                 'unread_count' => ((int) $l['articles']) - ((int) $l['read']),
             ];
         }
         return $this->respond($format, ['tags' => $out]);
     }
 
-    /** 
+    /**
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#edit-tag
      * @see https://github.com/bazqux/bazqux-api?tab=readme-ov-file#tagging-items
      * @see https://raw.githubusercontent.com/mihaip/google-reader-api/refs/heads/master/wiki/ApiEditTags.wiki */
@@ -798,7 +798,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             return self::respError(["ParameterRequiredOneOfTwo", "a", "r"]);
         }
         $c = new Context;
-        // add the items to the context; 
+        // add the items to the context;
         $c->articles(array_map(function($v) {
             return $this->itemIdDecode($v);
         }, $body['i']));
@@ -859,7 +859,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return HTTP::respText("OK");
     }
 
-    /** 
+    /**
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#subscription-list
      * @see https://www.inoreader.com/developers/subscription-list
      */
@@ -877,24 +877,24 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         foreach (Arsse::$db->subscriptionList(Arsse::$user->id) as $f) {
             // NOTE: FreshRSS omits firstitemmsec, and FeedHQ seems to populate it with nonsense, so we feel confident in omitting it
             $out[] = [
-                'id' => "feed/{$f['id']}",
-                'title' => $f['title'],
+                'id'         => "feed/{$f['id']}",
+                'title'      => $f['title'],
                 'categories' => array_map(function($t) {
                     return [
-                        'id' => "user/-/label/$t",
+                        'id'    => "user/-/label/$t",
                         'label' => $t,
                     ];
                 }, $tags[$f['id']] ?? []),
-                'url' => $f['url'], // NOTE: This appears to be a FreshRSS extension and is expected by Newsflash
-                'htmlUrl' => $f['source'],
-                'iconUrl' => $f['icon_url'] ?? $this->origin()."freshrss/default.png", // this appears to be a common extension; the fallback value points to an image approximating FreshRSS' generic icon
+                'url'           => $f['url'], // NOTE: This appears to be a FreshRSS extension and is expected by Newsflash
+                'htmlUrl'       => $f['source'],
+                'iconUrl'       => $f['icon_url'] ?? $this->origin()."freshrss/default.png", // this appears to be a common extension; the fallback value points to an image approximating FreshRSS' generic icon
                 'frss:priority' => "main",
-                'sortid' => $this->makeSortId(++$sort),
+                'sortid'        => $this->makeSortId(++$sort),
             ];
         }
         return $this->respond($format, ['subscriptions' => $out]);
     }
-    
+
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#subscribed */
     protected function subscriptionValid(string $target, array $query, array $body, string $format): ResponseInterface {
         if (!isset($query['s'])) {
@@ -936,8 +936,8 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
             // NOTE: This is how at least FreshRSS and The Old Reader respond in error cases
             return $this->respond($format, [
                 'numResults' => 0,
-                'query' => $url,
-                'error' => $message,
+                'query'      => $url,
+                'error'      => $message,
             ], 400);
         }
         return $this->respond($format, [
@@ -948,7 +948,6 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         ]);
     }
 
-    
     /** @see https://feedhq.readthedocs.io/en/latest/api/reference.html#subscription-edit */
     protected function subscriptionEdit(string $target, array $query, array $body, string $format): ResponseInterface {
         // check required parameters
@@ -1124,12 +1123,12 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         }
         // add "reading list" (all articles) to output
         $out[] = [
-            'id' => "user/{$meta['num']}/state/com.google/reading-list",
-            'count' => $total,
+            'id'                      => "user/{$meta['num']}/state/com.google/reading-list",
+            'count'                   => $total,
             'newestItemTimestampUsec' => Date::transform($ts, "unix", "sql")."000000",
         ];
         $out = [
-            'max' => $total,
+            'max'          => $total,
             'unreadcounts' => $out,
         ];
         // return the whole list
@@ -1159,7 +1158,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return HTTP::respText("$out");
     }
 
-    /** 
+    /**
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#stream-items-ids
      * @see https://github.com/bazqux/bazqux-api?tab=readme-ov-file#item-ids
      * @see https://github.com/mihaip/google-reader-api/blob/master/wiki/ApiStreamItemsIds.wiki */
@@ -1177,7 +1176,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                     $out[] = ['id' => (string) $i['id']];
                 } else {
                     $out[] = [
-                        'id' => (string) $i['id'], // FreshRSS returns the ID as a string, so we do the same
+                        'id'            => (string) $i['id'], // FreshRSS returns the ID as a string, so we do the same
                         'timestampUsec' => Date::transform($i['modified_date'], "unix", "sql")."000000",
                     ];
                 }
@@ -1192,7 +1191,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         return self::respond($format, $out);
     }
 
-    /** 
+    /**
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#stream-items-contents
      * @see https://feedhq.readthedocs.io/en/latest/api/reference.html#stream-contents */
     protected function itemContents(string $target, array $query, array $body, string $format): ResponseInterface {
@@ -1275,7 +1274,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
                         //'direction' => "ltr", // FIXME: a future feed parser should be able to expose this information; FreshRSS does not include it
                         'content'   => $i['content'],
                     ],
-                    'enclosure'    => isset($i['media_url']) ? [['href' => $i['media_url'], 'type' => $i['media_type']]] : [], // enclosures appear to be a FreshRSS extension 
+                    'enclosure'     => isset($i['media_url']) ? [['href' => $i['media_url'], 'type' => $i['media_type']]] : [], // enclosures appear to be a FreshRSS extension
                     'author'        => $i['author'],
                     'linkingUsers'  => [],
                     'comments'      => [],
@@ -1289,7 +1288,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
         $out = [
             'id'      => "user/-/state/com.google/reading-list", // NOTE: FreshRSS uses the reading list stream ID for any stream; this avoids a bunch of pointless complexity, so we do the same
             'updated' => Date::transform($this->now(), "unix"),
-            'items'   => $out
+            'items'   => $out,
         ];
         if ($allowContinuation && sizeof($out['items']) === $this->pageSize($query['n'])) {
             // there are probably more items, so we construct a continuation string
@@ -1407,7 +1406,7 @@ abstract class Reader extends \JKingWeb\Arsse\REST\AbstractHandler {
     }
 
     /** Formats data as XML output according to how FeedHQ does it
-     * 
+     *
      * @see https://github.com/feedhq/feedhq/blob/65f4f04b4e81f4911e30fa4d4014feae4e172e0d/feedhq/reader/renderers.py#L48
      */
     protected static function makeXML(iterable $data, \DOMDocument $d): \DOMElement {

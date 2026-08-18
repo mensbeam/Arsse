@@ -55,8 +55,7 @@ class Result implements \JKingWeb\Arsse\Db\Result {
         $this->id = $lastID;
     }
 
-    public function __destruct() {
-    }
+    public function __destruct() {}
 
     // PHP iterator methods
 

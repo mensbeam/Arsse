@@ -7,5 +7,4 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\User;
 
-class ExceptionSession extends Exception {
-}
+class ExceptionSession extends Exception {}

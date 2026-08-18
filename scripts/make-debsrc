@@ -1,0 +1,75 @@
+#!/bin/bash
+function err() {
+    echo "DEBSRC: $1" >&2
+    cleanup
+    exit 1
+}
+function cleanup() {
+    if [ -n "$tmp_dir" ]; then
+        rm -rf "$tmp_dir"
+    fi
+}
+
+for tool in git tar php composer; do
+    if [ ! "$(command -v $tool)" ]; then
+        err "The $tool command is required for this script to function"
+    fi
+done
+if [ "$1" == "--help" ]; then
+    echo "Usage: $0 [<git-commit-ish>]"
+    echo ""
+    echo "The <git-commit-ish> argument may be any valid Git commit-ish"
+    echo "reference. For more details see the Git documentation here:"
+    echo "https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-commit-ishalsocommittish"
+    echo ""
+    echo "Note that commits predating the 0.10.0 tag may not work correctly or at all."
+    exit
+fi
+
+prj_dir="$(realpath "$(dirname "$(dirname "$0")")")"
+# validate the commit
+commit="$1"
+if [ -z "$commit" ]; then
+    commit="HEAD"
+fi
+version="$(git -C "$prj_dir" describe --tags "$commit" 2>/dev/null)"
+if [ -z "$version" ]; then
+    err "The supplied Git commit-ish is invalid"
+fi
+# isolate the parts of the version string
+baseVersion="$(sed -e 's/^\([^-]\+\).*/\1/' <<< "$version")"
+release="$(sed -e 's/^\([^-]\+\)-\([0-9]\+\).*/\2/' <<< "$version")"
+if [ -z "$release" ]; then
+    release=1
+fi
+debVersion="$baseVersion-$release"
+# create the tarball if it doesn't exist
+tarball="$prj_dir/release/$version/arsse-$version.tar.gz"
+if [ ! -f "$tarball" ]; then
+    "$prj_dir/scripts/make-tarball" "$version"
+    if [ $? -gt 0 ]; then
+        exit 2
+    fi
+fi  
+# create a temporary directory to hold the Debian source files
+tmp_dir="$(mktemp -d)"
+if [ $? -gt 0 ]; then
+    err "Unable to create temporary directory"
+fi
+tar_dir="$tmp_dir/arsse-$baseVersion"
+# repackage the tarball into the Debian-specific formats
+pushd  "$tmp_dir" >/dev/null
+tar xf "$tarball"
+popd >/dev/null
+mv "$tmp_dir/arsse" "$tar_dir"
+orig_ball="$(dirname "$tarball")/arsse_$baseVersion.orig.tar.gz"
+deb_ball="$(dirname "$tarball")/arsse_$debVersion.debian.tar.gz"
+pushd "$tmp_dir" >/dev/null
+GZIP=-9 tar czf "$orig_ball" "$(basename "$tar_dir")"
+popd >/dev/null
+pushd "$tar_dir/dist" >/dev/null
+GZIP=-9 tar czf "$deb_ball" "debian"
+popd >/dev/null
+# generate the DSC file and clean up
+"$prj_dir/scripts/make-dsc" "$tar_dir/dist/debian" "$debVersion" "$orig_ball" "$deb_ball" > "$(dirname "$tarball")/arsse_$debVersion.dsc"
+cleanup

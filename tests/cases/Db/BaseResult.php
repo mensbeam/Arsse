@@ -44,6 +44,7 @@ abstract class BaseResult extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         static::$interface = null;
         self::clearData(true);
+        parent::tearDownAfterClass();
     }
 
     public function testConstructResult(): void {

@@ -22,7 +22,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         'dbTimeoutExec'    => 0.5,
         'dbTimeoutLock'    => 0.001,
         'dbSQLite3Timeout' => 0,
-      //'dbSQLite3File' => "(temporary file)",
+        //'dbSQLite3File'  => "(temporary file)",
     ];
 
     public static function setUpBeforeClass(): void {
@@ -44,7 +44,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
             "INSERT INTO arsse_meta(\"key\",value) values('schema_version','0')",
         ]);
         // construct a fresh driver for each test
-        $this->drv = new static::$dbDriverClass();
+        $this->drv = new static::$dbDriverClass;
     }
 
     public function tearDown(): void {
@@ -60,6 +60,7 @@ abstract class BaseDriver extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         static::$interface = null;
         self::clearData(true);
+        parent::tearDownAfterClass();
     }
 
     protected function exec($q): bool {

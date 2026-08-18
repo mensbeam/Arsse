@@ -17,14 +17,16 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('slow')]
 #[CoversClass(\JKingWeb\Arsse\Feed::class)]
 class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
-    protected static $host = "http://localhost:8000/";
+    protected static $host = "http://localhost:50034/";
     protected $base = "";
+
+    public static function setUpBeforeClass(): void {
+        static::startMockServer();
+    }
 
     public function setUp(): void {
         if (!extension_loaded('curl')) {
             $this->markTestSkipped("Feed fetching tests are only accurate with curl enabled.");
-        } elseif (!@file_get_contents(self::$host."IsUp")) {
-            $this->markTestSkipped("Test Web server is not accepting requests");
         }
         $this->base = self::$host."Feed/";
         parent::setUp();
@@ -70,7 +72,7 @@ class TestFetching extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testHandleACertificateError(): void {
         $this->assertException("invalidCertificate", "Feed");
-        new Feed(null, "https://localhost:8000/");
+        new Feed(null, "https://localhost:50034/");
     }
 
     public function testHandleATimeout(): void {

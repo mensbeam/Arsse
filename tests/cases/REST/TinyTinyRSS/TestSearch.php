@@ -121,7 +121,6 @@ class TestSearch extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-
     #[DataProvider('provideSearchStrings')]
     public function testApplySearchToContext(string $search, $exp): void {
         $act = Search::parse($search, "UTC");

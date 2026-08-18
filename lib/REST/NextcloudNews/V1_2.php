@@ -296,7 +296,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     // folder name not acceptable
                 case 10231:
                 case 10232: return self::error(422, $e);
-                // other errors related to input
+                    // other errors related to input
                 default: return self::error(400, $e); // @codeCoverageIgnore
             }
         }
@@ -329,7 +329,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     // folder name not acceptable
                 case 10231:
                 case 10232: return self::error(422, $e);
-                // other errors related to input
+                    // other errors related to input
                 default: return self::error(400, $e); // @codeCoverageIgnore
             }
         }
@@ -465,7 +465,7 @@ class V1_2 extends \JKingWeb\Arsse\REST\AbstractHandler {
                     // name is invalid
                 case 10231:
                 case 10232: return self::error(422, $e);
-                // other errors related to input
+                    // other errors related to input
                 default: return self::error(400, $e); // @codeCoverageIgnore
             }
         }

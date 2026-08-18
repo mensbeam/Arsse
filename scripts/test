@@ -1,0 +1,39 @@
+#!/bin/bash
+
+function add_extension() {
+    local ext_dir="$("$PHP" -r 'echo rtrim(ini_get("extension_dir"), "/");')"
+    for ext in "$@"; do
+        if [ -f "$ext_dir/$ext.so" ]; then
+            php_args+=("-d" "extension=$ext")
+        fi
+    done
+}
+
+if [ -n "$ARSSE_PHP" ]; then
+    PHP="$ARSSE_PHP"
+else
+    PHP=php
+fi
+prj_dir="$(dirname $(dirname "$0"))"
+type="$1"
+shift
+php_args=("-n" "-d" "zend.assertions=1")
+# enable extensions required by The Arsse (through "curl"), Picofeed (through "iconv"), the PHPUnit (the rest)
+add_extension intl dom filter hash json sqlite3 pdo_sqlite mysqli pdo_mysql pgsql pdo_pgsql curl simplexml iconv mbstring phar tokenizer xmlwriter
+# prepare the PHPUnit arguments based on which functionality we want
+phpunit_args=("-c" "$prj_dir/tests/phpunit.dist.xml")
+if [ "$type" == "test" -o "$type" == "test:quick" -o "$type" == "coverage" ]; then
+    phpunit_args+=("--exclude-group=optional")
+fi
+if [ "$type" == "test:quick" ]; then
+    phpunit_args+=("--exclude-group=slow")
+fi
+if [ "$type" == "coverage" -o "$type" == "coverage:full" ]; then
+    if [ "$type" == "coverage" ]; then
+        phpunit_args+=("--exclude-group=coverageOptional")
+    fi
+    php_args+=("-d" "zend_extension=xdebug" "-d" "xdebug.mode=coverage")
+    phpunit_args+=("--coverage-html" "$prj_dir/tests/coverage")
+fi
+# run the requested tests
+"$PHP" "${php_args[@]}" "$prj_dir/vendor/bin/phpunit" "${phpunit_args[@]}" "$@"

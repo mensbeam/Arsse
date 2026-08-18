@@ -61,7 +61,6 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-
     #[DataProvider('provideAuthenticableRequests')]
     public function testAuthenticateRequests(array $serverParams, array $expAttr): void {
         $r = new REST;
@@ -133,7 +132,6 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-
     #[DataProvider('provideCorsHeaders')]
     public function testAddCorsHeaders(string $reqMethod, array $reqHeaders, array $resHeaders, array $expHeaders): void {
         $r = new REST;
@@ -198,7 +196,6 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-
     #[DataProvider('provideUnnormalizedResponses')]
     public function testNormalizeHttpResponses(ResponseInterface $res, ResponseInterface $exp, ?RequestInterface $req = null): void {
         $rMock = \Phake::partialMock(REST::class);
@@ -231,7 +228,6 @@ class TestREST extends \JKingWeb\Arsse\Test\AbstractTest {
             [new Response(200, [], $stream),                                HTTP::respEmpty(200, ['Content-Length' => "3"]),         new Request("HEAD", "")],
         ];
     }
-
 
     #[DataProvider('provideMockRequests')]
     public function testDispatchRequests(ServerRequest $req, string $method, bool $called, string $class = "", string $target = ""): void {

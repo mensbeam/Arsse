@@ -35,14 +35,16 @@
         "mensbeam/uri": "^1.0"
     },
     "require-dev": {
-        "bamarni/composer-bin-plugin": "*"
+        "bamarni/composer-bin-plugin": "*",
+        "donatj/mock-webserver": "^2.10"
     },
     "suggest": {
         "ext-pcntl": "To respond to signals, particularly to reload configuration via SIGHUP"
     },
     "config": {
         "platform": {
-            "php": "7.3.33"
+            "php": "7.3.33",
+            "ext-sockets": "7.3.33"
         },
         "allow-plugins": {
             "bamarni/composer-bin-plugin": true
@@ -50,7 +52,7 @@
     },
     "extra": {
         "bamarni-bin": {
-            "bin-links": false,
+            "bin-links": true,
             "forward-command": true
         }
     },
@@ -75,5 +77,31 @@
             "type": "vcs",
             "url": "https://github.com/JKingweb/laminas-xml/"
         }
-    ]
+    ],
+    "scripts": {
+        "test": ["./scripts/test test"],
+        "test:quick": ["./scripts/test test:quick"],
+        "test:full": ["./scripts/test test:full"],
+        "coverage": ["./scripts/test coverage"],
+        "coverage:full": ["./scripts/test coverage:full"],
+        "clean": ["./vendor/bin/php-cs-fixer fix"],
+        "manual": ["./vendor/bin/daux generate -d manual -q", "rm -rf manual/daux_libraries manual/theme manual/themes/src @no_additional_args"],
+        "manual:live": ["Composer\\Config::disableProcessTimeout", "./vendor/bin/daux serve"],
+        "package": ["@package:generic", "@package:debsrc"],
+        "package:generic": ["./scripts/make-tarball"],
+        "package:debsrc": ["./scripts/make-debsrc"]
+    },
+    "scripts-descriptions": {
+        "test": "Executes the PHPUnit test suite excluding optional tests",
+        "test:quick": "Executes the PHPUnit test suite excluding optional and slow tests",
+        "test:full": "Executes the PHPUnit test suite excluding no tests",
+        "coverage": "Executes the PHPUnit test suite and produces a code coverage report, excluding tests redundant to coverage",
+        "coverage:full": "Executes the PHPUnit test suite and produces a code coverage report, excluding no tests",
+        "clean": "Corrects defifiencies in coding style",
+        "manual": "Produces the static HTML manual from the Markdown source files",
+        "manual:live": "Serves the manual on a basic HTTP server on port 8085",
+        "package": "Produces all relevant release artefacts",
+        "package:generic": "Produces the main release tarball",
+        "package:debsrc": "Produces a Debian source package with related files"
+    }
 }

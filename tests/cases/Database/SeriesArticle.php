@@ -14,7 +14,6 @@ use JKingWeb\Arsse\Context\Context;
 use JKingWeb\Arsse\Misc\Date;
 use JKingWeb\Arsse\Misc\ValueInfo;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\CoversMethod;
 
 trait SeriesArticle {
     protected static $drv;
@@ -136,7 +135,7 @@ trait SeriesArticle {
             ],
             'arsse_article_contents' => [
                 'columns' => ["id", "content"],
-                'rows' => [
+                'rows'    => [
                     [1,   'First article'],
                     [2,   'Second article'],
                     [3,   'third article'],
@@ -380,13 +379,6 @@ trait SeriesArticle {
         unset($this->data, $this->matches, $this->fields, $this->checkTables, $this->user);
     }
 
-
-    //#[CoversMethod(Database::class, "articleList")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     #[DataProvider("provideContextMatches")]
     public function testListArticlesCheckingContext(Context $c, array $exp): void {
         $ids = array_column($ids = Arsse::$db->articleList("john.doe@example.com", $c, ["id"], ["id"])->getAll(), "id");
@@ -530,12 +522,6 @@ trait SeriesArticle {
         ];
     }
 
-    //#[CoversMethod(Database::class, "editionArticle")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testRetrieveArticleIdsForEditions(): void {
         $exp = [
             1    => 1,
@@ -577,24 +563,11 @@ trait SeriesArticle {
         $this->assertEquals($exp, $act);
     }
 
-
-    //#[CoversMethod(Database::class, "articleList")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testListArticlesOfAMissingFolder(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->articleList($this->user, (new Context)->folder(1));
     }
 
-    //#[CoversMethod(Database::class, "articleList")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")] 
     public function testListArticlesOfAMissingSubscription(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->articleList($this->user, (new Context)->subscription(1));
@@ -605,12 +578,6 @@ trait SeriesArticle {
         Arsse::$db->articleList($this->user, (new Context)->subscription(16));
     }
 
-    //#[CoversMethod(Database::class, "articleList")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")] 
     public function testListArticlesCheckingProperties(): void {
         $this->user = "john.doe@example.org";
         // check that the different fieldset groups return the expected columns
@@ -625,12 +592,6 @@ trait SeriesArticle {
     }
 
     #[DataProvider("provideOrderedLists")]
-    //#[CoversMethod(Database::class, "articleList")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testListArticlesCheckingOrder(array $sortCols, array $exp): void {
         $act = ValueInfo::normalize(array_column(iterator_to_array(Arsse::$db->articleList("john.doe@example.com", null, ["id"], $sortCols)), "id"), ValueInfo::T_INT | ValueInfo::M_ARRAY);
         $this->assertSame($exp, $act);
@@ -649,22 +610,10 @@ trait SeriesArticle {
         ];
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkNothing(): void {
         $this->assertSame(0, Arsse::$db->articleMark($this->user, []));
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesUnread(): void {
         Arsse::$db->articleMark($this->user, ['read' => false]);
         $now = Date::transform(time(), "sql");
@@ -676,12 +625,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesRead(): void {
         Arsse::$db->articleMark($this->user, ['read' => true]);
         $now = Date::transform(time(), "sql");
@@ -695,12 +638,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesUnstarred(): void {
         Arsse::$db->articleMark($this->user, ['starred' => false]);
         $now = Date::transform(time(), "sql");
@@ -712,12 +649,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesStarred(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true]);
         $now = Date::transform(time(), "sql");
@@ -731,12 +662,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesUnreadAndUnstarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => false]);
         $now = Date::transform(time(), "sql");
@@ -747,12 +672,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesReadAndStarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => true,'starred' => true]);
         $now = Date::transform(time(), "sql");
@@ -767,12 +686,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesUnreadAndStarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true]);
         $now = Date::transform(time(), "sql");
@@ -787,12 +700,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesReadAndUnstarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => true,'starred' => false]);
         $now = Date::transform(time(), "sql");
@@ -807,12 +714,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testSetNoteForAllArticles(): void {
         Arsse::$db->articleMark($this->user, ['note' => "New note"]);
         $now = Date::transform(time(), "sql");
@@ -828,12 +729,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkATreeFolder(): void {
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->folder(7));
         $now = Date::transform(time(), "sql");
@@ -845,12 +740,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkALeafFolder(): void {
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->folder(8));
         $now = Date::transform(time(), "sql");
@@ -860,12 +749,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAMissingFolder(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->folder(42));
@@ -880,12 +763,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAMissingSubscription(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->articleMark($this->user, ['read' => true], (new Context)->subscription(1));
@@ -896,12 +773,6 @@ trait SeriesArticle {
         Arsse::$db->articleMark("john.doe@example.com", ['read' => true], (new Context)->subscription(16));
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAnArticle(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->article(120));
         $now = Date::transform(time(), "sql");
@@ -911,12 +782,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleArticles(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->articles([202,204,207,120]));
         $now = Date::transform(time(), "sql");
@@ -926,12 +791,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleArticlessUnreadAndStarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->articles([202,204,207,120]));
         $now = Date::transform(time(), "sql");
@@ -942,23 +801,11 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkTooManyMultipleArticles(): void {
         $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
         $this->assertSame(7, Arsse::$db->articleMark("john.doe@example.com", ['read' => false,'starred' => true], (new Context)->articles(range(3, $setSize * 3))));
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAMissingArticle(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->article(1));
@@ -969,12 +816,6 @@ trait SeriesArticle {
         Arsse::$db->articleMark("john.doe@example.com", ['starred' => true], (new Context)->article(999));
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAnEdition(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(1101));
         $now = Date::transform(time(), "sql");
@@ -984,12 +825,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditions(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editions([2202,2204,2207,120]));
         $now = Date::transform(time(), "sql");
@@ -999,24 +834,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleMissingEditions(): void {
         $this->assertSame(0, Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editions([56458, 1851855])));
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditionsUnread(): void {
         Arsse::$db->articleMark($this->user, ['read' => false], (new Context)->editions([2202,2204,2207,1101]));
         $now = Date::transform(time(), "sql");
@@ -1026,12 +849,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditionsUnreadWithStale(): void {
         Arsse::$db->articleMark($this->user, ['read' => false], (new Context)->editions([2202,2204,2207,120]));
         $now = Date::transform(time(), "sql");
@@ -1041,12 +858,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditionsUnreadAndStarredWithStale(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->editions([2202,2204,2207,120]));
         $now = Date::transform(time(), "sql");
@@ -1057,33 +868,16 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkTooManyMultipleEditions(): void {
         $this->assertSame(7, Arsse::$db->articleMark("john.doe@example.com", ['read' => false,'starred' => true], (new Context)->editions(range(3, 51))));
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnread(): void {
         Arsse::$db->articleMark($this->user, ['read' => false], (new Context)->edition(120)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionStarred(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(120));
         $now = Date::transform(time(), "sql");
@@ -1093,12 +887,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnreadAndStarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => true], (new Context)->edition(120)); // only starred is changed
         $now = Date::transform(time(), "sql");
@@ -1108,24 +896,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnreadAndUnstarred(): void {
         Arsse::$db->articleMark($this->user, ['read' => false,'starred' => false], (new Context)->edition(120)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAMissingEdition(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->edition(2));
@@ -1136,12 +912,6 @@ trait SeriesArticle {
         Arsse::$db->articleMark("john.doe@example.com", ['starred' => false], (new Context)->edition(999));
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkByOldestEdition(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editionRange(2205, null));
         $now = Date::transform(time(), "sql");
@@ -1153,12 +923,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkByLatestEdition(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->editionRange(null, 120));
         $now = Date::transform(time(), "sql");
@@ -1168,12 +932,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkByLastMarked(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->markedRange('2017-01-01T00:00:00Z', null));
         $now = Date::transform(time(), "sql");
@@ -1185,12 +943,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkByNotLastMarked(): void {
         Arsse::$db->articleMark($this->user, ['starred' => true], (new Context)->markedRange(null, '2000-01-01T00:00:00Z'));
         $now = Date::transform(time(), "sql");
@@ -1200,12 +952,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleCount")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testCountArticles(): void {
         $setSize = (new \ReflectionClassConstant(Database::class, "LIMIT_SET_SIZE"))->getValue();
         $this->assertSame(2, Arsse::$db->articleCount("john.doe@example.com", (new Context)->starred(true)));
@@ -1214,7 +960,6 @@ trait SeriesArticle {
         $this->assertSame(10, Arsse::$db->articleCount("john.doe@example.com", (new Context)->articles(range(1, $setSize * 3))));
     }
 
-    //#[CoversMethod(Database::class, "articleStarred")]
     public function testFetchStarredCounts(): void {
         $exp1 = ['total' => 2, 'unread' => 1, 'read' => 1];
         $exp2 = ['total' => 0, 'unread' => 0, 'read' => 0];
@@ -1222,20 +967,17 @@ trait SeriesArticle {
         $this->assertEquals($exp2, Arsse::$db->articleStarred("jane.doe@example.com"));
     }
 
-    //#[CoversMethod(Database::class, "editionLatest")]
     public function testFetchLatestEdition(): void {
         $this->assertSame(2208, Arsse::$db->editionLatest($this->user));
         $this->assertSame(2204, Arsse::$db->editionLatest($this->user, (new Context)->subscription(12)));
         $this->assertSame(5, Arsse::$db->editionLatest("john.doe@example.com", (new Context)->subscription(3)->hidden(false)));
     }
 
-    //#[CoversMethod(Database::class, "editionLatest")]
     public function testFetchLatestEditionOfMissingSubscription(): void {
         $this->assertException("idMissing", "Db", "ExceptionInput");
         Arsse::$db->editionLatest($this->user, (new Context)->subscription(1));
     }
 
-    //#[CoversMethod(Database::class, "articleLabelsGet")]
     public function testListTheLabelsOfAnArticle(): void {
         $this->assertEquals([1,2], Arsse::$db->articleLabelsGet("john.doe@example.com", 1));
         $this->assertEquals([2], Arsse::$db->articleLabelsGet("john.doe@example.com", 5));
@@ -1245,13 +987,11 @@ trait SeriesArticle {
         $this->assertEquals([], Arsse::$db->articleLabelsGet("john.doe@example.com", 2, true));
     }
 
-    //#[CoversMethod(Database::class, "articleLabelsGet")]
     public function testListTheLabelsOfAMissingArticle(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleLabelsGet($this->user, 101);
     }
 
-    //#[CoversMethod(Database::class, "articleCategoriesGet")]
     public function testListTheCategoriesOfAnArticle(): void {
         $exp = ["Fascinating", "Logical"];
         $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 119));
@@ -1261,19 +1001,12 @@ trait SeriesArticle {
         $this->assertSame($exp, Arsse::$db->articleCategoriesGet($this->user, 204));
     }
 
-    //#[CoversMethod(Database::class, "articleCategoriesGet")]
     public function testListTheCategoriesOfAMissingArticle(): void {
         $this->assertException("subjectMissing", "Db", "ExceptionInput");
         Arsse::$db->articleCategoriesGet($this->user, 101);
     }
 
     #[DataProvider("provideArrayContextOptions")]
-    //#[CoversMethod(Database::class, "articleList")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testUseTooFewValuesInArrayContext(string $option): void {
         $this->assertException("tooShort", "Db", "ExceptionInput");
         Arsse::$db->articleList($this->user, (new Context)->$option([]));
@@ -1291,12 +1024,6 @@ trait SeriesArticle {
         }
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesNotHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['hidden' => false]);
         $now = Date::transform(time(), "sql");
@@ -1308,12 +1035,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['hidden' => true]);
         $now = Date::transform(time(), "sql");
@@ -1325,12 +1046,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesUnreadAndNotHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false, 'hidden' => false]);
         $now = Date::transform(time(), "sql");
@@ -1341,12 +1056,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesReadAndHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => true, 'hidden' => true]);
         $now = Date::transform(time(), "sql");
@@ -1357,12 +1066,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesUnreadAndHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true]);
         $now = Date::transform(time(), "sql");
@@ -1373,12 +1076,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAllArticlesReadAndNotHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => true,'hidden' => false]);
         $now = Date::transform(time(), "sql");
@@ -1389,12 +1086,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkMultipleEditionsUnreadAndHiddenWithStale(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true], (new Context)->editions([501,502,519,520]));
         $now = Date::transform(time(), "sql");
@@ -1405,12 +1096,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['hidden' => true], (new Context)->edition(520));
         $now = Date::transform(time(), "sql");
@@ -1420,12 +1105,6 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnreadAndHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => true], (new Context)->edition(520)); // only hidden is changed
         $now = Date::transform(time(), "sql");
@@ -1435,24 +1114,12 @@ trait SeriesArticle {
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleMark")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testMarkAStaleEditionUnreadAndNotHidden(): void {
         Arsse::$db->articleMark("jane.doe@example.com", ['read' => false,'hidden' => false], (new Context)->edition(520)); // no changes occur
         $state = $this->primeExpectations($this->data, $this->checkTables);
         $this->compareExpectations(static::$drv, $state);
     }
 
-    //#[CoversMethod(Database::class, "articleList")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testSelectScrapedContent(): void {
         $exp = [
             ['id' => 101, 'content' => "<p>Article content 1</p>"],
@@ -1466,12 +1133,6 @@ trait SeriesArticle {
         $this->assertResult($exp, Arsse::$db->articleList("jill.doe@example.com", (new Context)->subscription(15), ["id", "content"]));
     }
 
-    //#[CoversMethod(Database::class, "articleList")]
-    //#[CoversMethod(Database::class, "articleQuery")]
-    //#[CoversMethod(Database::class, "articleValidateId")]
-    //#[CoversMethod(Database::class, "articleValidateEdition")]
-    //#[CoversMethod(Database::class, "articleColumns")]
-    //#[CoversMethod(Database::class, "articleFilter")]
     public function testSearchScrapedContent(): void {
         $exp = [
             ['id' => 801, 'content' => "<p>Scraped content 1</p>"],

@@ -72,44 +72,37 @@ The `/vendor-bin/` directory houses the files needed for the tools used in The A
 | `/.php-cs-fixer.cache`    | Cache for php-cs-fixer                                   |
 | `/composer.json`          | Configuration for Composer                               |
 | `/composer.lock`          | Version synchronization data for Composer                |
-| `/RoboFile.php`           | Task definitions for [Robo](https://robo.li/)            |
-| `/robo`                   | Simple wrapper for executing Robo on POSIX systems       |
-| `/robo.bat`               | Simple wrapper for executing Robo on Windows             |
 
 In addition the files `/package.json` and `/postcss.config.js` as well as the `/node_modules/` directory are used by [Yarn](https://yarnpkg.com/) and [PostCSS](https://postcss.org/) when modifying the stylesheet for The Arsse's manual.
 
 # Common tasks
 
-We use a tool called [Robo](https://robo.li/) to simplify the execution of common tasks. It is installed with The Arsse's other dependencies, and its configured tasks can be listed by executing `./robo` without arguments.
+We use Composer scripts to simplify the execution of common tasks. The configured tasks can be listed by executing `composer run -l`.
 
 ## Running tests
 
-The Arsse has an extensive [PHPUnit](https://phpunit.de/) test suite; tests can be run by executing `./robo test`, which can be supplemented with any arguments understoof by PHPUnit. For example, to test only the Tiny Tiny RSS protocol, one could run `./robo test --testsuite TTRSS`.
+The Arsse has an extensive [PHPUnit](https://phpunit.de/) test suite; tests can be run by executing `composer test`, which can be supplemented with any arguments understood by PHPUnit. For example, to test only the Tiny Tiny RSS protocol, one could run `composer test --testsuite TTRSS`.
 
-There is also a `test:quick` Robo task which excludes slower tests, and a `test:full` task which includes redundant tests in addition to the standard test suite
+There is also a `test:quick` command which excludes slower tests, and a `test:full` task which includes redundant tests in addition to the standard test suite
 
 ### Test coverage
 
-Computing the coverage of tests can be done by running `./robo coverage`, after which an HTML-format coverage report will be written to `/tests/coverage/`. Either [PCOV](https://github.com/krakjoe/pcov) or [Xdebug](https://xdebug.org) is required for this. PCOV is generally recommended as it is faster than Xdebug. Neither extension need be enabled globally; Robo will enable it when needed.
+Computing the coverage of tests can be done by running `composer coverage`, after which an HTML-format coverage report will be written to `/tests/coverage/`. [Xdebug](https://xdebug.org) is required for this, though the expension does not need to be enabled in PHP's configuration; the testing script will enable it when needed.
 
 ## Enforcing coding style
 
-The [php-cs-fixer](https://cs.symfony.com) tool, executed via `./robo clean`, can be used to rewrite code to adhere to The Arsse's coding style. The style largely follows [PSR-12](https://www.php-fig.org/psr/psr-12/) with some exceptions:
+The [php-cs-fixer](https://cs.symfony.com) tool, executed via `composer clean`, can be used to rewrite code to adhere to The Arsse's coding style. The style largely follows [PSR-12](https://www.php-fig.org/psr/psr-12/) with some exceptions:
 
 - Classes, methods, and functions should have their opening brace on the same line as the signature
 - Anonymous functions should have no space before the parameter list
 
 ## Building the manual
 
-The Arsse's user manual, made using [Daux](https://daux.io/), can be compiled by running `./robo manual`, which will output files to `/manual/`. It is also possible to serve the manual from a test HTTP server on port 8085 by running `./robo manual:live`.
-
-### Rebuilding the manual theme
-
-The manual employs a custom theme derived from the standard Daux theme. If the standard Daux theme receives improvements, the custom theme can be rebuilt by running `./robo manual:theme`. This requires that [NodeJS](https://nodejs.org) and [Yarn](https://yarnpkg.com/) be installed, but JavaScript tools are not required to modify The Arsse itself, nor the content of the manual.
+The Arsse's user manual, made using [Daux](https://daux.io/), can be compiled by running `composer manual`, which will output files to `/manual/`. It is also possible to serve the manual from a test HTTP server on port 8085 by running `composer manual:live`.
 
 ## Packaging a release
 
-Producing release packages is done by running `./robo package`. This performs the following operations:
+Producing release packages is done by running `composer package`. This performs the following operations:
 
 - Duplicates a [Git](https://git-scm.com/) working tree with the commit (usually a release tag) to package
 - Generates the HTML manual
@@ -117,3 +110,4 @@ Producing release packages is done by running `./robo package`. This performs th
 - Deletes numerous unneeded files
 - Exports the default configuration of The Arsse to a file
 - Compresses the remaining files into a tarball
+- Generates Debian source-package files

@@ -43,12 +43,12 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         static::$interface = null;
         self::clearData(true);
+        parent::tearDownAfterClass();
     }
 
     public function testConstructStatement(): void {
         $this->assertInstanceOf(Statement::class, new $this->statementClass(...$this->makeStatement("SELECT ? as value")));
     }
-
 
     #[DataProvider('provideBindings')]
     public function testBindATypedValue($value, string $type, string $exp): void {
@@ -62,7 +62,6 @@ abstract class BaseStatement extends \JKingWeb\Arsse\Test\AbstractTest {
         $act = $s->run(...[$value])->getValue();
         $this->assertTrue((bool) $act);
     }
-
 
     #[DataProvider('provideBinaryBindings')]
     public function testHandleBinaryData($value, string $type, string $exp): void {

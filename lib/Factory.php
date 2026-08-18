@@ -9,7 +9,7 @@ namespace JKingWeb\Arsse;
 
 class Factory {
     /** Instantiates an object of the specified class
-     * 
+     *
      * This exists purely for overriding during testing. There we can return mock objects instead
      */
     public function get(string $class) {

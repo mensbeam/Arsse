@@ -136,7 +136,8 @@ class Feed {
         $icon = new Favicon(self::configure($userAgent, $cookie));
         try {
             $this->iconUrl = $icon->find($feed->siteUrl, $feed->getIcon());
-        } catch (GuzzleException $e) {}
+        } catch (GuzzleException $e) {
+        }
         $this->iconData = $icon->getContent();
         if (strlen($this->iconData)) {
             $this->iconType = $icon->getType();
@@ -253,18 +254,18 @@ class Feed {
                 }
                 // if the two items have the same ID or any one hash matches, they are two versions of the same item
                 if (
-                    ($item->id && $check->id && $item->id === $check->id) ||
-                    ($item->urlTitleHash && $item->urlTitleHash === $check->urlTitleHash) ||
-                    ($item->urlContentHash && $item->urlContentHash === $check->urlContentHash) ||
-                    ($item->titleContentHash && $item->titleContentHash === $check->titleContentHash)
+                    ($item->id && $check->id && $item->id === $check->id)
+                    || ($item->urlTitleHash && $item->urlTitleHash === $check->urlTitleHash)
+                    || ($item->urlContentHash && $item->urlContentHash === $check->urlContentHash)
+                    || ($item->titleContentHash && $item->titleContentHash === $check->titleContentHash)
                 ) {
                     if (// because newsfeeds are usually ordered newest-first, the later item should only be used if...
                         // the later item has an update date and the existing item does not
-                        ($item->updatedDate && !$check->updatedDate) ||
+                        ($item->updatedDate && !$check->updatedDate)
                         // the later item has an update date newer than the existing item's
-                        ($item->updatedDate && $check->updatedDate && $item->updatedDate->getTimestamp() > $check->updatedDate->getTimestamp()) ||
+                        || ($item->updatedDate && $check->updatedDate && $item->updatedDate->getTimestamp() > $check->updatedDate->getTimestamp())
                         // neither item has update dates, both have publish dates, and the later item has a newer publish date
-                        (!$item->updatedDate && !$check->updatedDate && $item->publishedDate && $check->publishedDate && $item->publishedDate->getTimestamp() > $check->publishedDate->getTimestamp())
+                        || (!$item->updatedDate && !$check->updatedDate && $item->publishedDate && $check->publishedDate && $item->publishedDate->getTimestamp() > $check->publishedDate->getTimestamp())
                     ) {
                         // if the later item should be used, replace the existing one
                         $out[$index] = $item;
@@ -329,11 +330,11 @@ class Feed {
                 }
                 if (
                     // the item matches if the GUID matches...
-                    ($i->id && $i->id === $a['guid']) ||
+                    ($i->id && $i->id === $a['guid'])
                     // ... or if any one of the hashes match
-                    ($i->urlTitleHash && $i->urlTitleHash === $a['url_title_hash']) ||
-                    ($i->urlContentHash && $i->urlContentHash === $a['url_content_hash']) ||
-                    ($i->titleContentHash && $i->titleContentHash === $a['title_content_hash'])
+                    || ($i->urlTitleHash && $i->urlTitleHash === $a['url_title_hash'])
+                    || ($i->urlContentHash && $i->urlContentHash === $a['url_content_hash'])
+                    || ($i->titleContentHash && $i->titleContentHash === $a['title_content_hash'])
                 ) {
                     if ($i->updatedDate && Date::transform($i->updatedDate, "sql") !== $a['edited']) {
                         // if the item has an edit timestamp and it doesn't match that of the article in the database, the the article has been edited

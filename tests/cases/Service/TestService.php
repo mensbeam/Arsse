@@ -21,6 +21,7 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
     public function setUp(): void {
         parent::setUp();
         self::setConf();
+        \Phake::when(Arsse::$obj)->get(Database::class)->thenReturn(\Phake::mock(Database::class));
         Arsse::$db = \Phake::mock(Database::class);
         $this->srv = new Service;
     }
@@ -91,13 +92,11 @@ class TestService extends \JKingWeb\Arsse\Test\AbstractTest {
         $u = Arsse::$user;
         $l = Arsse::$lang;
         $d = Arsse::$db;
-        $o = Arsse::$obj;
         $c = Arsse::$conf;
         $this->srv->reload();
         $this->assertNotSame($u, Arsse::$user);
         $this->assertNotSame($l, Arsse::$lang);
         $this->assertNotSame($d, Arsse::$db);
-        $this->assertNotSame($o, Arsse::$obj);
         $this->assertNotSame($c, Arsse::$conf);
     }
 }

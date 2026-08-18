@@ -14,7 +14,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class Icon extends \JKingWeb\Arsse\REST\AbstractHandler {
-
     public function dispatch(ServerRequestInterface $req): ResponseInterface {
         if ($req->getAttribute("authenticated", false)) {
             // if HTTP authentication was successfully used, set the expected user ID

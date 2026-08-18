@@ -7,5 +7,4 @@ declare(strict_types=1);
 
 namespace JKingWeb\Arsse\User;
 
-class ExceptionInput extends Exception {
-}
+class ExceptionInput extends Exception {}

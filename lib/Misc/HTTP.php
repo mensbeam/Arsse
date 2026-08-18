@@ -57,11 +57,11 @@ class HTTP {
     }
 
     /** Parses a set of query parameters or application/x-ww-form-data body
-     * 
+     *
      * Keys which appear more than once produce array values; keys which have
      * no value delimiter produce null values; keys which have no value after
      * their value delimiter produce empty-string values.
-     * 
+     *
      * @param string $data The data to parse
      * @param bool $body Whether the data is an application/x-www-form-data entity body
      */
@@ -88,15 +88,15 @@ class HTTP {
     }
 
     /** Parses a multipart/form-data entity
-     * 
+     *
      * Severe shortcuts are taken, namely:
-     * 
+     *
      * - Data is assumed to be all text fields
      * - Data is assumed to be UTF-8 text
      * - Parts' Content-Disposition is assumed to have the name as the first parameter
      * - Field names are assumed not to require percent-decoding
      * - Content-Transfer-Encoding is assumed not to be used
-     * 
+     *
      * This is enough to handle known clients.
      */
     public static function parseMultipart(string $data, string $boundary): array {

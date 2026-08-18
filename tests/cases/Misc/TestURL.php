@@ -76,10 +76,9 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
             ["/ ",                            "u",    "p",    "/"],
             ["EXAMPLE.COM/",                  null,   null,   "EXAMPLE.COM/"],
             ["EXAMPLE.COM",                   null,   null,   "EXAMPLE.COM"],
-            [" ",                             null,   null,   " "],            
+            [" ",                             null,   null,   " "],
         ];
     }
-
 
     #[DataProvider('provideQueries')]
     public function testAppendQueryParameters(string $url, string $query, string $exp): void {
@@ -96,7 +95,6 @@ class TestURL extends \JKingWeb\Arsse\Test\AbstractTest {
             ["/#ack", "", "/#ack"],
         ];
     }
-
 
     #[DataProvider('provideAbsolutes')]
     public function testDetermineAbsoluteness(bool $exp, string $url): void {

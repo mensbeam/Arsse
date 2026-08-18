@@ -4,16 +4,16 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
 <channel>
     <title>Test feed</title>
-    <link>http://localhost:8000/</link>
+    <link>http://localhost:50034/</link>
     <description>Example newsfeed title</description>
 
     <item>
-        <guid>http://localhost:8000/Fetching/Error?code=404</guid>
+        <guid>http://localhost:50034/Fetching/Error?code=404</guid>
         <title>Missing article</title>
         <description>Partial content</description>
     </item>
     <item>
-        <guid>http://localhost:8000/Feed/Scraping/Document</guid>
+        <guid>http://localhost:50034/Feed/Scraping/Document</guid>
         <title>Example article</title>
         <description>Partial content</description>
     </item>

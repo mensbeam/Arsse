@@ -119,7 +119,6 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-
     #[DataProvider('provideHTTPErrors')]
     public function testHandleHttpErrors(int $code, string $message): void {
         $e = $this->mockGuzzleException(BadResponseException::class, "Irrelevant message", $code);
@@ -146,7 +145,6 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         return $out;
     }
-
 
     #[DataProvider('providePicoFeedException')]
     public function testHandlePicofeedException(PicoFeedException $e, string $message) {
@@ -176,7 +174,7 @@ class TestException extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testHandleUnexpectedError() {
-        $e = new \Exception();
+        $e = new \Exception;
         $this->assertException("internalError", "Feed");
         throw new FeedException("", ['url' => "https://example.com/"], $e);
     }

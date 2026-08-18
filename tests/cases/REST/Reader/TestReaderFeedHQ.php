@@ -79,12 +79,12 @@ class TestReaderFeedHQ extends TestReader {
         ]);
         $act = $this->req("GET", "/user-info", "", $user);
         $exp = HTTP::respJson([
-            'userName' => "john.doe@example.com",
-            'userEmail' => "",
-            'userId' => "2112",
-            'userProfileId' => "2112",
-            'isBloggerUser' => false,
-            'signupTimeSec' => 1608592157,
+            'userName'            => "john.doe@example.com",
+            'userEmail'           => "",
+            'userId'              => "2112",
+            'userProfileId'       => "2112",
+            'isBloggerUser'       => false,
+            'signupTimeSec'       => 1608592157,
             'isMultiLoginEnabled' => false,
         ]);
         $this->assertMessage($exp, $act);
@@ -240,11 +240,11 @@ XML_FILE;
         $exp = HTTP::respJson([
             'itemRefs' => [
                 [
-                    'id' => "1",
+                    'id'            => "1",
                     'timestampUsec' => Date::transform($articles[0]['modified_date'], "unix")."000000",
                 ],
                 [
-                    'id' => "11",
+                    'id'            => "11",
                     'timestampUsec' => Date::transform($articles[1]['modified_date'], "unix")."000000",
                 ],
             ],

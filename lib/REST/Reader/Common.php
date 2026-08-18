@@ -13,7 +13,7 @@ use Psr\Http\Message\ResponseInterface;
 
 trait Common {
     /** Performs a GoogleLogin and possibly an HTTP Basic challenge
-     * 
+     *
      * When this function is called mandatory HTTP authentication has already
      * been checked, so GoogleLogin is always a viable means of authentication
      * and it's only other schemes which might or might not also be acceptable

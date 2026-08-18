@@ -3,8 +3,8 @@
     'content' => <<<MESSAGE_BODY
 <html>
 <title>Example article</title>
-<link rel="alternate" type="application/rss+xml" href="http://localhost:8000/Feed/Discovery/Feed">
-<link rel="alternate" type="application/rss+xml" href="http://localhost:8000/Feed/Discovery/Missing">
+<link rel="alternate" type="application/rss+xml" href="http://localhost:50034/Feed/Discovery/Feed">
+<link rel="alternate" type="application/rss+xml" href="http://localhost:50034/Feed/Discovery/Missing">
 </html>
 MESSAGE_BODY
 ];

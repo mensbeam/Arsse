@@ -93,8 +93,8 @@ class URL {
         return substr($url, 0, $insPos).$glue.$data.substr($url, $insPos);
     }
 
-    /** Reads credentials from the souce URL and inserts them into the destination URL, if origins match. 
-     * 
+    /** Reads credentials from the souce URL and inserts them into the destination URL, if origins match.
+     *
      * If there are no credentials or the origins do not match, the destination URL is returned without modification
      */
     public static function credentialsApply(string $destination, string $source): string {

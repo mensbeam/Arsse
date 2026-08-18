@@ -34,7 +34,7 @@ abstract class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         parent::setUp();
         self::setConf();
         // construct a fresh driver for each test
-        $this->drv = new static::$dbDriverClass();
+        $this->drv = new static::$dbDriverClass;
         $schemaId = (get_class($this->drv))::schemaID();
         // set up a virtual filesystem for schema files
         $this->vfs = vfsStream::setup("schemata", null, [$schemaId => []]);
@@ -58,6 +58,7 @@ abstract class BaseUpdate extends \JKingWeb\Arsse\Test\AbstractTest {
         }
         static::$interface = null;
         self::clearData(true);
+        parent::tearDownAfterClass();
     }
 
     public function testLoadMissingFile(): void {
@@ -166,21 +167,21 @@ QUERY_TEXT
                 'rows'    => [
                     ["a", "xyz", 1],
                     ["b", "abc", 2],
-                ]
+                ],
             ],
             'arsse_folders' => [
                 'columns' => ["owner", "name"],
                 'rows'    => [
                     ["a", "1"],
                     ["b", "2"],
-                ]
+                ],
             ],
             'arsse_icons' => [
                 'columns' => ["id", "url"],
                 'rows'    => [
                     [1, "http://example.com/icon"],
                     [2, "http://example.org/icon"],
-                ]
+                ],
             ],
             'arsse_feeds' => [
                 'columns' => ["url", "icon"],
@@ -189,7 +190,7 @@ QUERY_TEXT
                     ["http://example.org/", 2],
                     ["https://example.com/", 1],
                     ["http://example.net/", null],
-                ]
+                ],
             ],
             'arsse_subscriptions' => [
                 'columns' => ["id", "scrape"],
@@ -198,8 +199,8 @@ QUERY_TEXT
                     [2,1],
                     [3,0],
                     [4,0],
-                ]
-            ]
+                ],
+            ],
         ];
         $this->compareExpectations($this->drv, $exp);
     }
@@ -285,7 +286,7 @@ QUERY_TEXT
                     ["a", "xyz", 1, 0],
                     ["b", "abc", 2, 0],
                     ["c", "gfy", 5, 1],
-                ]
+                ],
             ],
             'arsse_subscriptions' => [
                 'columns' => ["id", "owner", "url", "feed_title", "title", "folder", "last_mod", "etag", "next_fetch", "added", "source", "updated", "err_count", "err_msg", "size", "icon", "modified", "order_type", "pinned", "scrape", "keep_rule", "block_rule", "deleted"],
@@ -293,7 +294,7 @@ QUERY_TEXT
                     [1, "a", "https://example.com/rss", "Title 1", "User Title", null, "2001-06-13 06:56:23", '"ook"', "2001-06-13 06:57:23", "2002-02-02 00:02:03", "https://example.com/", "2001-06-13 06:55:23", 42, "Some error", 47, null, "2002-02-02 00:05:03", 2, 1, 0, "keep", "block", 0],
                     [4, "a", "https://example.net/rss", "Title 3", "Rosy Title", 1337, "2001-06-15 06:56:23", '"ack"', "2001-06-15 06:57:23", "2002-02-03 00:02:03", "https://example.net/", "2001-06-15 06:55:23", 44, "This error", 3,  12,   "2002-02-03 00:05:03", 1, 0, 0, "meep", "bloop", 0],
                     [6, "c", "https://example.net/rss", "Title 3", null,         4400, "2001-06-15 06:56:23", '"ack"', "2001-06-15 06:57:23", "2002-02-04 00:02:03", "https://example.net/", "2001-06-15 06:55:23", 44, "This error", 3,  12,   "2002-02-04 00:05:03", 2, 0, 1, null,   null,    0],
-                ]
+                ],
             ],
             'arsse_articles' => [
                 'columns' => ["id", "subscription", "read", "starred", "hidden", "touched", "published", "edited", "added", "modified", "marked", "url", "title", "author", "guid", "url_title_hash", "url_content_hash", "title_content_hash", "note"],
@@ -304,7 +305,7 @@ QUERY_TEXT
                     [8,  6, 0, 1, 0, 0, "2001-11-12 22:07:55", "2002-11-12 07:51:12", "2001-11-12 23:44:56", "2001-11-12 23:44:56", "2002-12-12 00:37:22", "https://example.net/1", "Article 5", "Adam Doe", "GUID5", "UTHASH5", "UCHASH5", "TCHASH5", ""],
                     [9,  4, 0, 0, 0, 0, "2001-11-13 22:07:55", "2002-11-13 07:51:12", "2001-11-13 23:44:56", "2001-11-13 23:44:56", null,                  "https://example.net/2", "Article 6", "Evie Doe", "GUID6", "UTHASH6", "UCHASH6", "TCHASH6", ""],
                     [10, 6, 0, 0, 1, 0, "2001-11-13 22:07:55", "2002-11-13 07:51:12", "2001-11-13 23:44:56", "2001-11-13 23:44:56", "2002-12-13 00:37:22", "https://example.net/2", "Article 6", "Evie Doe", "GUID6", "UTHASH6", "UCHASH6", "TCHASH6", "Note 6"],
-                ]
+                ],
             ],
             'arsse_article_contents' => [
                 'columns' => ["id", "content"],
@@ -315,7 +316,7 @@ QUERY_TEXT
                     [8,  "Content 5"],
                     [9,  "Content 6"],
                     [10, "Scraped 6"],
-                ]
+                ],
             ],
             'arsse_editions' => [
                 'columns' => ["id", "article", "modified"],
@@ -332,7 +333,7 @@ QUERY_TEXT
                     [18, 9,  "2000-02-06 00:00:00"],
                     [19, 10, "2000-01-06 00:00:00"],
                     [20, 10, "2000-02-06 00:00:00"],
-                ]
+                ],
             ],
             'arsse_enclosures' => [
                 'columns' => ["article", "url", "type"],
@@ -340,7 +341,7 @@ QUERY_TEXT
                     [2, "http://example.com/2/enclosure", "image/png"],
                     [7, "http://example.net/5/enclosure", "application/octet-stream"],
                     [8, "http://example.net/5/enclosure", "application/octet-stream"],
-                ]
+                ],
             ],
             'arsse_categories' => [
                 'columns' => ["article", "name"],
@@ -354,7 +355,7 @@ QUERY_TEXT
                     [10, "Medicine"],
                     [10, "Drugs"],
                     [10, "Technology"],
-                ]
+                ],
             ],
             'arsse_label_members' => [
                 'columns' => ["label", "article", "assigned", "modified"],
@@ -363,8 +364,8 @@ QUERY_TEXT
                     [1, 2, 0, '2023-09-02 11:22:33'],
                     [1, 7, 1, '2023-09-03 11:22:33'],
                     [4, 8, 0, '2023-09-04 11:22:33'],
-                ]
-            ]
+                ],
+            ],
         ];
         $this->compareExpectations($this->drv, $exp);
     }

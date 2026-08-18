@@ -494,7 +494,7 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
         $exp = HTTP::respJson([
             'version'       => V1_2::VERSION,
             'arsse_version' => Arsse::VERSION,
-            ]);
+        ]);
         $this->assertMessage($exp, $this->req("GET", "/version"));
     }
 
@@ -834,9 +834,9 @@ class TestV1_2 extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public static function provideMultipleMarkings(): iterable {
         $payloads = [
-            'read' => ['read' => true],
+            'read'   => ['read' => true],
             'unread' => ['read' => false],
-            'star' => ['starred' => true],
+            'star'   => ['starred' => true],
             'unstar' => ['starred' => false],
         ];
         $in = [

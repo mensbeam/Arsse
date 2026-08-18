@@ -50,7 +50,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify($this->cli, \Phake::never())->loadConf();
     }
 
-
     #[DataProvider('provideHelpText')]
     public function testPrintHelp(string $cmd, string $name): void {
         $this->assertConsole($cmd, 0, str_replace("arsse.php", $name, CLI::USAGE));
@@ -70,7 +69,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testStartTheDaemon(): void {
         $srv = \Phake::mock(Service::class);
-        \Phake::when($srv)->watch(\Phake::anyParameters())->thenReturn(new \DateTimeImmutable());
+        \Phake::when($srv)->watch(\Phake::anyParameters())->thenReturn(new \DateTimeImmutable);
         \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
         $this->assertConsole("arsse.php daemon", 0);
         \Phake::verify($this->cli)->loadConf();
@@ -81,7 +80,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $f = tempnam(sys_get_temp_dir(), "arsse");
         $srv = \Phake::mock(Service::class);
         $daemon = \Phake::mock(Daemon::class);
-        \Phake::when($srv)->watch(\Phake::anyParameters())->thenReturn(new \DateTimeImmutable());
+        \Phake::when($srv)->watch(\Phake::anyParameters())->thenReturn(new \DateTimeImmutable);
         \Phake::when($daemon)->checkPIDFilePath(\Phake::anyParameters())->thenReturn($f);
         \Phake::when($daemon)->fork(\Phake::anyParameters())->thenReturn(null);
         \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
@@ -99,7 +98,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     public function testFailToStartTheForkingDaemon(): void {
         $srv = \Phake::mock(Service::class);
         $daemon = \Phake::mock(Daemon::class);
-        \Phake::when($srv)->watch(\Phake::anyParameters())->thenReturn(new \DateTimeImmutable());
+        \Phake::when($srv)->watch(\Phake::anyParameters())->thenReturn(new \DateTimeImmutable);
         \Phake::when($daemon)->checkPIDFilePath(\Phake::anyParameters())->thenThrow(new Service\Exception("pidDuplicate", ['pid' => 2112]));
         \Phake::when($daemon)->fork(\Phake::anyParameters())->thenReturn(null);
         \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
@@ -113,13 +112,12 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
 
     public function testRefreshAllFeeds(): void {
         $srv = \Phake::mock(Service::class);
-        \Phake::when($srv)->watch(\Phake::anyParameters())->thenReturn(new \DateTimeImmutable());
+        \Phake::when($srv)->watch(\Phake::anyParameters())->thenReturn(new \DateTimeImmutable);
         \Phake::when(Arsse::$obj)->get(Service::class)->thenReturn($srv);
         $this->assertConsole("arsse.php feed refresh-all", 0);
         \Phake::verify($this->cli)->loadConf();
         \Phake::verify($srv)->watch(false);
     }
-
 
     #[DataProvider('provideFeedUpdates')]
     public function testRefreshAFeed(string $cmd, int $exitStatus, string $output): void {
@@ -136,7 +134,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["arsse.php feed refresh 2", 10502, ""],
         ];
     }
-
 
     #[DataProvider('provideDefaultConfigurationSaves')]
     public function testSaveTheDefaultConfiguration(string $cmd, int $exitStatus, string $file): void {
@@ -159,7 +156,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-
     #[DataProvider('provideUserList')]
     public function testListUsers(string $cmd, array $list, int $exitStatus, string $output): void {
         Arsse::$user = \Phake::mock(User::class);
@@ -177,7 +173,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["arsse.php user",      [],    0, ""],
         ];
     }
-
 
     #[DataProvider('provideUserAdditions')]
     public function testAddAUser(string $cmd, int $exitStatus, string $output): void {
@@ -207,7 +202,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::verify(Arsse::$user)->propertiesSet("jane.doe@example.com", ['admin' => true]);
     }
 
-
     #[DataProvider('provideUserAuthentication')]
     public function testAuthenticateAUser(string $cmd, int $exitStatus, string $output): void {
         Arsse::$user = \Phake::mock(User::class);
@@ -223,7 +217,7 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public static function provideUserAuthentication(): iterable {
-        $l = new \JKingWeb\Arsse\Lang();
+        $l = new \JKingWeb\Arsse\Lang;
         $success = $l("CLI.Auth.Success");
         $failure = $l("CLI.Auth.Failure");
         return [
@@ -237,7 +231,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["arsse.php user auth --fever jane.doe@example.com thx1138", 0, $success],
         ];
     }
-
 
     #[DataProvider('provideUserRemovals')]
     public function testRemoveAUser(string $cmd, int $exitStatus, string $output): void {
@@ -253,7 +246,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["arsse.php user remove jane.doe@example.com", 10402, ""],
         ];
     }
-
 
     #[DataProvider('provideUserPasswordChanges')]
     public function testChangeAUserPassword(string $cmd, int $exitStatus, string $output): void {
@@ -284,7 +276,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         ];
     }
 
-
     #[DataProvider('provideUserPasswordClearings')]
     public function testClearAUserPassword(string $cmd, int $exitStatus, string $output): void {
         $passwordClear = function($user) {
@@ -311,7 +302,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["arsse.php user unset-pass jane.doe@example.com --fever",          10402, ""],
         ];
     }
-
 
     #[DataProvider('provideOpmlExports')]
     public function testExportToOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat): void {
@@ -353,7 +343,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
             ["arsse.php export jane.doe@example.com bad.opml -f",      10604, "bad.opml",     "jane.doe@example.com", true],
         ];
     }
-
 
     #[DataProvider('provideOpmlImports')]
     public function testImportFromOpml(string $cmd, int $exitStatus, string $file, string $user, bool $flat, bool $replace): void {
@@ -424,7 +413,6 @@ class TestCLI extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertConsole("arsse.php user show john.doe@example.com", 0, $exp);
         \Phake::verify(Arsse::$user)->propertiesGet("john.doe@example.com");
     }
-
 
     #[DataProvider('provideMetadataChanges')]
     public function testSetMetadataOfAUser(string $cmd, string $user, array $in, array $out, int $exp): void {

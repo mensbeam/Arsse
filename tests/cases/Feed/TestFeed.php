@@ -21,7 +21,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[CoversClass(\JKingWeb\Arsse\Feed::class)]
 #[Group('slow')]
 class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
-    protected static $host = "http://localhost:8000/";
+    protected static $host = "http://localhost:50034/";
     protected $base = "";
     protected $latest = [
         [
@@ -92,10 +92,11 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         ],
     ];
 
+    public static function setUpBeforeClass(): void {
+        static::startMockServer();
+    }
+
     public function setUp(): void {
-        if (!@file_get_contents(self::$host."IsUp")) {
-            $this->markTestSkipped("Test Web server is not accepting requests");
-        }
         $this->base = self::$host."Feed/";
         parent::setUp();
         self::setConf();
@@ -227,7 +228,6 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertSame("http://example.com/1", $f->newItems[0]->url);
     }
 
-
     #[DataProvider('provide304ResponseURLs')]
     public function testHandleCacheHeadersOn304(string $url): void {
         // upon 304, the client should re-use the caching header values it supplied to the server
@@ -287,7 +287,6 @@ class TestFeed extends \JKingWeb\Arsse\Test\AbstractTest {
             }
         }
     }
-
 
     #[DataProvider('provide304Timestamps')]
     public function testComputeNextFetchFrom304(string $t, string $exp): void {

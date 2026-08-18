@@ -51,7 +51,6 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->daemon = \Phake::partialMock(Daemon::class);
     }
 
-
     #[DataProvider('providePathResolutions')]
     public function testResolveRelativePaths(string $path, $cwd, $exp): void {
         // set up mock daemon class
@@ -77,7 +76,6 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
             [".",           false,      false],
         ];
     }
-
 
     #[DataProvider('providePidFileChecks')]
     public function testCheckPidFiles(string $file, bool $accessible, $exp): void {
@@ -114,7 +112,6 @@ class TestDaemon extends \JKingWeb\Arsse\Test\AbstractTest {
             ["ok/dir/file",       true,  "ok/dir/file"],
         ];
     }
-
 
     #[DataProvider('providePidReadChecks')]
     public function testCheckPidReads(string $file, $exp) {

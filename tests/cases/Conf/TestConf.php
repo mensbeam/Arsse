@@ -46,7 +46,6 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertInstanceOf(Conf::class, new Conf);
     }
 
-
     #[Depends('testLoadDefaultValues')]
     public function testImportFromArray(): void {
         $arr = [
@@ -58,7 +57,6 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals("xx", $conf->lang);
     }
 
-
     #[Depends('testImportFromArray')]
     public function testImportFromFile(): void {
         $conf = new Conf;
@@ -68,13 +66,11 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertEquals("xx", $conf->lang);
     }
 
-
     #[Depends('testImportFromFile')]
     public function testImportFromMissingFile(): void {
         $this->assertException("fileMissing", "Conf");
         $conf = new Conf(self::$path."confMissing");
     }
-
 
     #[Depends('testImportFromFile')]
     public function testImportFromEmptyFile(): void {
@@ -82,13 +78,11 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         $conf = new Conf(self::$path."confEmpty");
     }
 
-
     #[Depends('testImportFromFile')]
     public function testImportFromFileWithoutReadPermission(): void {
         $this->assertException("fileUnreadable", "Conf");
         $conf = new Conf(self::$path."confUnreadable");
     }
-
 
     #[Depends('testImportFromFile')]
     public function testImportFromFileWhichIsNotAnArray(): void {
@@ -96,14 +90,12 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         $conf = new Conf(self::$path."confNotArray");
     }
 
-
     #[Depends('testImportFromFile')]
     public function testImportFromFileWhichIsNotPhp(): void {
         $this->assertException("fileCorrupt", "Conf");
         // this should not print the output of the non-PHP file
         $conf = new Conf(self::$path."confNotPHP");
     }
-
 
     #[Depends('testImportFromFile')]
     public function testImportFromCorruptFile(): void {
@@ -177,7 +169,6 @@ class TestConf extends \JKingWeb\Arsse\Test\AbstractTest {
         $this->assertNotSame($exp, $arr);
         $this->assertArraySubset($exp, $arr);
     }
-
 
     #[Depends('testExportToFile')]
     public function testExportToStdout(): void {

@@ -26,12 +26,12 @@ class TestOPML extends \JKingWeb\Arsse\Test\AbstractTest {
         ['id' => 1, 'parent' => null, 'children' => 1, 'feeds' => 1, 'name' => "Science"],
     ];
     protected $subscriptions = [
-        ['id' => 3, 'folder' => 1,    'top_folder' => 1,    'unread' => 2,  'updated' => "2016-05-23 06:40:02", 'err_msg' => 'argh', 'title' => 'Ars Technica',   'url' => "http://localhost:8000/3", 'icon_url' => 'http://localhost:8000/3.png'],
-        ['id' => 4, 'folder' => 6,    'top_folder' => 3,    'unread' => 6,  'updated' => "2017-10-09 15:58:34", 'err_msg' => '',     'title' => 'CBC News',       'url' => "http://localhost:8000/4", 'icon_url' => 'http://localhost:8000/4.png'],
-        ['id' => 6, 'folder' => null, 'top_folder' => null, 'unread' => 0,  'updated' => "2010-02-12 20:08:47", 'err_msg' => '',     'title' => 'Eurogamer',      'url' => "http://localhost:8000/6", 'icon_url' => 'http://localhost:8000/6.png'],
-        ['id' => 1, 'folder' => 2,    'top_folder' => 1,    'unread' => 5,  'updated' => "2017-09-15 22:54:16", 'err_msg' => '',     'title' => 'NASA JPL',       'url' => "http://localhost:8000/1", 'icon_url' => null],
-        ['id' => 5, 'folder' => 6,    'top_folder' => 3,    'unread' => 12, 'updated' => "2017-07-07 17:07:17", 'err_msg' => '',     'title' => 'Ottawa Citizen', 'url' => "http://localhost:8000/5", 'icon_url' => ''],
-        ['id' => 2, 'folder' => 5,    'top_folder' => 3,    'unread' => 10, 'updated' => "2011-11-11 11:11:11", 'err_msg' => 'oops', 'title' => 'Toronto Star',   'url' => "http://localhost:8000/2", 'icon_url' => 'http://localhost:8000/2.png'],
+        ['id' => 3, 'folder' => 1,    'top_folder' => 1,    'unread' => 2,  'updated' => "2016-05-23 06:40:02", 'err_msg' => 'argh', 'title' => 'Ars Technica',   'url' => "http://localhost:50034/3", 'icon_url' => 'http://localhost:50034/3.png'],
+        ['id' => 4, 'folder' => 6,    'top_folder' => 3,    'unread' => 6,  'updated' => "2017-10-09 15:58:34", 'err_msg' => '',     'title' => 'CBC News',       'url' => "http://localhost:50034/4", 'icon_url' => 'http://localhost:50034/4.png'],
+        ['id' => 6, 'folder' => null, 'top_folder' => null, 'unread' => 0,  'updated' => "2010-02-12 20:08:47", 'err_msg' => '',     'title' => 'Eurogamer',      'url' => "http://localhost:50034/6", 'icon_url' => 'http://localhost:50034/6.png'],
+        ['id' => 1, 'folder' => 2,    'top_folder' => 1,    'unread' => 5,  'updated' => "2017-09-15 22:54:16", 'err_msg' => '',     'title' => 'NASA JPL',       'url' => "http://localhost:50034/1", 'icon_url' => null],
+        ['id' => 5, 'folder' => 6,    'top_folder' => 3,    'unread' => 12, 'updated' => "2017-07-07 17:07:17", 'err_msg' => '',     'title' => 'Ottawa Citizen', 'url' => "http://localhost:50034/5", 'icon_url' => ''],
+        ['id' => 2, 'folder' => 5,    'top_folder' => 3,    'unread' => 10, 'updated' => "2011-11-11 11:11:11", 'err_msg' => 'oops', 'title' => 'Toronto Star',   'url' => "http://localhost:50034/2", 'icon_url' => 'http://localhost:50034/2.png'],
     ];
     protected $tags = [
         ['id' => 1, 'name' => "Canada", 'subscription' => 2],
@@ -51,20 +51,20 @@ class TestOPML extends \JKingWeb\Arsse\Test\AbstractTest {
     <outline text="Photography"/>
     <outline text="Politics">
         <outline text="Local">
-            <outline type="rss" text="Toronto Star" xmlUrl="http://localhost:8000/2" category="Canada"/>
+            <outline type="rss" text="Toronto Star" xmlUrl="http://localhost:50034/2" category="Canada"/>
         </outline>
         <outline text="National">
-            <outline type="rss" text="CBC News" xmlUrl="http://localhost:8000/4" category="Canada,Politics"/>
-            <outline type="rss" text="Ottawa Citizen" xmlUrl="http://localhost:8000/5" category="Canada,Politics"/>
+            <outline type="rss" text="CBC News" xmlUrl="http://localhost:50034/4" category="Canada,Politics"/>
+            <outline type="rss" text="Ottawa Citizen" xmlUrl="http://localhost:50034/5" category="Canada,Politics"/>
         </outline>
     </outline>
     <outline text="Science">
         <outline text="Rocketry">
-            <outline type="rss" text="NASA JPL" xmlUrl="http://localhost:8000/1" category="Science etc"/>
+            <outline type="rss" text="NASA JPL" xmlUrl="http://localhost:50034/1" category="Science etc"/>
         </outline>
-        <outline type="rss" text="Ars Technica" xmlUrl="http://localhost:8000/3" category="Science etc"/>
+        <outline type="rss" text="Ars Technica" xmlUrl="http://localhost:50034/3" category="Science etc"/>
     </outline>
-    <outline type="rss" text="Eurogamer" xmlUrl="http://localhost:8000/6"/>
+    <outline type="rss" text="Eurogamer" xmlUrl="http://localhost:50034/6"/>
 </body>
 </opml>
 OPML_EXPORT_SERIALIZATION;
@@ -73,12 +73,12 @@ OPML_EXPORT_SERIALIZATION;
 <opml version="2.0">
 <head/>
 <body>
-    <outline type="rss" text="Ars Technica" xmlUrl="http://localhost:8000/3" category="Science etc"/>
-    <outline type="rss" text="CBC News" xmlUrl="http://localhost:8000/4" category="Canada,Politics"/>
-    <outline type="rss" text="Eurogamer" xmlUrl="http://localhost:8000/6"/>
-    <outline type="rss" text="NASA JPL" xmlUrl="http://localhost:8000/1" category="Science etc"/>
-    <outline type="rss" text="Ottawa Citizen" xmlUrl="http://localhost:8000/5" category="Canada,Politics"/>
-    <outline type="rss" text="Toronto Star" xmlUrl="http://localhost:8000/2" category="Canada"/>
+    <outline type="rss" text="Ars Technica" xmlUrl="http://localhost:50034/3" category="Science etc"/>
+    <outline type="rss" text="CBC News" xmlUrl="http://localhost:50034/4" category="Canada,Politics"/>
+    <outline type="rss" text="Eurogamer" xmlUrl="http://localhost:50034/6"/>
+    <outline type="rss" text="NASA JPL" xmlUrl="http://localhost:50034/1" category="Science etc"/>
+    <outline type="rss" text="Ottawa Citizen" xmlUrl="http://localhost:50034/5" category="Canada,Politics"/>
+    <outline type="rss" text="Toronto Star" xmlUrl="http://localhost:50034/2" category="Canada"/>
 </body>
 </opml>
 OPML_EXPORT_SERIALIZATION;
@@ -134,10 +134,10 @@ OPML_EXPORT_SERIALIZATION;
             ["Empty.2.opml", false, [[], []]],
             ["Empty.3.opml", false, [[], []]],
             ["FeedsOnly.opml", false, [[
-                ['url' => "http://localhost:8000/1", 'title' => "Feed 1", 'folder' => 0, 'tags' => []],
-                ['url' => "http://localhost:8000/2", 'title' => "",       'folder' => 0, 'tags' => []],
-                ['url' => "http://localhost:8000/3", 'title' => "",       'folder' => 0, 'tags' => []],
-                ['url' => "http://localhost:8000/4", 'title' => "",       'folder' => 0, 'tags' => []],
+                ['url' => "http://localhost:50034/1", 'title' => "Feed 1", 'folder' => 0, 'tags' => []],
+                ['url' => "http://localhost:50034/2", 'title' => "",       'folder' => 0, 'tags' => []],
+                ['url' => "http://localhost:50034/3", 'title' => "",       'folder' => 0, 'tags' => []],
+                ['url' => "http://localhost:50034/4", 'title' => "",       'folder' => 0, 'tags' => []],
                 ['url' => "",                     'title' => "",       'folder' => 0, 'tags' => ["whee"]],
                 ['url' => "",                     'title' => "",       'folder' => 0, 'tags' => ["whee", "whoo"]],
             ], []]],
@@ -156,7 +156,7 @@ OPML_EXPORT_SERIALIZATION;
                 ['url' => "https://www.thestar.com/content/thestar/feed.RSSManagerServlet.topstories.rss", 'title' => "Toronto Star",   'folder' => 5, 'tags' => ["news", "canada", "toronto"]],
                 ['url' => "http://rss.canada.com/get/?F239",                                               'title' => "Ottawa Citizen", 'folder' => 6, 'tags' => ["news", "canada"]],
                 ['url' => "https://www.eurogamer.net/?format=rss",                                         'title' => "Eurogamer",      'folder' => 0, 'tags' => ["gaming", "frequent"]],
-            ], [1      =>
+            ], [1 =>
                 ['id' => 1, 'name' => "Photography", 'parent' => 0],
                 ['id' => 2, 'name' => "Science",     'parent' => 0],
                 ['id' => 3, 'name' => "Rocketry",    'parent' => 2],

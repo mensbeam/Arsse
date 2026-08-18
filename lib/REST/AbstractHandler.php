@@ -118,7 +118,7 @@ abstract class AbstractHandler implements Handler {
                 }
                 break;
             default:
-                // other media types would normally be rejected, but 
+                // other media types would normally be rejected, but
                 //   if it happens to be mislabelled JSON we can accept
                 //   it; we will not try form data here, though,
                 //   because it's not a very distinct format; multipart
@@ -126,7 +126,8 @@ abstract class AbstractHandler implements Handler {
                 if (HTTP::sniffJson($body)) {
                     try {
                         return HTTP::parseJson($body);
-                    } catch (\JsonException $e) {}
+                    } catch (\JsonException $e) {
+                    }
                 }
                 throw new Exception415;
         }

@@ -14,7 +14,6 @@ use JKingWeb\Arsse\REST\NextcloudNews\Common;
 use JKingWeb\Arsse\REST\NextcloudNews\OCS;
 use JKingWeb\Arsse\User\ExceptionConflict;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 
 #[CoversClass(\JKingWeb\Arsse\REST\NextcloudNews\OCS::class)]
@@ -49,10 +48,10 @@ class TestOCS extends \JKingWeb\Arsse\Test\AbstractTest {
         \Phake::when(Arsse::$user)->propertiesGet($this->userId)->thenReturn(['admin' => true, 'lang' => "en_CA"]);
         \Phake::when(Arsse::$user)->propertiesGet("jane.doe@example.com")->thenReturn(['admin' => false, 'lang' => null]);
         // produce consistent timestamps
-        $this->now = new \DateTimeImmutable();
+        $this->now = new \DateTimeImmutable;
         \Phake::when(Arsse::$obj)->get(\DateTimeImmutable::class)->thenReturn($this->now);
         // initialize a handler
-        $this->h = new OCS();
+        $this->h = new OCS;
     }
 
     protected static function v($value) {
@@ -102,7 +101,7 @@ class TestOCS extends \JKingWeb\Arsse\Test\AbstractTest {
     }
 
     public function testQueryAMissingUser(): void {
-        \Phake::when(Arsse::$user)->propertiesGet("oops")->thenThrow(new ExceptionConflict());
+        \Phake::when(Arsse::$user)->propertiesGet("oops")->thenThrow(new ExceptionConflict);
         $exp = HTTP::respXml("<ocs><meta><status>failure</status><statuscode>404</statuscode><message>User does not exist</message></meta><data></data></ocs>", 404);
         $this->assertMessage($exp, $this->req("GET", "oops"));
         $exp = HTTP::respJson(['ocs' => ['meta' => ['status' => "failure", 'statuscode' => 404, 'message' => "User does not exist"], 'data' => new \stdClass]], 404);

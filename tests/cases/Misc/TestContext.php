@@ -100,7 +100,7 @@ class TestContext extends \JKingWeb\Arsse\Test\AbstractTest {
             'articleRange'     => [[1, 100],                                         [1, 100]],
             'editionRange'     => [[1, 100],                                         [1, 100]],
             'andGroups'        => [[[$and]],                                         [$and]],
-            'orGroups'        => [[[$or]],                                          [$or]],
+            'orGroups'         => [[[$or]],                                          [$or]],
         ];
         foreach ($tests as $k => [$input, $output]) {
             yield $k => [$k, $input, $output, false];

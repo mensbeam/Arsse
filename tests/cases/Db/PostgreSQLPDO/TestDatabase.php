@@ -25,8 +25,8 @@ class TestDatabase extends \JKingWeb\Arsse\TestCase\Database\AbstractTest {
 
     public function setUp(): void {
         parent::setUp();
-        $seqList =
-            "select 
+        $seqList
+            = "select 
                 replace(substring(column_default, 10), right(column_default, 12), '') as seq, 
                 table_name as table, 
                 column_name as col 

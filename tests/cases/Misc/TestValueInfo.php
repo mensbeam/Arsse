@@ -73,7 +73,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],            0],
             ["some string", 0],
             ["           ", 0],
-            [new \StdClass(), 0],
+            [new \StdClass, 0],
             [new StrClass(""),    I::NULL],
             [new StrClass("1"),   I::VALID],
             [new StrClass("0"),   I::VALID | I::ZERO],
@@ -148,7 +148,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],            0],
             ["some string", I::VALID],
             ["           ", I::VALID | I::WHITE],
-            [new \StdClass(), 0],
+            [new \StdClass, 0],
             [new StrClass(""),    I::VALID | I::EMPTY],
             [new StrClass("1"),   I::VALID],
             [new StrClass("0"),   I::VALID],
@@ -219,7 +219,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],            false, false],
             ["some string", false, false],
             ["           ", false, false],
-            [new \StdClass(), false, false],
+            [new \StdClass, false, false],
             [new StrClass(""),    false, true],
             [new StrClass("1"),   true,  true],
             [new StrClass("0"),   false, true],
@@ -291,7 +291,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],            null],
             ["some string", null],
             ["           ", null],
-            [new \StdClass(), null],
+            [new \StdClass, null],
             [new StrClass(""),    false],
             [new StrClass("1"),   true],
             [new StrClass("0"),   false],
@@ -308,7 +308,6 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             }
         }
     }
-
 
     #[DataProvider('provideSimpleNormalizationValues')]
     public function testNormalizeSimpleValues($input, string $typeName, $exp, bool $pass, bool $strict, bool $drop): void {
@@ -368,7 +367,6 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             $assert($exp, I::normalize($input, $typeConst | $modeConst | I::M_NULL), "$typeName $modeName (null pass-through) test failed.");
         }
     }
-
 
     #[DataProvider('provideDateNormalizationValues')]
     public function testNormalizeDateValues($input, $format, $exp, bool $strict, bool $drop): void {
@@ -516,7 +514,7 @@ class TestValueInfo extends \JKingWeb\Arsse\Test\AbstractTest {
             [[],                                    [null,true], [false,false], [0,                  false], [0.0,                      false], ["",                    false], [[],                                     true],  [null, false]],
             ["some string",                         [null,true], [true, false], [0,                  false], [0.0,                      false], ["some string",         true],  [["some string"],                        false], [null, false]],
             ["           ",                         [null,true], [true, false], [0,                  false], [0.0,                      false], ["           ",         true],  [["           "],                        false], [null, false]],
-            [new \StdClass(),                         [null,true], [true, false], [0,                  false], [0.0,                      false], ["",                    false], [[new \StdClass()],                        false], [null, false]],
+            [new \StdClass,                         [null,true], [true, false], [0,                  false], [0.0,                      false], ["",                    false], [[new \StdClass],                        false], [null, false]],
             [new StrClass(""),                      [null,true], [false,true],  [0,                  false], [0.0,                      false], ["",                    true],  [[new StrClass("")],                     false], [null, false]],
             [new StrClass("1"),                     [null,true], [true, true],  [1,                  true],  [1.0,                      true],  ["1",                   true],  [[new StrClass("1")],                    false], [null, false]],
             [new StrClass("0"),                     [null,true], [false,true],  [0,                  true],  [0.0,                      true],  ["0",                   true],  [[new StrClass("0")],                    false], [null, false]],

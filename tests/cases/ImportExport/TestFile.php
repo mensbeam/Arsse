@@ -48,7 +48,6 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
         parent::tearDown();
     }
 
-
     #[DataProvider('provideFileExports')]
     public function testExportToAFile(string $file, string $user, bool $flat, $exp): void {
         $path = $this->path.$file;
@@ -87,7 +86,6 @@ class TestFile extends \JKingWeb\Arsse\Test\AbstractTest {
             ["exportBadDir/file",  "jane.doe@example.com", false, $createException],
         ];
     }
-
 
     #[DataProvider('provideFileImports')]
     public function testImportFromAFile(string $file, string $user, bool $flat, bool $replace, $exp): void {
