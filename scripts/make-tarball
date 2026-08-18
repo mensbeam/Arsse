@@ -41,10 +41,10 @@ if [ -z "$commit" ]; then
     commit="HEAD"
 fi
 version="$(git -C "$prj_dir" describe --tags "$commit" 2>/dev/null)"
-if [ -z "$version"]; then
+if [ -z "$version" ]; then
     err "The supplied Git commit-ish is invalid"
 fi
-$tarball = "$prj_dir/release/$version/arsse-$version.tar.gz"
+tarball="$prj_dir/release/$version/arsse-$version.tar.gz"
 # create a temporary worktree
 tmp_dir="$(mktemp -d)"
 if [ $? -gt 0 ]; then
@@ -53,7 +53,7 @@ fi
 wrk_dir="$tmp_dir/arsse"
 mkdir -p "$wrk_dir"
 git -C "$prj_dir" worktree add "$wrk_dir" "$commit"
-if [ "$?" -gt 0 ];
+if [ "$?" -gt 0 ]; then
     err "Unable to create temporary Git worktree"
 fi
 # fix up the Arch PKGBUILD, if there is one
@@ -64,7 +64,7 @@ if [ -f "$wrk_dir/dist/arch/PKGBUILD" ]; then
 fi
 # write the Debian changelog, if appropriate
 if [ -f "$wrk_dir/dist/debian/control" ]; then
-    "$prj_dir/scripts/changelog" "$version" debian > "$wrk_dir/dist/debain/changelog"
+    "$prj_dir/scripts/changelog" "$version" debian >"$wrk_dir/dist/debian/changelog"
 fi
 # fix up the RPM specfile, if appropriate (this isn't well tested)
 if [ -f "$wrk_dir/dist/rpm/arsse.spec" ]; then

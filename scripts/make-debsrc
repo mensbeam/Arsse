@@ -33,7 +33,7 @@ if [ -z "$commit" ]; then
     commit="HEAD"
 fi
 version="$(git -C "$prj_dir" describe --tags "$commit" 2>/dev/null)"
-if [ -z "$version"]; then
+if [ -z "$version" ]; then
     err "The supplied Git commit-ish is invalid"
 fi
 # isolate the parts of the version string
@@ -45,7 +45,7 @@ if [ -z "$release" ]; then
 fi
 debVersion="$baseVersion-$release"
 # create the tarball if it doesn't exist
-$tarball = "$prj_dir/release/$version/arsse-$version.tar.gz"
+tarball="$prj_dir/release/$version/arsse-$version.tar.gz"
 if [ ! -f "$tarball" ]; then
     "$prj_dir/scripts/make-tarball" "$version"
     if [ $? -gt 0 ]; then
