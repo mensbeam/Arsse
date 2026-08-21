@@ -1,12 +1,19 @@
 #!/bin/bash
 
 function add_extension() {
-    local ext_dir="$("$PHP" -r 'echo rtrim(ini_get("extension_dir"), "/");')"
+    local added=()
     for ext in "$@"; do
         if [ -f "$ext_dir/$ext.so" ]; then
-            php_args+=("-d" "extension=$ext")
+            if [ "$ext" == "xdebug" ]; then
+                added+=("-d" "zend_extension=$ext")
+            else
+                added+=("-d" "extension=$ext")
+            fi
         fi
     done
+    if [ -n "$added" ]; then
+        php_args+=("${added[@]}")
+    fi
 }
 
 if [ -n "$ARSSE_PHP" ]; then
@@ -17,9 +24,12 @@ fi
 prj_dir="$(dirname $(dirname "$0"))"
 type="$1"
 shift
-php_args=("-n" "-d" "zend.assertions=1")
-# enable extensions required by The Arsse (through "curl"), Picofeed (through "iconv"), the PHPUnit (the rest)
-add_extension intl dom filter hash json sqlite3 pdo_sqlite mysqli pdo_mysql pgsql pdo_pgsql curl simplexml iconv mbstring phar tokenizer xmlwriter
+ext_dir="$("$PHP" -r 'echo rtrim(ini_get("extension_dir"), "/");')"
+php_args=("-n" "-d" "zend.assertions=1" "-d" "extension_dir=$ext_dir")
+# enable extensions required by The Arsse, Picofeed, and PHPUnit
+add_extension intl dom filter hash json sqlite3 pdo_sqlite mysqli pdo_mysql pgsql pdo_pgsql curl
+add_extension simplexml iconv
+add_extension mbstring phar tokenizer xmlwriter
 # prepare the PHPUnit arguments based on which functionality we want
 phpunit_args=("-c" "$prj_dir/tests/phpunit.dist.xml")
 if [ "$type" == "test" -o "$type" == "test:quick" -o "$type" == "coverage" ]; then
@@ -32,7 +42,8 @@ if [ "$type" == "coverage" -o "$type" == "coverage:full" ]; then
     if [ "$type" == "coverage" ]; then
         phpunit_args+=("--exclude-group=coverageOptional")
     fi
-    php_args+=("-d" "zend_extension=xdebug" "-d" "xdebug.mode=coverage")
+    add_extension xdebug
+    php_args+=("-d" "xdebug.mode=coverage")
     phpunit_args+=("--coverage-html" "$prj_dir/tests/coverage")
 fi
 # run the requested tests
